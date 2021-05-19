@@ -114,3 +114,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# Ignore our config file
+config.json

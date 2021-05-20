@@ -4,7 +4,60 @@ import logger from "@utils/logger"
 import Discord from "discord.js"
 import * as cron from "node-cron"
 import axios from "axios"
+import sqlite3 from "sqlite3"
+import { Sequelize, Model, DataTypes } from "sequelize"
 
+
+
+const sequelize = new Sequelize('sqlite:./databases/data.db', {
+    logging: true
+});
+
+
+
+class User extends Model {
+    public id: number
+    public username: string
+    public birthday: Date
+}
+
+
+User.init({
+    username: DataTypes.STRING,
+    birthday: DataTypes.DATE
+  }, { sequelize, modelName: 'user' });
+  
+(async () => {
+
+    await sequelize.authenticate()
+    console.log('DB Connection has been established successfully.');
+
+    await sequelize.sync();
+
+
+    /*const jane = await User.create({
+        username: 'janedoe',
+        birthday: new Date(1980, 6, 20)
+    });*/
+
+    const users = await User.findAll()
+
+    for(const user of users) {
+        console.log(user.birthday.getMonth())
+    }
+
+    
+
+    //const jane = User.findOne()
+
+    //console.log(jane.toJSON());
+
+    sequelize.close()
+
+})();
+
+
+/*
 dotenv.config()
 console.log(process.env.BOT_TOKEN)
 
@@ -31,3 +84,4 @@ logger.info("Init!")
 cron.schedule('* * * * *', function() {
     logger.info("Info log!")
 });
+*/

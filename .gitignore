@@ -116,5 +116,6 @@ dist
 .pnp.*
 
 
-# Ignore our config file
-config.json
+# Ignore our .env file
+.env
+compiled

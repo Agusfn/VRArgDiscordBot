@@ -73,6 +73,15 @@ export default abstract class Script {
         cron.schedule(cronExpression, task)
     }
 
+    /**
+     * Add a new cron task
+     * @param frequency 
+     * @param task 
+     */
+     protected addCustomCron(cronExpression: string, task: () => void) {
+        cron.schedule(cronExpression, task)
+    }
+
 
     /**
      * Initialize script. Shall only be called by ScriptLoader.

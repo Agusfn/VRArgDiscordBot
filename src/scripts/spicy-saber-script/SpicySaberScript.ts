@@ -67,7 +67,7 @@ export class SpicySaberScript extends Script {
             try {
                 ssUser = await api.getPlayer(scoreSaberId)
             } catch(error) {
-                message.channel.send(error)
+                message.channel.send(error.message)
                 return
             }
             console.log("ssUser", ssUser)
@@ -96,14 +96,38 @@ export class SpicySaberScript extends Script {
 
         this.addCommand("deslinkear", null, async () => {
 
-            
+            // 
+
 
         })
 
 
-        /*this.addCron(CronFrequency.MINUTELY, () => {
-            console.log("Minutely cron...")
-        })*/
+        // Cron each 10 mins (on minute 0, 10, 20, ...)
+        this.addCustomCron("*/10 * * * *", () => {
+
+
+            console.log("Running cron (every 10 min)...")
+
+            // Si el fetcher NO está corriendo (usar attr del script), llamarlo (pasar lo de abajo a un metodo en otro archivo)
+
+                // Obtener todos los usuarios que no tuvieron el historial de scores completamente descargado
+                // Para cada uno:
+                    // Obtener un array con todos sus scoreIds registrados
+                    // Fetchear página de scores de lastFetchPage+1
+
+                    // Si no se pudo fetchear por max attempts, breakear todo el fetcher, y esperar al próximo cron.
+                    
+                    // Si hay resultados:
+                        // Para cada resultado:
+                            // Si no existe en el array de scores del user:
+                                // Crear resultado en la DB
+                                // Agregar al array de resultados del user
+                        // Incrementar lastFetchPage += 1 en db
+                    // Si no hay resultados
+                        // Marcar fetchedAllScoreHistory = true del usuario
+  
+
+        })
 
     }
     

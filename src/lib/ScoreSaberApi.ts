@@ -1,7 +1,9 @@
 import {PagesReply, PagifiedPlayer, Player, Score, ScoreReply} from "@ts/interfaces";
 import {IRestResponse, RestClient} from "typed-rest-client/RestClient";
 
-
+/**
+ * ScoreSaber has a limit of 80 requests per minute.
+ */
 export default class ScoreSaberApi {
 
     private static readonly HOST: string = 'https://new.scoresaber.com/api/';
@@ -13,9 +15,9 @@ export default class ScoreSaberApi {
 
         if (response.result === null) {
             if(response.statusCode == 404) {
-                throw new Error(`No se encontró el player ${id}`);
+                throw new Error(`No se encontró el playerId ${id} en Scoresaber.`);
             } else {
-                throw new Error(`No se pudo obtener el player ${id} (status=${response.statusCode})`);
+                throw new Error(`No se pudo obtener el player ${id} (status=${response.statusCode}).`);
             }
         }
 

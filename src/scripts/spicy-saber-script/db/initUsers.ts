@@ -18,7 +18,15 @@ export default () => {
         scoreSaberAvatarPath: Types.STRING,
         globalRank: Types.INTEGER,
         countryRank: Types.INTEGER,
-        avgRankedAccuracy: Types.DECIMAL(5, 3)
+        avgRankedAccuracy: Types.DECIMAL(5, 3),
+        fetchedAllScoreHistory: {
+            type: Types.BOOLEAN,
+            defaultValue: false
+        },
+        lastFetchPage: {
+            type: Types.INTEGER,
+            defaultValue: 0
+        }
     }, 
     { 
         sequelize: Sequelize.getInstance(), 

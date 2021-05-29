@@ -2,9 +2,19 @@ import { Model } from "sequelize"
 
 
 export class User extends Model {
-    public id: number
-    public username: string
-    public birthday: Date
+
+    public discordUserId: string
+    public registeredDate: Date
+    public discordUsername: string
+    public playerName: string
+    public scoreSaberPlayerId: string
+    public currentPP: number
+    public scoreSaberCountry: string
+    public scoreSaberAvatarPath: string
+    public globalRank: number
+    public countryRank: number
+    public avgRankedAccuracy: number
+    
 }
 
 

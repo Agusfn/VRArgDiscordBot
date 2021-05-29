@@ -1,9 +1,8 @@
 import * as ModuleAlias from 'module-alias'
 
 ModuleAlias.addAliases({
-    '@database': __dirname + '/database',
     '@lib': __dirname + '/lib',
-    '@model': __dirname + '/model',
     '@scripts': __dirname + '/scripts',
+    '@ts': __dirname + '/ts',
     '@utils': __dirname + '/utils'    
 });

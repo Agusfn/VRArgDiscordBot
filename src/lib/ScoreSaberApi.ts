@@ -1,6 +1,7 @@
 import {PagesReply, PagifiedPlayer, Player, Score, ScoreReply} from "@ts/interfaces";
 import {IRestResponse, RestClient} from "typed-rest-client/RestClient";
 
+
 export default class ScoreSaberApi {
 
     private static readonly HOST: string = 'https://new.scoresaber.com/api/';
@@ -11,7 +12,11 @@ export default class ScoreSaberApi {
         const response: IRestResponse<Player> = await this.restClient.get<Player>(`player/${id}/full`);
 
         if (response.result === null) {
-            throw new Error(`Failed to fetch player ${id} (status=${response.statusCode})`);
+            if(response.statusCode == 404) {
+                throw new Error(`No se encontró el player ${id}`);
+            } else {
+                throw new Error(`No se pudo obtener el player ${id} (status=${response.statusCode})`);
+            }
         }
 
         return response.result;

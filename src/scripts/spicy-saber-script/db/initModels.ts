@@ -1,22 +1,21 @@
-//import { DataTypes } from "sequelize"
-//import { Song, User, UserScore } from "../model/"
-import initUser from "./initUser"
+import initUsers from "./initUsers"
+import initSongs from "./initSongs"
+import initUserScores from "./initUserScores"
+import setRelationships from "./setRelationships"
 
 /**
  * Entry point for loading sequelize model schemes
  */
 export default () => {
 
-    // We can manually initialize models:
+    console.log("Initializing spicysaber script models...")
 
-    /*User.init({
-        username: DataTypes.STRING,
-        birthday: DataTypes.DATE
-    }, { sequelize: seqInstance, modelName: 'user' });*/
+    initUsers()
+    initSongs()
+    initUserScores()
 
-
-    // Or segment it in files:
-    initUser()
+    // Load any relationship after models have been initialized
+    setRelationships()
 
 }
 

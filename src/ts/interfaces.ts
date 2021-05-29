@@ -25,7 +25,7 @@ export interface PlayerInfo {
     pp: number,
     banned: boolean,
     inactive: boolean,
-    name: string,
+    playerName: string,
     country: string,
     role: string,
     badges: Badge[],

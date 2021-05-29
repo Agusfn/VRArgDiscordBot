@@ -27,6 +27,10 @@ export default abstract class Script {
      */
     protected abstract onUserMessage?(): void
 
+    /**
+     * Whether or not to use models in sequelize database. If true, a file 'your-script-dir/db/initModels.ts' MUST exist.
+     */
+    protected abstract useDbModels: boolean
 
 
     private commands: RegisteredCommand[] = []

@@ -12,6 +12,7 @@ export class SpicySaberScript extends Script {
 
     protected onUserMessage: undefined
 
+    protected useDbModels = true
 
     protected registerCommands() {
 
@@ -25,6 +26,7 @@ export class SpicySaberScript extends Script {
          */
         this.onCommand("linkear", "<id scoresaber>", (message: Message, params) => {
             console.log("params", params)
+            message.author.avatar
 
         })
 

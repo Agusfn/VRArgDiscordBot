@@ -6,7 +6,7 @@ export default () => {
 
     UserScore.init({
         scoreId: {
-            type: Types.STRING,
+            type: Types.INTEGER,
             primaryKey: true
         },
         date: Types.DATE,

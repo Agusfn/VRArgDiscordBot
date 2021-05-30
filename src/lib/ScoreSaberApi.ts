@@ -34,14 +34,19 @@ export default class ScoreSaberApi {
         return response.result;
     }
 
-    public async getScores(id: string, order: ScoreOrder, offset: number): Promise<ScoreReply> {
+    public async getScores(playerId: string, order: ScoreOrder, offset: number): Promise<ScoreReply> {
         const orderPath = ScoreSaberApi.getPathByScoreOrder(order);
 
         const response: IRestResponse<ScoreReply> = await this.restClient
-            .get<ScoreReply>(`player/${id}/scores/${orderPath}/${offset}`);
+            .get<ScoreReply>(`player/${playerId}/scores/${orderPath}/${offset}`);
 
         if (response.result === null) {
-            throw new Error(`Failed to fetch scores for ${id} (status=${response.statusCode})`);
+            if(response.statusCode == 404) {
+                return {scores: []} // no results
+            } else {
+                throw new Error(`Failed to fetch scores for ${playerId} (status=${response.statusCode})`);
+            }
+            
         }
 
         return response.result;

@@ -3,7 +3,7 @@ import { Model } from "sequelize"
 
 export class UserScore extends Model {
 
-    scoreId: string
+    scoreId: number
     date: Date
     discordUserId: string
     songHash: string

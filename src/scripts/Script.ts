@@ -18,12 +18,12 @@ export default abstract class Script {
     /**
      * When the bot is ready to start working.
      */
-    protected abstract onScriptReady?(): void
+    protected abstract onDiscordReady?(): void
 
     /**
-     * Register commands, crons, and other events.
+     * Register commands, crons, and other events. Shall only be called by ScriptLoader.
      */
-    protected abstract onInitialize?(): void
+    public abstract onInitialized?(): void
 
     /**
      * When a user sends a message.
@@ -100,14 +100,9 @@ export default abstract class Script {
             this.initDbModels()
         }
 
-        // Load registered commands (if defined)
-        if(typeof this.onInitialize == "function") {
-            this.onInitialize()
-        }
-
         // Register discord ready event (if needed)
-        if(typeof this.onScriptReady == "function") {
-            discordClient.on("ready", this.onScriptReady);
+        if(typeof this.onDiscordReady == "function") {
+            discordClient.on("ready", this.onDiscordReady);
         }
 
     }

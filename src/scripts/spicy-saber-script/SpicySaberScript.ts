@@ -4,7 +4,7 @@ import initModels from "./db/initModels"
 import { UserScore } from "./model/index"
 import { CronFrequency } from "@ts/enums"
 import UserProfileLinking from "./lib/UserProfileLinking"
-import HistoricScoreFetching from "./lib/HistoricScoreFetching"
+import UserScoreFetcher from "./lib/UserScoreFetcher"
 
 export class SpicySaberScript extends Script {
 
@@ -12,16 +12,6 @@ export class SpicySaberScript extends Script {
      * Name of this script.
      */
     protected scriptName = "SpicySaber Script"
-
-    /**
-     * (Optional) Event the script is ready.
-     */
-    protected async onScriptReady() {       
-
-
-
-
-    }
 
     /**
      * (Optional) Event when a user sends a message.
@@ -37,12 +27,39 @@ export class SpicySaberScript extends Script {
     private cronFetchersRunning: boolean = false
 
 
+    // **** Our custom attrs *****
+
+    private scoreFetcher: UserScoreFetcher
+
+    
+    /**
+     * (Optional) Event when discord client is ready, called slightly after onInitialized()
+     */
+    protected async onDiscordReady() {       
+
+    }
+
     /**
      * (Optional) Register any commands here.
      */
-    protected onInitialize() {
+    public async onInitialized() {
 
+        // Initialize score fetcher
+        this.scoreFetcher = new UserScoreFetcher()
+        await this.scoreFetcher.initialize() // (async)
 
+        await UserScore.create({
+            scoreId: 34585543,
+            date: new Date("2020-04-22T19:57:07.000Z"),
+            discordUserId: "455891068580528153",
+            songHash: "12733D36CE7271844EFC86DE1CC432CE25D1DA2E",
+            globalRank: 2,
+            score: 876095,
+            pp: 0,
+            weight: 0
+        })
+
+        // Register commands
         this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
 
             // Validar param
@@ -73,8 +90,8 @@ export class SpicySaberScript extends Script {
 
         // Cron each 10 mins (on minute 0, 10, 20, ...)
         this.addCustomCron("*/2 * * * *", async () => {
-
-            if(this.cronFetchersRunning) {
+        
+            /*if(this.cronFetchersRunning) {
                 console.log("Cron fetchers are stil running, skipping this call...")
                 return
             }
@@ -82,9 +99,9 @@ export class SpicySaberScript extends Script {
             this.cronFetchersRunning = true
             console.log("Running cron...")
 
-            await HistoricScoreFetching.continueFetch()
+            await this.scoreFetcher.continueHistoricFetching()
 
-            this.cronFetchersRunning = false
+            this.cronFetchersRunning = false*/
             
         })
 

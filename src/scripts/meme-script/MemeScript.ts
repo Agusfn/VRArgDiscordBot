@@ -13,7 +13,7 @@ export class MemeScript extends Script {
 
     protected scriptName = "Meme Script"
 
-    protected onScriptReady() {
+    protected onDiscordReady() {
         console.log("Script initialized!! Do something.. Lol")
         
     }
@@ -21,7 +21,7 @@ export class MemeScript extends Script {
     protected onUserMessage: undefined
     protected initDbModels: undefined
 
-    protected onInitialize() {
+    public onInitialized() {
 
         /*const api = new ScoreSaberApi()
         api.getPlayer("76561198021081220").then(info => {

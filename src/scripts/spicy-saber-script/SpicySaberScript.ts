@@ -46,18 +46,7 @@ export class SpicySaberScript extends Script {
 
         // Initialize score fetcher
         this.scoreFetcher = new UserScoreFetcher()
-        await this.scoreFetcher.initialize() // (async)
-
-        await UserScore.create({
-            scoreId: 34585543,
-            date: new Date("2020-04-22T19:57:07.000Z"),
-            discordUserId: "455891068580528153",
-            songHash: "12733D36CE7271844EFC86DE1CC432CE25D1DA2E",
-            globalRank: 2,
-            score: 876095,
-            pp: 0,
-            weight: 0
-        })
+        this.scoreFetcher.initialize() // (async)
 
         // Register commands
         this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
@@ -89,20 +78,19 @@ export class SpicySaberScript extends Script {
 
 
         // Cron each 10 mins (on minute 0, 10, 20, ...)
-        this.addCustomCron("*/2 * * * *", async () => {
+        this.addCustomCron("*/1 * * * *", async () => {
         
-            /*if(this.cronFetchersRunning) {
+            if(this.cronFetchersRunning) {
                 console.log("Cron fetchers are stil running, skipping this call...")
                 return
             }
             
             this.cronFetchersRunning = true
             console.log("Running cron...")
-
+            // run periodic user status fetching
             await this.scoreFetcher.continueHistoricFetching()
-
-            this.cronFetchersRunning = false*/
-            
+            // run periodic score fetching
+            this.cronFetchersRunning = false
         })
 
     }

@@ -29,10 +29,11 @@ export default () => {
         pp: Types.DECIMAL(7, 2),
         weight: Types.DECIMAL(10, 9)
     }, 
-    { 
+    {
         sequelize: Sequelize.getInstance(), 
         modelName: "UserScore",
-        tableName: "user_scores"
+        tableName: "user_scores",
+        timestamps: false
     })
 
 

@@ -16,8 +16,6 @@ export default class UserScoreFetcher {
      */
     private wholeSongHashList: string[]
 
-    private i =0
-
 
     /**
      * Initialize the fetcher, loading the in-memory list of song hashes.
@@ -32,12 +30,14 @@ export default class UserScoreFetcher {
     }
 
 
+    /**
+     * Continue the user historic score fetching algorithm. Will keep running until ALL users have had their history saved, or until it raises some error.
+     * A likely error is "too many requests" from scoresaber API. In which case it will halt and resume safely in the next cron call.
+     */
     public async continueHistoricFetching() {
 
         const usersPending = await User.findAll({where: { fetchedAllScoreHistory: false }})
-        console.log("Running user historic fetcher. Users pending to process: ", usersPending.map(user => user.playerName))
 
-        userLoop:
         for(let user of usersPending) {
 
             // Obtener un array con todos sus scoreIds registrados
@@ -53,72 +53,62 @@ export default class UserScoreFetcher {
             const api = new ScoreSaberApi()
 
             while(!endPageReached) {
-
-                let userScores
-                try {
-                    userScores = await api.getScores(user.scoreSaberPlayerId, ScoreOrder.RECENT, nextFetchPage)
-                } catch(error) {
-                    console.log(`Halting historic fetcher for user ${user.playerName}. Reason: ${error.message}. Will continue in next iteration.`)
-                    break userLoop
-                }
+                
+                // Fetch page. Any error (too many requests, most likely) will be caught by cron catch, but each page is saved and can be resumed
+                const pageScores = await api.getScores(user.scoreSaberPlayerId, ScoreOrder.RECENT, nextFetchPage)
  
-                if(userScores.scores.length > 0) {
+                if(pageScores.scores.length > 0) {
                     
-                    console.log(userScores)
+                    // plain objects to bulk create for each page
+                    const songsToSave = []
+                    const scoresToSave = []
+                    
+                    console.log(`Page: ${nextFetchPage}. Scores: ${pageScores.scores.length}`, "ScoreIds: ", pageScores.scores.map(score => score.scoreId))
     
-                    for(let score of userScores.scores) {
-
-                        if(!this.wholeSongHashList.includes(score.songHash))
-                            await this.saveNewSongFromScore(score)
-
+                    for(let score of pageScores.scores) {
+                        if(!this.wholeSongHashList.includes(score.songHash)) {
+                            this.wholeSongHashList.push(score.songHash)
+                            songsToSave.push(this.makeSongObjectFromScore(score))
+                        }
                         if(!userScoreIds.includes(score.scoreId)) { // user doesn't have this score registered
-                            const scoreEntity = await this.saveNewUserScore(score, user.discordUserId) // To-do: add song first because there is constraint fail otherwise and it won't log for some fuckin reason
-                            console.log("saved score", scoreEntity.toJSON())
                             userScoreIds.push(score.scoreId)
+                            scoresToSave.push(this.makeUserScoreObject(score, user.discordUserId))
                         }
                     }
+
+                    await Song.bulkCreate(songsToSave)
+                    await UserScore.bulkCreate(scoresToSave)
     
                     user.lastFetchPage = nextFetchPage
                     await user.save()
                     nextFetchPage += 1
     
                 } else { // end page reached
+                    console.log(`Finished loading historic scores for user ${user.playerName} (scoresaber ${user.scoreSaberPlayerId})`)
                     endPageReached = true
                     user.fetchedAllScoreHistory = true
                     await user.save()
                 }
 
             }
-
                 
         }
-
     }
 
 
-    /**
-     * Register a new song in the database from a score. The song must not exist previously on the db, otherwise a sql validation error will be thrown.
-     * @param score 
-     */
-    private async saveNewSongFromScore(score: Score): Promise<Song> {
 
-        if(this.wholeSongHashList.includes(score.songHash)) {
-            throw Error("This song already exists in the database")
-        }
-        this.wholeSongHashList.push(score.songHash)
-        console.log("Saving new song on db, song from score: ", score)
-        return await Song.create({
+    private makeSongObjectFromScore(score: Score): object {
+        return {
             songHash: score.songHash,
             songName: score.songName,
             songSubName: score.songSubName,
             songAuthorName: score.songAuthorName,
             levelAuthorName: score.levelAuthorName
-        })
+        }
     }
 
-
-    private async saveNewUserScore(score: Score, discordUserId: string): Promise<UserScore> {
-        console.log("Score to save: ", {
+    private makeUserScoreObject(score: Score, discordUserId: string): object {
+        return {
             scoreId: score.scoreId,
             date: new Date(score.timeSet),
             discordUserId: discordUserId,
@@ -127,17 +117,7 @@ export default class UserScoreFetcher {
             score: score.score,
             pp: score.pp,
             weight: score.weight
-        })
-        return await UserScore.create({
-            scoreId: score.scoreId,
-            date: new Date(score.timeSet),
-            discordUserId: discordUserId,
-            songHash: score.songHash,
-            globalRank: score.rank,
-            score: score.score,
-            pp: score.pp,
-            weight: score.weight
-        })
+        }
     }
 
 

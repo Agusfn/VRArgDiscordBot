@@ -17,7 +17,8 @@ export default () => {
     { 
         sequelize: Sequelize.getInstance(), 
         modelName: "Song",
-        tableName: "songs"
+        tableName: "songs",
+        timestamps: false
     })
 
 }

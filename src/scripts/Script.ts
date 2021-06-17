@@ -79,7 +79,13 @@ export default abstract class Script {
      * @param task 
      */
      protected addCustomCron(cronExpression: string, task: () => void) {
-        cron.schedule(cronExpression, task)
+        cron.schedule(cronExpression, async () => {
+            try {
+                await task()
+            } catch(error) {
+                console.log(error)
+            }
+        })
     }
 
 

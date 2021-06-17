@@ -37,8 +37,8 @@ export default class ScoreSaberApi {
     public async getScores(playerId: string, order: ScoreOrder, offset: number): Promise<ScoreReply> {
         const orderPath = ScoreSaberApi.getPathByScoreOrder(order);
 
-        const response: IRestResponse<ScoreReply> = await this.restClient
-            .get<ScoreReply>(`player/${playerId}/scores/${orderPath}/${offset}`);
+        // This will throw an error if we get too many requests.
+        const response: IRestResponse<ScoreReply> = await this.restClient.get<ScoreReply>(`player/${playerId}/scores/${orderPath}/${offset}`);
 
         if (response.result === null) {
             if(response.statusCode == 404) {

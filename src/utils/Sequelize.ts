@@ -24,7 +24,7 @@ export default class Sequelize {
             throw Error("The DB has already been instantiated!")
         }
         this.sequelize = new SequelizeDB('sqlite:'+process.env.DB_FILE, {
-            logging: console.log
+            logging: /*console.log*/false
         });
 
         // Test connection

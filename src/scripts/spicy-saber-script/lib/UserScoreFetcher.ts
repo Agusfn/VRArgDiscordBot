@@ -49,7 +49,7 @@ export default class UserScoreFetcher {
             console.log("Processing user: ", user.scoreSaberPlayerId, ". Current scoreIds: ", userScoreIds)
 
             let endPageReached = false
-            let nextFetchPage = user.lastFetchPage + 1
+            let nextFetchPage = user.lastHistoryFetchPage + 1
             const api = new ScoreSaberApi()
 
             while(!endPageReached) {
@@ -79,7 +79,7 @@ export default class UserScoreFetcher {
                     await Song.bulkCreate(songsToSave)
                     await UserScore.bulkCreate(scoresToSave)
     
-                    user.lastFetchPage = nextFetchPage
+                    user.lastHistoryFetchPage = nextFetchPage
                     await user.save()
                     nextFetchPage += 1
     
@@ -93,6 +93,90 @@ export default class UserScoreFetcher {
             }
                 
         }
+    }
+
+    /*public async continueCheck2() {
+
+        const aMomentAgo = new Date((new Date).getTime() - PLAYER_STATUS_CHECK_INTERVAL_MIN * 60 * 1000 )
+
+        const usersPendingCheck = await User.findAll({
+            where: { lastPeriodicStatusCheck: { [Op.lte]: aMomentAgo } },
+            order: [ ["lastPeriodicStatusCheck", "ASC"] ]
+        })
+        console.log("usersPendingCheck", usersPendingCheck)
+
+        const ssApi = new ScoreSaberApi()
+
+        for(const user of usersPendingCheck) {
+
+            const lastScore = await UserScore.findOne({
+                attributes: ["scoreId"],
+                where: { discordUserId: user.discordUserId },
+                order: [ ["date", "DESC"] ],
+                limit: 1
+            })
+            if(!lastScore) return
+
+            let currentPage = 1, endPageReached = false
+            
+
+            while(!endPageReached) {
+
+                const pageScores = await ssApi.getScores(user.scoreSaberPlayerId, ScoreOrder.RECENT, currentPage)
+
+                for(const score of pageScores.scores) {
+
+                    if(score.scoreId == lastScore.scoreId) {
+                        endPageReached = true
+                        break
+                    }
+                    // Si el score id no es el ultimo registrado
+                        // Guardar en la db
+                    // Si es el ultimo registrado
+                        // Updatear lastPeriodicFetch del user a now()
+                        // setear endPageReached=true
+                        // Breakear este loop
+                }
+                // Para cada score:
+
+                // Incrementar n+=1
+            }
+            
+            console.log("Updating user " + user.playerName)
+            user.lastPeriodicStatusCheck = new Date()
+            await user.save()
+
+        }
+            
+
+    }*/
+
+    public continueLatestScoresFetching() {
+
+        // Obtener todos los users ordenados por lastPeriodicFetch más antiguo (se supone que se actualizarán todos los users, pero si scoresaber API limita las requests, algunos users quedarán desactualizados)
+        // Para cada user:
+            // Obtener su id de score más reciente, de la db
+            // Mientras endPageReached=false
+                // Obtener su página de scores n (o n=1 inicialmente)
+                // Si da error en obtener score (max requests), terminar ejecucion.
+                // Para cada score:
+                    // Si el score id no es el ultimo registrado
+                        // Guardar en la db
+                    // Si es el ultimo registrado
+                        // Updatear lastPeriodicFetch del user a now()
+                        // setear endPageReached=true
+                        // Breakear este loop
+                // Incrementar n+=1
+
+    }
+
+
+    public onUserNewScoreSubmit() {
+        // Si el score es relevante (ver cómo, si es mayor a cierto pp, o a cierto pp de acuerdo a su nivel, o que onda)
+            // Si es user de arg:
+                // Obtener score y user con más pp de esa cancion de users de dicho pais (usar join)
+                // Si el score es mas alto
+                    // Tirar anuncio picante
     }
 
 

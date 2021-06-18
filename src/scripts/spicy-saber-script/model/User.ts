@@ -15,7 +15,8 @@ export class User extends Model {
     public countryRank: number
     public avgRankedAccuracy: number
     public fetchedAllScoreHistory: boolean
-    public lastFetchPage: number
+    public lastHistoryFetchPage: number
+    public lastPeriodicStatusCheck: Date
     
 }
 

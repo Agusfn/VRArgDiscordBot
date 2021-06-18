@@ -23,10 +23,11 @@ export default () => {
             type: Types.BOOLEAN,
             defaultValue: false
         },
-        lastFetchPage: {
+        lastHistoryFetchPage: {
             type: Types.INTEGER,
             defaultValue: 0
-        }
+        },
+        lastPeriodicStatusCheck: Types.DATE
     }, 
     { 
         sequelize: Sequelize.getInstance(), 

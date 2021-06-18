@@ -59,7 +59,8 @@ export default class UserProfileLinking {
             scoreSaberAvatarPath: ssUser.playerInfo.avatar,
             globalRank: ssUser.playerInfo.rank,
             countryRank: ssUser.playerInfo.countryRank,
-            avgRankedAccuracy: ssUser.scoreStats.averageRankedAccuracy
+            avgRankedAccuracy: ssUser.scoreStats.averageRankedAccuracy,
+            lastPeriodicStatusCheck: new Date()
         })
         console.log("ssUser", newUser.toJSON())
 

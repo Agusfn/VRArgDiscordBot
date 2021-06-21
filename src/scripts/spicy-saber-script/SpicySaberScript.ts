@@ -5,6 +5,9 @@ import { UserScore } from "./model/index"
 import { CronFrequency } from "@ts/enums"
 import UserProfileLinking from "./lib/UserProfileLinking"
 import UserScoreFetcher from "./lib/UserScoreFetcher"
+import PeriodicPlayerStatusChecker from "./lib/PeriodicPlayerStatusChecker"
+import discordClient from "@utils/discordClient"
+import {TextChannel} from "discord.js"
 
 export class SpicySaberScript extends Script {
 
@@ -24,19 +27,23 @@ export class SpicySaberScript extends Script {
     protected initDbModels = initModels
 
 
-    private cronFetchersRunning: boolean = false
-
 
     // **** Our custom attrs *****
 
     private scoreFetcher: UserScoreFetcher
+    private playerStatusChecker: PeriodicPlayerStatusChecker
 
-    
+    private playerCheckerRunning = false
+    private historicFetcherRunning: boolean = false
+
+
     /**
      * (Optional) Event when discord client is ready, called slightly after onInitialized()
      */
     protected async onDiscordReady() {       
-
+        console.log("discord channels", JSON.stringify(discordClient.channels.cache, null, 4))
+        const channel = <TextChannel>discordClient.channels.cache.find(channel => channel.id == "856383011443572766")
+        channel.send("Hola!! <@455891068580528153> tagueado rey")
     }
 
     /**
@@ -77,21 +84,38 @@ export class SpicySaberScript extends Script {
         })
 
 
-        // Cron each 10 mins (on minute 0, 10, 20, ...)
-        this.addCustomCron("*/1 * * * *", async () => {
+        /**
+         * User periodic status (score, rank, etc) check cron job. Should be very quick for a handful of users.
+         */
+        //this.addCustomCron("*/30 * * * *", async () => {
+          /*  if(this.playerCheckerRunning) {
+                return
+            }
+            this.scoreFetcher.pause()
+            this.playerCheckerRunning = true
+
+            console.log("Running user periodic status check...")
+            await this.playerStatusChecker.continueCheck()
+
+            this.scoreFetcher.resume()
+            this.playerCheckerRunning = false
+        })*/
         
-            if(this.cronFetchersRunning) {
-                console.log("Cron fetchers are stil running, skipping this call...")
+
+        // Cron each 10 mins (on minute 0, 10, 20, ...)
+        //this.addCustomCron("*/1 * * * *", async () => {
+        /*
+            if(this.historicFetcherRunning) {
                 return
             }
             
-            this.cronFetchersRunning = true
-            console.log("Running cron...")
+            this.historicFetcherRunning = true
+            console.log("Running user historic score fetcher...")
             // run periodic user status fetching
             await this.scoreFetcher.continueHistoricFetching()
             // run periodic score fetching
-            this.cronFetchersRunning = false
-        })
+            this.historicFetcherRunning = false
+        })*/
 
     }
     

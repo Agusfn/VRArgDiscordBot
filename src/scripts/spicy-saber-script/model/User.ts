@@ -1,5 +1,5 @@
 import { Model } from "sequelize"
-
+import { SSCountries } from "../config"
 
 export class User extends Model {
 
@@ -17,6 +17,7 @@ export class User extends Model {
     public fetchedAllScoreHistory: boolean
     public lastHistoryFetchPage: number
     public lastPeriodicStatusCheck: Date
+
     
 }
 

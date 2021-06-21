@@ -1,7 +1,7 @@
 import { User, UserScore, Song } from "../model/index"
 import ScoreSaberApi, { ScoreOrder }  from "@lib/ScoreSaberApi"
 import { ScoreReply, Score } from "@ts/interfaces"
-
+import { sleep } from "@utils/other"
 
 /**
  * Class to handle historic score fetching for new users. Doesn't take care of fetching new scores, only scores from the moment they register, to the past.
@@ -17,6 +17,9 @@ export default class UserScoreFetcher {
     private wholeSongHashList: string[]
 
 
+    private paused = false
+
+
     /**
      * Initialize the fetcher, loading the in-memory list of song hashes.
      */
@@ -29,6 +32,14 @@ export default class UserScoreFetcher {
         console.log("ScoreFetcher initialized. Current song hash list: ", this.wholeSongHashList)
     }
 
+
+    public pause() {
+        this.paused = true
+    }
+
+    public resume() {
+        this.paused = false
+    }
 
     /**
      * Continue the user historic score fetching algorithm. Will keep running until ALL users have had their history saved, or until it raises some error.
@@ -53,6 +64,11 @@ export default class UserScoreFetcher {
             const api = new ScoreSaberApi()
 
             while(!endPageReached) {
+
+                while(this.paused) {
+                    console.log("User score fetcher is paused... waiting for resume.")
+                    await sleep(20000)
+                }
                 
                 // Fetch page. Any error (too many requests, most likely) will be caught by cron catch, but each page is saved and can be resumed
                 const pageScores = await api.getScores(user.scoreSaberPlayerId, ScoreOrder.RECENT, nextFetchPage)
@@ -204,7 +220,5 @@ export default class UserScoreFetcher {
         }
     }
 
-
-
-
 }
+

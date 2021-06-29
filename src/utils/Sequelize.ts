@@ -10,6 +10,7 @@ import { Sequelize as SequelizeDB } from "sequelize"
 export default class Sequelize {
 
     private static sequelize: SequelizeDB = null
+    private static maintenanceClosed = false
 
     public static getInstance() {
         return this.sequelize
@@ -38,6 +39,15 @@ export default class Sequelize {
      */
     public static async syncModels() {
         await this.sequelize.sync()
+    }
+
+    /**
+     * 
+     */
+    public static async closeForMaintenance() {
+        this.maintenanceClosed = true
+        await this.sequelize.close()
+        this.sequelize = null
     }
 
 }

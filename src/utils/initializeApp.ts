@@ -4,6 +4,9 @@ import discordClient from "./discordClient"
 import { COMMAND_PREFIX } from "@utils/configuration"
 import bot = require("bot-commander")
 import Sequelize from "@utils/Sequelize"
+import * as cron from "node-cron"
+import { DATABASE_BACKUP_FRECUENCY_DAYS } from "@utils/configuration"
+import FileBackupRotator from "@utils/FileBackupRotator"
 
 export const initializeApp = async () => {
     
@@ -16,6 +19,25 @@ export const initializeApp = async () => {
      * Initialize sequelize database instance.
      */
     await Sequelize.initialize()
+
+    //cron.schedule(`* * */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
+    cron.schedule(`* * * * *`, async () => {
+        try {
+            await Sequelize.closeForMaintenance()
+            console.log("DB Connection closed for maintenance")
+    
+            
+            console.log("Doing database backup...")
+            FileBackupRotator.backupFile(process.env.DB_FILE, "databases")
+    
+    
+            await Sequelize.initialize()
+            console.log("DB Connection reopened!")
+        } catch(error) {
+            console.log(error)
+        }
+    })
+
 
 
     /**

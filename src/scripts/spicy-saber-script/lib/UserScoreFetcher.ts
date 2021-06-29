@@ -19,6 +19,13 @@ export default class UserScoreFetcher {
 
     private paused = false
 
+    private fetchRunning = false
+
+
+    public isFetchRunning() {
+        return this.fetchRunning
+    }
+
 
     /**
      * Initialize the fetcher, loading the in-memory list of song hashes.
@@ -32,11 +39,12 @@ export default class UserScoreFetcher {
         console.log("ScoreFetcher initialized. Current song hash list: ", this.wholeSongHashList)
     }
 
-
+    /** Pause the fetching, should only be done if it's running. If it is not, it will have no effect */
     public pause() {
         this.paused = true
     }
 
+    /** Resume the fetching, should only be done if it's running. If it is not, it will have no effect */
     public resume() {
         this.paused = false
     }
@@ -46,6 +54,8 @@ export default class UserScoreFetcher {
      * A likely error is "too many requests" from scoresaber API. In which case it will halt and resume safely in the next cron call.
      */
     public async continueHistoricFetching() {
+
+        this.fetchRunning = true
 
         const usersPending = await User.findAll({where: { fetchedAllScoreHistory: false }})
 
@@ -66,7 +76,7 @@ export default class UserScoreFetcher {
             while(!endPageReached) {
 
                 while(this.paused) {
-                    console.log("User score fetcher is paused... waiting for resume.")
+                    console.log("User score fetcher is paused... waiting for resume.") // to-do: put logger on discord
                     await sleep(20000)
                 }
                 
@@ -109,6 +119,9 @@ export default class UserScoreFetcher {
             }
                 
         }
+
+        this.fetchRunning = false
+
     }
 
     /*public async continueCheck2() {
@@ -167,7 +180,7 @@ export default class UserScoreFetcher {
 
     }*/
 
-    public continueLatestScoresFetching() {
+    private continueLatestScoresFetching() {
 
         // Obtener todos los users ordenados por lastPeriodicFetch más antiguo (se supone que se actualizarán todos los users, pero si scoresaber API limita las requests, algunos users quedarán desactualizados)
         // Para cada user:
@@ -187,7 +200,7 @@ export default class UserScoreFetcher {
     }
 
 
-    public onUserNewScoreSubmit() {
+    private onUserNewScoreSubmit() {
         // Si el score es relevante (ver cómo, si es mayor a cierto pp, o a cierto pp de acuerdo a su nivel, o que onda)
             // Si es user de arg:
                 // Obtener score y user con más pp de esa cancion de users de dicho pais (usar join)

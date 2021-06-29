@@ -1,5 +1,6 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
+import { UserRankInfo } from "@ts/interfaces"
 
 export class User extends Model {
 
@@ -17,6 +18,16 @@ export class User extends Model {
     public fetchedAllScoreHistory: boolean
     public lastHistoryFetchPage: number
     public lastPeriodicStatusCheck: Date
+    public announcementsEnabled: boolean
+
+
+    public getRankInfo(): UserRankInfo {
+        return {
+            discordUserId: this.discordUserId,
+            globalRank: this.globalRank
+        }
+    }
+
 
     
 }

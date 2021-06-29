@@ -90,3 +90,8 @@ export interface ScoreReply {
 export interface PagesReply {
     pages: number;
 }
+
+export interface UserRankInfo {
+    discordUserId: string,
+    globalRank: number
+}

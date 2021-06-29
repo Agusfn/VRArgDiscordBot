@@ -27,7 +27,11 @@ export default () => {
             type: Types.INTEGER,
             defaultValue: 0
         },
-        lastPeriodicStatusCheck: Types.DATE
+        lastPeriodicStatusCheck: Types.DATE,
+        announcementsEnabled: {
+            type: Types.BOOLEAN,
+            defaultValue: true
+        }
     }, 
     { 
         sequelize: Sequelize.getInstance(), 

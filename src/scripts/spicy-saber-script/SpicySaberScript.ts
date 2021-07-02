@@ -42,7 +42,7 @@ export class SpicySaberScript extends Script {
     }
 
     /**
-     * (Optional) Register any commands here.
+     * (Optional) Register any commands here. Called slightly before onDiscordReady()
      */
     public async onInitialized() {
 

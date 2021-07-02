@@ -1,12 +1,15 @@
-import * as dotenv from "dotenv"
+import { DATABASE_BACKUP_FRECUENCY_DAYS } from "@utils/configuration"
+import DiscordTransport from "@utils/DiscordLogChannelTransport"
+import FileBackupRotator from "@utils/FileBackupRotator"
+import { COMMAND_PREFIX } from "@utils/configuration"
 import { CommandMetadata } from "@ts/interfaces"
 import discordClient from "./discordClient"
-import { COMMAND_PREFIX } from "@utils/configuration"
-import bot = require("bot-commander")
 import Sequelize from "@utils/Sequelize"
+import bot = require("bot-commander")
+import logger from "@utils/logger"
 import * as cron from "node-cron"
-import { DATABASE_BACKUP_FRECUENCY_DAYS } from "@utils/configuration"
-import FileBackupRotator from "@utils/FileBackupRotator"
+import * as dotenv from "dotenv"
+
 
 export const initializeApp = async () => {
     
@@ -14,25 +17,25 @@ export const initializeApp = async () => {
      * Initialize dotenv
      */
     dotenv.config()
+    if(process.env.DISCORD_CHANNEL_LOGGING == "true") {
+        logger.add(new DiscordTransport())
+    }
+   
 
     /**
      * Initialize sequelize database instance.
      */
     await Sequelize.initialize()
 
-    //cron.schedule(`* * */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
-    cron.schedule(`* * * * *`, async () => {
+    cron.schedule(`* * */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
+    //cron.schedule(`* * * * *`, async () => {
         try {
             await Sequelize.closeForMaintenance()
-            console.log("DB Connection closed for maintenance")
-    
-            
-            console.log("Doing database backup...")
-            FileBackupRotator.backupFile(process.env.DB_FILE, "databases")
-    
-    
+            logger.info("DB Connection closed for maintenance")
+            logger.info("Doing database backup...")
+            FileBackupRotator.backupFile(process.env.DB_FILE, "databases", DATABASE_BACKUP_FRECUENCY_DAYS)
             await Sequelize.initialize()
-            console.log("DB Connection reopened!")
+            logger.info("DB Connection reopened!")
         } catch(error) {
             console.log(error)
         }

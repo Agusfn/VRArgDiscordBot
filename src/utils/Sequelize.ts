@@ -3,6 +3,8 @@
  */
 
 import { Sequelize as SequelizeDB } from "sequelize"
+import logger from "@utils/logger"
+
 
 /**
  * Class to handle Sequelize instance and testing functions.
@@ -31,7 +33,7 @@ export default class Sequelize {
         // Test connection
         await this.sequelize.authenticate()
 
-        console.log("Sequelize DB initialized and authenticated (db file "+process.env.DB_FILE+").")
+        logger.info("Sequelize DB initialized and authenticated (db file "+process.env.DB_FILE+").")
     }
 
     /**

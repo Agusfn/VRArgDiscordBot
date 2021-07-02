@@ -25,7 +25,8 @@
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "winston-transport": "^4.4.0"
   },
   "devDependencies": {
     "@types/module-alias": "^2.0.0",

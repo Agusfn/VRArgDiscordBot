@@ -27,7 +27,7 @@ export const initializeApp = async () => {
      */
     await Sequelize.initialize()
 
-    cron.schedule(`* * */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
+    cron.schedule(`0 0 */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
     //cron.schedule(`* * * * *`, async () => {
         try {
             await Sequelize.closeForMaintenance()

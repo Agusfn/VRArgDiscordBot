@@ -2,7 +2,6 @@ import Script from "../Script"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { UserScore, User } from "./model/index"
-import { CronFrequency } from "@ts/enums"
 import UserProfileLinking from "./lib/UserProfileLinking"
 import UserScoreFetcher from "./lib/UserScoreFetcher"
 import PlayerStatusChecker from "./lib/PlayerStatusChecker"
@@ -53,6 +52,24 @@ export class SpicySaberScript extends Script {
 
 
         // Register commands
+        /*this.addCommand("linkear_trucho", "<nick discord> <id user discord> <id scoresaber>", async (message: Message, args) => {
+
+            // Validar param
+            const scoreSaberId = args[2]
+            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
+                message.channel.send("Ingresa un id numérico valido de entre 5 y 20 dígitos.")
+                return
+            }
+
+            const newUser = await UserProfileLinking.linkUser(args[1], args[0], scoreSaberId)
+            if(newUser) {
+                message.channel.send(`El usuario de ScoreSaber ${newUser.playerName} se ha vinculado exitosamente a tu cuenta!`)
+            } else {
+                message.channel.send(UserProfileLinking.getErrorText())
+            }
+            
+        })*/
+
         this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
 
             // Validar param
@@ -92,7 +109,6 @@ export class SpicySaberScript extends Script {
         })
 
 
-
         this.addCommand("deslinkear", null, async (message: Message, args) => {
 
             const user = await User.findByPk(message.author.id)
@@ -107,6 +123,7 @@ export class SpicySaberScript extends Script {
 
             message.channel.send(`Se desvinculó el perfil de scoresaber ${user.playerName} de tu cuenta de discord.`)
         })
+
 
 
         this.addCommand("playerinfo", null, async (message: Message, args) => {

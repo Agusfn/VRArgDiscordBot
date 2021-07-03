@@ -47,15 +47,18 @@ export default class PlayerStatusChecker {
             // Update user data and save copy of updated data
             this.alterUserWithScoresaberPlayerData(user, player)
             await user.save()
+
             logger.info(`Updated ${user.discordUsername} (scoresaber ${user.playerName}) player status.`)
 
-            if(user.announcementsEnabled)
+            if(user.announcementsEnabled) {
                 this.comparedUsersAfterUpdate.push(user.getRankInfo())
+            }
+                
         }
 
         this.fetcherRunning = false
 
-        //this.comparePlayersRankingChanges() // async
+        this.comparePlayersRankingChanges() // async
     }
 
 
@@ -85,22 +88,21 @@ export default class PlayerStatusChecker {
      */
     comparePlayersRankingChanges() {
 
-        console.log("Initializing comparison of players...")
 
         for(const updatedUser of this.comparedUsersAfterUpdate) {
             
             const userBeforeUpdate = this.comparedUsersBeforeUpdate.find(user => user.discordUserId == updatedUser.discordUserId) // this must exist so we don't event need to check
             
-            if(updatedUser.globalRank > userBeforeUpdate.globalRank) { // player increased their country ranking
+            if(updatedUser.globalRank < userBeforeUpdate.globalRank) { // player improved (lowered) their country ranking
 
                 const playersSurpassed: UserRankInfo[] = []
-                const usersBelowUpdatedUser = this.comparedUsersAfterUpdate.filter(user => user.globalRank < updatedUser.globalRank)
-
+                const usersBelowUpdatedUser = this.comparedUsersAfterUpdate.filter(user => user.globalRank > updatedUser.globalRank) // users which are now worse (higher) rank than updatedUser
+                
                 for(const lowerRankUser of usersBelowUpdatedUser) { // iterate over all of the players with currently lower rank than the user we're iterating
 
                     const lowerRankUserBeforeUpdate = this.comparedUsersBeforeUpdate.find(user => user.discordUserId == lowerRankUser.discordUserId)
 
-                    if(lowerRankUserBeforeUpdate.globalRank > userBeforeUpdate.globalRank) { // the lowerRankUser had higher rank than updatedUser before the update => it was surpassed by updatedUser
+                    if(lowerRankUserBeforeUpdate.globalRank < userBeforeUpdate.globalRank) { // the lowerRankUser had better (lower) rank than updatedUser before the update => it was surpassed by updatedUser
                         playersSurpassed.push(lowerRankUser)
                     }
                 }
@@ -126,23 +128,27 @@ export default class PlayerStatusChecker {
     sendPlayerSurpassAnnouncement(user: UserRankInfo, usersSurpassed: UserRankInfo[]) {
 
         const channel = <TextChannel>discordClient.channels.cache.find(channel => channel.id == SCORE_ANNOUNCEMENTS_CHANNEL_ID)
+        
         if(channel) {
-            let surpassedPlayers = ""
+            let surpassedPlayersTxt = ""
 
-            if(surpassedPlayers.length == 1) {
-                surpassedPlayers = `<@${user.discordUserId}>`
+            if(surpassedPlayersTxt.length == 1) {
+                surpassedPlayersTxt = `<@${usersSurpassed[0].discordUserId}>`
             } else {
                 for(let i=0; i<usersSurpassed.length; i++) {
-                    surpassedPlayers += `<@${user.discordUserId}>`
+
+                    surpassedPlayersTxt += `<@${usersSurpassed[i].discordUserId}>`
+
                     if(i < usersSurpassed.length - 2) {
-                        surpassedPlayers += ", "
+                        surpassedPlayersTxt += ", "
                     } else if(i == usersSurpassed.length - 2) { // second last
-                        surpassedPlayers += " y "
+                        surpassedPlayersTxt += " y a "
                     }
                 }
             }
 
-            channel.send(`<@${user.discordUserId}> acaba de sobrepasar en el ranking de ScoreSaber a ${surpassedPlayers}!`)
+            //channel.send(`<@${user.discordUserId}> acaba de sobrepasar en el ranking de ScoreSaber a ${surpassedPlayers}!`)
+            logger.info(`Player surpass announcement test: <@${user.discordUserId}> acaba de sobrepasar en el ranking de ScoreSaber a ${surpassedPlayersTxt}!`)
         }
 
 

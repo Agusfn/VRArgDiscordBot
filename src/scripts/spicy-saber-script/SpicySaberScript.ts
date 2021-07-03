@@ -7,6 +7,7 @@ import UserScoreFetcher from "./lib/UserScoreFetcher"
 import PlayerStatusChecker from "./lib/PlayerStatusChecker"
 import discordClient from "@utils/discordClient"
 import {TextChannel} from "discord.js"
+import logger from "@utils/logger"
 
 export class SpicySaberScript extends Script {
 
@@ -143,13 +144,18 @@ export class SpicySaberScript extends Script {
          * Register cron each 30 mins to update player statuses (total score, rank, pp).
          */
         this.addCustomCron("*/30 * * * *", async () => {
-            if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
-                return
+            try {
+                if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
+                    return
+                }
+                this.scoreFetcher.pause() // pause score fetcher (if it's even running) so we can use scoresaber API for this higher priority task
+                console.log("Running user periodic status check...")
+                await this.playerStatusChecker.checkAllPlayersStatus()
+                this.scoreFetcher.resume() // resume score fetcher
+            } catch(error) {
+                this.playerStatusChecker.setFetchRunning(false)
+                logger.error(error) 
             }
-            this.scoreFetcher.pause() // pause score fetcher (if it's even running) so we can use scoresaber API for this higher priority task
-            console.log("Running user periodic status check...")
-            await this.playerStatusChecker.checkAllPlayersStatus()
-            this.scoreFetcher.resume() // resume score fetcher
         })
         
 
@@ -158,10 +164,15 @@ export class SpicySaberScript extends Script {
          * It's very frecuent since the fetching may be interrupted for too many requests to scoresaber API.
          */
         this.addCustomCron("*/10 * * * *", async () => {
-            if(this.scoreFetcher.isFetchRunning()) {
-                return
+            try {
+                if(this.scoreFetcher.isFetchRunning()) {
+                    return
+                }
+                await this.scoreFetcher.continueHistoricFetching()
+            } catch(error) {
+                this.scoreFetcher.setFetchRunning(false)
+                logger.error(error)
             }
-            await this.scoreFetcher.continueHistoricFetching()
         })
 
     }

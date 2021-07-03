@@ -23,6 +23,12 @@ export default class PlayerStatusChecker {
         return this.fetcherRunning
     }
 
+    public setFetchRunning(val: boolean) {
+        this.fetcherRunning = val
+    }
+
+
+
     /**
      * Fetch and update status of all players
      */

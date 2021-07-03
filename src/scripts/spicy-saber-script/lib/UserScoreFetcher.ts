@@ -27,6 +27,10 @@ export default class UserScoreFetcher {
         return this.fetchRunning
     }
 
+    public setFetchRunning(val: boolean) {
+        this.fetchRunning = val
+    }
+
 
     /**
      * Initialize the fetcher, loading the in-memory list of song hashes.

@@ -25,7 +25,7 @@ export interface PlayerInfo {
     pp: number,
     banned: boolean,
     inactive: boolean,
-    name: string,
+    playerName: string,
     country: string,
     role: string,
     badges: Badge[],
@@ -64,23 +64,23 @@ export interface PagifiedPlayer {
 }
 
 export interface Score {
+    rank: number,
     scoreId: number,
-    leaderboardId: number,
     score: number,
-    uScore: number,
+    unmodifiedScore: number,
     mods: string,
-    playerId: string,
-    timeset: string,
     pp: number,
     weight: number,
-    id: string,
-    name: string,
+    timeSet: string,
+    leaderboardId: number,
+    songHash: string,
+    songName: string,
     songSubName: string,
     songAuthorName: string,
     levelAuthorName: string,
-    diff: string,
-    maxScoreEx: number,
-    rank: number
+    difficulty: string,
+    difficultyRaw: string,
+    maxScore: number
 }
 
 export interface ScoreReply {
@@ -89,4 +89,9 @@ export interface ScoreReply {
 
 export interface PagesReply {
     pages: number;
+}
+
+export interface UserRankInfo {
+    discordUserId: string,
+    globalRank: number
 }

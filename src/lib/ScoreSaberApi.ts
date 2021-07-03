@@ -1,6 +1,9 @@
 import {PagesReply, PagifiedPlayer, Player, Score, ScoreReply} from "@ts/interfaces";
 import {IRestResponse, RestClient} from "typed-rest-client/RestClient";
 
+/**
+ * ScoreSaber has a limit of 80 requests per minute.
+ */
 export default class ScoreSaberApi {
 
     private static readonly HOST: string = 'https://new.scoresaber.com/api/';
@@ -11,7 +14,11 @@ export default class ScoreSaberApi {
         const response: IRestResponse<Player> = await this.restClient.get<Player>(`player/${id}/full`);
 
         if (response.result === null) {
-            throw new Error(`Failed to fetch player ${id} (status=${response.statusCode})`);
+            if(response.statusCode == 404) {
+                throw new Error(`No se encontró el playerId ${id} en Scoresaber.`);
+            } else {
+                throw new Error(`No se pudo obtener el player ${id} (status=${response.statusCode}).`);
+            }
         }
 
         return response.result;
@@ -27,14 +34,19 @@ export default class ScoreSaberApi {
         return response.result;
     }
 
-    public async getScores(id: string, order: ScoreOrder, offset: number): Promise<ScoreReply> {
+    public async getScores(playerId: string, order: ScoreOrder, offset: number): Promise<ScoreReply> {
         const orderPath = ScoreSaberApi.getPathByScoreOrder(order);
 
-        const response: IRestResponse<ScoreReply> = await this.restClient
-            .get<ScoreReply>(`player/${id}/scores/${orderPath}/${offset}`);
+        // This will throw an error if we get too many requests.
+        const response: IRestResponse<ScoreReply> = await this.restClient.get<ScoreReply>(`player/${playerId}/scores/${orderPath}/${offset}`);
 
         if (response.result === null) {
-            throw new Error(`Failed to fetch scores for ${id} (status=${response.statusCode})`);
+            if(response.statusCode == 404) {
+                return {scores: []} // no results
+            } else {
+                throw new Error(`Failed to fetch scores for ${playerId} (status=${response.statusCode})`);
+            }
+            
         }
 
         return response.result;

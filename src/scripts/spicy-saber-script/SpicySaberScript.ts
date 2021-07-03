@@ -149,7 +149,6 @@ export class SpicySaberScript extends Script {
                     return
                 }
                 this.scoreFetcher.pause() // pause score fetcher (if it's even running) so we can use scoresaber API for this higher priority task
-                console.log("Running user periodic status check...")
                 await this.playerStatusChecker.checkAllPlayersStatus()
                 this.scoreFetcher.resume() // resume score fetcher
             } catch(error) {

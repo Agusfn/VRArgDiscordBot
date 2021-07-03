@@ -54,7 +54,7 @@ export default class PlayerStatusChecker {
             this.alterUserWithScoresaberPlayerData(user, player)
             await user.save()
 
-            logger.info(`Updated ${user.discordUsername} (scoresaber ${user.playerName}) player status.`)
+            //logger.info(`Updated ${user.discordUsername} (scoresaber ${user.playerName}) player status.`)
 
             if(user.announcementsEnabled) {
                 this.comparedUsersAfterUpdate.push(user.getRankInfo())

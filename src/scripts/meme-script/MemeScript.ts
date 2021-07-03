@@ -14,7 +14,6 @@ export class MemeScript extends Script {
     protected scriptName = "Meme Script"
 
     protected onDiscordReady() {
-        console.log("Script initialized!! Do something.. Lol")
         
     }
 

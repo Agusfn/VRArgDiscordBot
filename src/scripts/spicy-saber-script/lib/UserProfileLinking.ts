@@ -45,7 +45,6 @@ export default class UserProfileLinking {
             this.errorText = error.message
             return
         }
-        console.log("ssUser", ssUser)
 
         // add to user model in db
         const newUser = await User.create({
@@ -62,7 +61,6 @@ export default class UserProfileLinking {
             avgRankedAccuracy: ssUser.scoreStats.averageRankedAccuracy,
             lastPeriodicStatusCheck: new Date()
         })
-        console.log("ssUser", newUser.toJSON())
 
         return newUser
     }

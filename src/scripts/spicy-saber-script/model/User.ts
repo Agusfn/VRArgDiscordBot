@@ -1,6 +1,7 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
 import { UserRankInfo } from "@ts/interfaces"
+import moment from "moment"
 
 export class User extends Model {
 
@@ -26,6 +27,11 @@ export class User extends Model {
             discordUserId: this.discordUserId,
             globalRank: this.globalRank
         }
+    }
+
+
+    public lastStatusCheck() {
+        return moment(this.lastPeriodicStatusCheck)
     }
 
 

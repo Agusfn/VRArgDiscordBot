@@ -3,7 +3,7 @@ import { CronFrequency } from "@ts/enums"
 import discordClient from "@utils/discordClient"
 import bot = require("bot-commander")
 import * as cron from "node-cron"
-
+import logger from "@utils/logger"
 
 export default abstract class Script {
 
@@ -83,7 +83,7 @@ export default abstract class Script {
             try {
                 await task()
             } catch(error) {
-                console.log(error)
+                logger.error(error)
             }
         })
     }
@@ -99,7 +99,7 @@ export default abstract class Script {
         }
         this.initialized = true
 
-        console.log("Initializing "+this.scriptName+"!")
+        logger.info("Initializing "+this.scriptName+"!")
 
         // Initialize db models (if defined)
         if(typeof this.initDbModels == "function") {

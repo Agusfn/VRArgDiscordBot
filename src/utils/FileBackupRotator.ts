@@ -4,6 +4,9 @@ import moment from "moment"
 import fs from "fs"
 
 
+const BACKUP_DATE_FORMAT = "Y-MM-DD"
+
+
 export default class FileBackupRotator {
 
 
@@ -23,7 +26,7 @@ export default class FileBackupRotator {
         const fileExtension = fileNameFull.split(".")[1]
 
         // Make new file name with current date
-        const newFileName = `${fileName}-${moment().format("Y-MM-DD")}`
+        const newFileName = `${fileName}-${moment().format(BACKUP_DATE_FORMAT)}`
 
         const destinationPath = `backups/${destinationFolder}/${newFileName}.${fileExtension}`
 
@@ -57,8 +60,8 @@ export default class FileBackupRotator {
      */
     private static removeOldRotationBackup(fileName: string, fileExtension: string, destinationFolder: string, rotationFreqDays: number) {
         try {
-            const oldestBackupDate = moment().subtract(rotationFreqDays * DATABASE_BACKUP_MAX_FILES, "days")
-            const oldFileName = `${fileName}-${oldestBackupDate.format("Y-MM-D")}`
+            const oldestBackupDate = moment().subtract(rotationFreqDays * (DATABASE_BACKUP_MAX_FILES-1), "days")
+            const oldFileName = `${fileName}-${oldestBackupDate.format(BACKUP_DATE_FORMAT)}`
             const oldFilePath = `backups/${destinationFolder}/${oldFileName}.${fileExtension}`
 
             if(fs.existsSync(oldFilePath)) {

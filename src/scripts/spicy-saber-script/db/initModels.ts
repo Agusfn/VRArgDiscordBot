@@ -8,8 +8,6 @@ import setRelationships from "./setRelationships"
  */
 export default () => {
 
-    console.log("Initializing spicysaber script models...")
-
     initUsers()
     initSongs()
     initUserScores()

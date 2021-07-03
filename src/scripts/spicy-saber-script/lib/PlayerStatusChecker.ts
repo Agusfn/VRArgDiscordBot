@@ -6,6 +6,7 @@ import { Op } from "sequelize"
 import { PLAYER_STATUS_CHECK_INTERVAL_MIN, SCORE_ANNOUNCEMENTS_CHANNEL_ID, SSCountries } from "../config"
 import discordClient from "@utils/discordClient"
 import { TextChannel } from "discord.js";
+import logger from "@utils/logger";
 
 
 /**
@@ -46,7 +47,7 @@ export default class PlayerStatusChecker {
             // Update user data and save copy of updated data
             this.alterUserWithScoresaberPlayerData(user, player)
             await user.save()
-            console.log("Saved player status.")
+            logger.info(`Updated ${user.discordUsername} (scoresaber ${user.playerName}) player status.`)
 
             if(user.announcementsEnabled)
                 this.comparedUsersAfterUpdate.push(user.getRankInfo())
@@ -54,7 +55,7 @@ export default class PlayerStatusChecker {
 
         this.fetcherRunning = false
 
-        this.comparePlayersRankingChanges() // async
+        //this.comparePlayersRankingChanges() // async
     }
 
 

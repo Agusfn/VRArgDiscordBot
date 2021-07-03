@@ -2,6 +2,7 @@ import { User, UserScore, Song } from "../model/index"
 import ScoreSaberApi, { ScoreOrder }  from "@lib/ScoreSaberApi"
 import { ScoreReply, Score } from "@ts/interfaces"
 import { sleep } from "@utils/other"
+import logger from "@utils/logger"
 
 /**
  * Class to handle historic score fetching for new users. Doesn't take care of fetching new scores, only scores from the moment they register, to the past.
@@ -61,26 +62,28 @@ export default class UserScoreFetcher {
 
         for(let user of usersPending) {
 
+            logger.info(`Fetching historic scores for ${user.discordUsername} (scoresaber: ${user.playerName})`)
+
             // Obtener un array con todos sus scoreIds registrados
             const userScoreIds = (await UserScore.findAll({
                 where: { discordUserId: user.discordUserId },
                 attributes: ["scoreId"]
             })).map(score => score.scoreId)
 
-            console.log("Processing user: ", user.scoreSaberPlayerId, ". Current scoreIds: ", userScoreIds)
-
             let endPageReached = false
             let nextFetchPage = user.lastHistoryFetchPage + 1
             const api = new ScoreSaberApi()
 
+            let songsLoaded = 0
+
             while(!endPageReached) {
 
                 while(this.paused) {
-                    console.log("User score fetcher is paused... waiting for resume.") // to-do: put logger on discord
+                    logger.info("User score fetcher is paused... waiting for resume.")
                     await sleep(20000)
                 }
                 
-                // Fetch page. Any error (too many requests, most likely) will be caught by cron catch, but each page is saved and can be resumed
+                // Fetch page. Any error (too many requests, most likely) will be caught by cron try-catch, but each page is saved and can be resumed
                 const pageScores = await api.getScores(user.scoreSaberPlayerId, ScoreOrder.RECENT, nextFetchPage)
  
                 if(pageScores.scores.length > 0) {
@@ -89,8 +92,6 @@ export default class UserScoreFetcher {
                     const songsToSave = []
                     const scoresToSave = []
                     
-                    console.log(`Page: ${nextFetchPage}. Scores: ${pageScores.scores.length}`, "ScoreIds: ", pageScores.scores.map(score => score.scoreId))
-    
                     for(let score of pageScores.scores) {
                         if(!this.wholeSongHashList.includes(score.songHash)) {
                             this.wholeSongHashList.push(score.songHash)
@@ -102,15 +103,21 @@ export default class UserScoreFetcher {
                         }
                     }
 
+                    songsLoaded += songsToSave.length
                     await Song.bulkCreate(songsToSave)
                     await UserScore.bulkCreate(scoresToSave)
+
+                    if(nextFetchPage % 10 == 0) {
+                        logger.info(`Page ${nextFetchPage} of historic scores loaded. New songs loaded in last 10 pages: ${songsLoaded}`)
+                        songsLoaded = 0
+                    }
     
                     user.lastHistoryFetchPage = nextFetchPage
                     await user.save()
                     nextFetchPage += 1
     
                 } else { // end page reached
-                    console.log(`Finished loading historic scores for user ${user.playerName} (scoresaber ${user.scoreSaberPlayerId})`)
+                    logger.info(`Finished loading historic scores for user ${user.discordUsername} (scoresaber ${user.playerName})`)
                     endPageReached = true
                     user.fetchedAllScoreHistory = true
                     await user.save()

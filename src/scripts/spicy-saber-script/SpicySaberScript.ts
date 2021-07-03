@@ -78,6 +78,7 @@ export class SpicySaberScript extends Script {
 
             if(!user) {
                 message.channel.send(`Tu cuenta de scoresaber no está vinculada con tu cuenta de discord. Vinculala con /linkear <id scoresaber>.`)
+                return
             }
 
             user.announcementsEnabled = !user.announcementsEnabled
@@ -98,6 +99,7 @@ export class SpicySaberScript extends Script {
 
             if(!user) {
                 message.channel.send(`No tenés una cuenta de scoresaber vinculada con tu cuenta de discord`)
+                return
             }
 
             await UserScore.destroy({ where: {discordUserId: message.author.id} })
@@ -107,33 +109,42 @@ export class SpicySaberScript extends Script {
         })
 
 
+        this.addCommand("playerinfo", null, async (message: Message, args) => {
+
+            const user = await User.findByPk(message.author.id)
+
+            if(!user) {
+                message.channel.send(`No tenés una cuenta de scoresaber vinculada con tu cuenta de discord`)
+                return
+            }
+
+            message.channel.send(`Scoresaber: ${user.playerName}\nPP: ${user.currentPP}\nCountry rank: ${user.countryRank}\nWorld rank: ${user.globalRank}\nLast profile update: ${user.lastStatusCheck().format("DD/MM/Y H:mm:ss")}`)
+        })
+
+
         /**
          * Register cron each 30 mins to update player statuses (total score, rank, pp).
          */
         this.addCustomCron("*/30 * * * *", async () => {
-            /*if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
+            if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
                 return
             }
             this.scoreFetcher.pause() // pause score fetcher (if it's even running) so we can use scoresaber API for this higher priority task
             console.log("Running user periodic status check...")
             await this.playerStatusChecker.checkAllPlayersStatus()
-            this.scoreFetcher.resume() // resume score fetcher*/
+            this.scoreFetcher.resume() // resume score fetcher
         })
         
 
         /**
          * Register cron each 10 mins to save the historic scores for all users.
-         * It's very frecuent since the fetching may interrupt for too many requests to scoresaber API.
+         * It's very frecuent since the fetching may be interrupted for too many requests to scoresaber API.
          */
         this.addCustomCron("*/10 * * * *", async () => {
-
-            /*if(this.scoreFetcher.isFetchRunning()) {
+            if(this.scoreFetcher.isFetchRunning()) {
                 return
             }
-            
-            console.log("Running user historic score fetcher...")
-            await this.scoreFetcher.continueHistoricFetching()*/
-            // run periodic score fetching
+            await this.scoreFetcher.continueHistoricFetching()
         })
 
     }

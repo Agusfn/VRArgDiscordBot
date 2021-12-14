@@ -1,6 +1,16 @@
 import { Message } from "discord.js"
+import { CommandType } from "./enums"
+
 
 export type CommandActionFunction = (...args: any) => any
+
+
+export interface Command {
+    commandType: CommandType,
+    name: string
+    commandAction: CommandActionFunction
+}
+
 
 export interface RegisteredCommand {
     name: string, // name of command. ex: "help"
@@ -95,3 +105,5 @@ export interface UserRankInfo {
     discordUserId: string,
     globalRank: number
 }
+
+

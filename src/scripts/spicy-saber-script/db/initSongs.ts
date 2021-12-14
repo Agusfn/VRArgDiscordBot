@@ -1,6 +1,6 @@
 import { DataTypes as Types } from "sequelize"
 import { Song, UserScore } from "../model"
-import Sequelize from "@utils/Sequelize"
+import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
 
@@ -15,7 +15,7 @@ export default () => {
         levelAuthorName: Types.STRING
     }, 
     { 
-        sequelize: Sequelize.getInstance(), 
+        sequelize: SequelizeDBManager.getInstance(), 
         modelName: "Song",
         tableName: "songs",
         timestamps: false

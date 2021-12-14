@@ -1,6 +1,6 @@
 import { DataTypes as Types } from "sequelize"
 import { User, UserScore } from "../model"
-import Sequelize from "@utils/Sequelize"
+import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
 
@@ -34,7 +34,7 @@ export default () => {
         }
     }, 
     { 
-        sequelize: Sequelize.getInstance(), 
+        sequelize: SequelizeDBManager.getInstance(), 
         modelName: "User",
         tableName: "users"
     })

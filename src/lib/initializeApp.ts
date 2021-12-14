@@ -1,14 +1,12 @@
-import { DATABASE_BACKUP_FRECUENCY_DAYS } from "@utils/configuration"
 import DiscordTransport from "@utils/DiscordLogChannelTransport"
-import FileBackupRotator from "@utils/FileBackupRotator"
 import { COMMAND_PREFIX } from "@utils/configuration"
 import { CommandMetadata } from "@ts/interfaces"
-import discordClient from "./discordClient"
-import Sequelize from "@utils/Sequelize"
+import discordClient from "../utils/discordClient"
+import SequelizeDBManager from "@lib/SequelizeDBManager"
 import bot = require("bot-commander")
 import logger from "@utils/logger"
-import * as cron from "node-cron"
 import * as dotenv from "dotenv"
+import initModels from "@models/initModels"
 
 
 export const initializeApp = async () => {
@@ -17,6 +15,11 @@ export const initializeApp = async () => {
      * Initialize dotenv
      */
     dotenv.config()
+
+
+    /**
+     * Add discord logging transport
+     */
     if(process.env.DISCORD_CHANNEL_LOGGING == "true") {
         logger.add(new DiscordTransport())
     }
@@ -25,22 +28,14 @@ export const initializeApp = async () => {
     /**
      * Initialize sequelize database instance.
      */
-    await Sequelize.initialize()
+    await SequelizeDBManager.initialize()
+    SequelizeDBManager.setMaintenanceCron()
 
-    cron.schedule(`0 0 */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
-    //cron.schedule(`* * * * *`, async () => {
-        try {
-            await Sequelize.closeForMaintenance()
-            logger.info("DB Connection closed for maintenance")
-            logger.info("Doing database backup...")
-            FileBackupRotator.backupFile(process.env.DB_FILE, "databases", DATABASE_BACKUP_FRECUENCY_DAYS)
-            await Sequelize.initialize()
-            logger.info("DB Connection reopened!")
-        } catch(error) {
-            console.log(error)
-        }
-    })
 
+    /**
+     * Initialize global (application-wide) models
+     */
+    await initModels()
 
 
     /**
@@ -50,6 +45,7 @@ export const initializeApp = async () => {
     .setSend( (meta: CommandMetadata, textMessage: string) => { // configure the communication medium between bot-commander and the user (user for error messages and validation)
         meta.message.channel.send(textMessage)
     })
+
 
     /**
      * Log into discord.

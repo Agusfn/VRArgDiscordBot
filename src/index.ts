@@ -1,5 +1,5 @@
 import "./fixTsPaths"
-import { initializeApp } from "@utils/initializeApp"
+import { initializeApp } from "@lib/initializeApp"
 import { ScriptLoader, MemeScript, SpicySaberScript } from "@scripts/index"
 /*import logger from "@utils/logger"
 import axios from "axios"*/

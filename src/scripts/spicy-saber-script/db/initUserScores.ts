@@ -1,6 +1,6 @@
 import { DataTypes as Types } from "sequelize"
 import { UserScore, User, Song } from "../model"
-import Sequelize from "@utils/Sequelize"
+import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
 
@@ -30,7 +30,7 @@ export default () => {
         weight: Types.DECIMAL(10, 9)
     }, 
     {
-        sequelize: Sequelize.getInstance(), 
+        sequelize: SequelizeDBManager.getInstance(), 
         modelName: "UserScore",
         tableName: "user_scores",
         timestamps: false

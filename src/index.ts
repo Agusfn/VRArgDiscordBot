@@ -11,8 +11,8 @@ import axios from "axios"*/
     await initializeApp()
 
     // Register and initialize scripts
-    ScriptLoader.registerScript(MemeScript)
-    ScriptLoader.registerScript(SpicySaberScript)
+    //ScriptLoader.registerScript(MemeScript)
+    //ScriptLoader.registerScript(SpicySaberScript)
     await ScriptLoader.initializeScripts()
 
 

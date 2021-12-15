@@ -8,6 +8,11 @@ export class User extends Model {
     public leaveDate: Date
     public isAdmin: boolean
     
+
+    public isMasterAdmin() {
+        return this.discordUserId == process.env.MASTER_ADMIN_DISCORD_USER_ID
+    }
+
 }
 
 

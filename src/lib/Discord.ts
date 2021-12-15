@@ -24,7 +24,7 @@ export class Discord {
      * Initialize discord instance and log the client in.
      * @param botToken 
      */
-    public static async initialize(botToken: string, guildId: string) {
+    public static initialize(botToken: string, guildId: string) {
         
         // Create client instance
         this.clientInstance = new DiscordJS.Client({ ws: {
@@ -32,7 +32,7 @@ export class Discord {
         }})
 
         // Log into client (async)
-        await this.clientInstance.login(botToken)
+        this.clientInstance.login(botToken)
 
         this.guildId = guildId
     }
@@ -43,7 +43,6 @@ export class Discord {
      */
     public static async loadGuild() {
         this.guild = await this.clientInstance.guilds.fetch(this.guildId)
-        logger.info("Discord Client Logged In and initialized!")
     }
 
 

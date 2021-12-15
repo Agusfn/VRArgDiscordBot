@@ -10,6 +10,7 @@ export default () => {
             type: Types.STRING,
             primaryKey: true
         },
+        username: Types.STRING,
         joinDate: Types.DATE,
         isPresent: Types.BOOLEAN,
         leaveDate: Types.DATE,
@@ -18,7 +19,8 @@ export default () => {
     { 
         sequelize: SequelizeDBManager.getInstance(), 
         modelName: "User",
-        tableName: "users"
+        tableName: "users",
+        timestamps: false
     })
 
 }

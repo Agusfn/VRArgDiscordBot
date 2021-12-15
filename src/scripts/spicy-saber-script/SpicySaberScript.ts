@@ -1,4 +1,4 @@
-import Script from "../Script"
+import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { UserScore, User } from "./model/index"

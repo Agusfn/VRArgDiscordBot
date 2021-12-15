@@ -1,4 +1,4 @@
-import Script from "../Script"
+import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import * as path from 'path'
 import BotVoiceActions from "@lib/BotVoiceActions"

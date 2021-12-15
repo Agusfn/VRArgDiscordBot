@@ -1,25 +1,11 @@
 import "./fixTsPaths"
-import { initializeApp } from "@lib/initializeApp"
-import { ScriptLoader, MemeScript, SpicySaberScript } from "@scripts/index"
-/*import logger from "@utils/logger"
-import axios from "axios"*/
+import { initializeApp, ScriptLoader } from "@lib/index"
+import { MemeScript, SpicySaberScript } from "@scripts/index"
 
 
-(async () => {
+// Initialize config, database, ORM, etc.
+initializeApp()
 
-    // Initialize config, database, ORM, etc.
-    await initializeApp()
-
-    // Register and initialize scripts
-    //ScriptLoader.registerScript(MemeScript)
-    //ScriptLoader.registerScript(SpicySaberScript)
-    await ScriptLoader.initializeScripts()
-
-
-
-})();
-
-
-/*
-logger.info("Init!")
-*/
+// Register scripts
+ScriptLoader.registerScript(MemeScript)
+ScriptLoader.registerScript(SpicySaberScript)

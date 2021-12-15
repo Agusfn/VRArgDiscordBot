@@ -1,4 +1,4 @@
-import Script from "./Script"
+import { Script } from "./Script"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 

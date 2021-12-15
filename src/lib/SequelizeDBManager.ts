@@ -32,7 +32,7 @@ export default class SequelizeDBManager {
      * Initialize sequelize DB
      */
     public static async initialize() {
-
+        
         if(this.sequelize != null) {
             throw Error("The DB has already been instantiated!")
         }
@@ -44,13 +44,15 @@ export default class SequelizeDBManager {
         await this.sequelize.authenticate()
 
         logger.info("Sequelize DB initialized and authenticated (db file "+process.env.DB_FILE+").")
+
+        this.setMaintenanceCron()
     }
 
 
     /**
      * Set up the maintenance cron
      */
-    public static async setMaintenanceCron() {
+    private static setMaintenanceCron() {
 
         cron.schedule(`0 0 */${DATABASE_BACKUP_FRECUENCY_DAYS} * *`, async () => {
             //cron.schedule(`* * * * *`, async () => {
@@ -70,11 +72,12 @@ export default class SequelizeDBManager {
 
 
     /**
-     * Sync the defined models on the db.
+     * Sync the defined models on the db. Should be called after declaring new Sequelize Models.
      */
     public static async syncModels() {
         await this.sequelize.sync()
     }
+
 
     /**
      * 

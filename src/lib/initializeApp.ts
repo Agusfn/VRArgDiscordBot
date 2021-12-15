@@ -7,10 +7,9 @@ import logger from "@utils/logger"
 import * as dotenv from "dotenv"
 import initModels from "@models/initModels"
 import { Discord, UserManager } from "@lib/index"
-import { TextChannel } from "discord.js"
+import { ScriptLoader } from "./ScriptLoader"
 
-
-export const initializeApp = async () => {
+export const initializeApp = () => {
     
 
     /**
@@ -22,23 +21,38 @@ export const initializeApp = async () => {
     /**
      * Initialize discord instance and log in (async)
      */
-    await Discord.initialize(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID)
+    Discord.initialize(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID)
 
 
     /**
      * Register global discord ready listener
      */
     Discord.getInstance().on("ready", async () => {
+        try {
+            // Add discord logging channel to logger
+            const logChannel = await Discord.getTextChannel(process.env.DISCORD_LOG_CHANNEL_ID)
+            logger.add(new DiscordTransport(logChannel))
 
-        // Add discord logging channel to logger
-        const logChannel = await Discord.getTextChannel(process.env.DISCORD_LOG_CHANNEL_ID)
-        logger.add(new DiscordTransport(logChannel))
+            logger.info("Discord Client Logged In successfully!")
 
-        // Load some important Discord objects into our Discord helper
-        await Discord.loadGuild()
+            // Initialize sequelize database connection
+            await SequelizeDBManager.initialize()
 
-        // Initialize user manager (duh)
-        await UserManager.initialize()
+            // Initialize global (application-wide) models
+            await initModels()
+
+            // Load some important Discord objects into our Discord helper
+            await Discord.loadGuild()
+
+            // Initialize user manager and load unregistered users
+            await UserManager.initialize()
+
+            // Initialize the user defined scripts
+            await ScriptLoader.initializeScripts()
+        } catch(error) {
+            logger.error("Error initializing bot.", error)
+            closeApp()
+        }
     })
 
  
@@ -55,27 +69,27 @@ export const initializeApp = async () => {
 
 
     /**
-     * Initialize sequelize database instance.
-     */
-    await SequelizeDBManager.initialize()
-    SequelizeDBManager.setMaintenanceCron()
-
-
-    /**
-     * Initialize global (application-wide) models
-     */
-    await initModels()
-
-
-    /**
      * Configure globally the bot-commander command parser.
      */
-    bot.prefix(COMMAND_PREFIX)
-    .setSend( (meta: CommandMetadata, textMessage: string) => { // configure the communication medium between bot-commander and the user (user for error messages and validation)
+    bot
+    .prefix(COMMAND_PREFIX) // "/" prefix for commands
+    .setSend((meta: CommandMetadata, textMessage: string) => { // set up communication medium from bot-commander to the user (discord channel message)
         meta.message.channel.send(textMessage)
     })
 
 
+    /**
+     * Register exit event, to close services gracefully
+     */
+    process.on('SIGINT', function() {
+        closeApp()
+    });
+
+}
 
 
+const closeApp = () => {
+    SequelizeDBManager.getInstance()?.close()
+    Discord.getInstance()?.destroy()
+    process.exit()
 }

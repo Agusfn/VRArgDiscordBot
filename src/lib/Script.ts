@@ -5,7 +5,7 @@ import bot = require("bot-commander")
 import * as cron from "node-cron"
 import logger from "@utils/logger"
 
-export default abstract class Script {
+export abstract class Script {
 
 
     private initialized = false

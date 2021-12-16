@@ -2,6 +2,7 @@ import DiscordTransport from "@utils/DiscordLogTransport"
 import { COMMAND_PREFIX } from "@utils/configuration"
 import { CommandMetadata } from "@ts/interfaces"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
+// @ts-ignore
 import bot = require("bot-commander")
 import logger from "@utils/logger"
 import * as dotenv from "dotenv"
@@ -70,12 +71,18 @@ export const initializeApp = () => {
     /**
      * Configure a global discord message listener, so any message starting with "/" is parsed by bot commander (commands must be added on each script)
      */
-    Discord.getInstance().on("message", message => {
-         const msgText = message.content
-         if(msgText.startsWith(COMMAND_PREFIX)) {
-             const metadata: CommandMetadata = { message: message } // Include Discord Message object into the bot-commander command metadata so we can have it in the handler.
-             bot.parse(msgText, metadata)
-         }
+    Discord.getInstance().on("messageCreate", (message: Message) => {
+
+        console.log(message)
+        logger.info(message)
+
+        //console.log("message by: " + message.author.username + " content: " + message.content)
+        /*const msgText = message.content
+        if(msgText.startsWith(COMMAND_PREFIX)) {
+            const metadata: CommandMetadata = { message: message } // Include Discord Message object into the bot-commander command metadata so we can have it in the handler.
+            bot.parse(msgText, metadata)
+            console.log("parsed command!")
+        }*/
     })
 
 

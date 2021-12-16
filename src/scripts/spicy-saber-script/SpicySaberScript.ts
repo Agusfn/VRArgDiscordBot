@@ -5,7 +5,6 @@ import { UserScore, User } from "./model/index"
 import UserProfileLinking from "./lib/UserProfileLinking"
 import UserScoreFetcher from "./lib/UserScoreFetcher"
 import PlayerStatusChecker from "./lib/PlayerStatusChecker"
-import discordClient from "@utils/discordClient"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 

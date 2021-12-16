@@ -4,7 +4,6 @@ import ScoreSaberApi, { ScoreOrder }  from "@lib/ScoreSaberApi"
 import { ScoreReply, Score, UserRankInfo } from "@ts/interfaces"
 import { Op } from "sequelize"
 import { PLAYER_STATUS_CHECK_INTERVAL_MIN, SCORE_ANNOUNCEMENTS_CHANNEL_ID, SSCountries } from "../config"
-import discordClient from "@utils/discordClient"
 import { TextChannel } from "discord.js";
 import logger from "@utils/logger";
 

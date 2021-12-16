@@ -1,6 +1,6 @@
 import { CommandActionFunction, CommandMetadata } from "@ts/interfaces"
 import { CronFrequency } from "@ts/enums"
-import discordClient from "@utils/discordClient"
+// @ts-ignore
 import bot = require("bot-commander")
 import * as cron from "node-cron"
 import logger from "@utils/logger"
@@ -108,7 +108,7 @@ export abstract class Script {
 
         // Register discord ready event (if needed)
         if(typeof this.onDiscordReady == "function") {
-            discordClient.on("ready", this.onDiscordReady);
+            //discordClient.on("ready", this.onDiscordReady);
         }
 
     }

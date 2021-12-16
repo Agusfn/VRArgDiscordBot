@@ -1,4 +1,4 @@
-import DiscordJS, { Guild, TextChannel } from "discord.js"
+import DiscordJS, { Guild, TextChannel, Intents } from "discord.js"
 import logger from "@utils/logger"
 
 
@@ -27,9 +27,9 @@ export class Discord {
     public static initialize(botToken: string, guildId: string) {
         
         // Create client instance
-        this.clientInstance = new DiscordJS.Client({ ws: {
-            intents: ["GUILD_MEMBERS"]
-        }})
+        this.clientInstance = new DiscordJS.Client({ 
+            intents: [Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
+        })
 
         // Log into client (async)
         this.clientInstance.login(botToken)

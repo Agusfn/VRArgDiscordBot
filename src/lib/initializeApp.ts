@@ -8,6 +8,7 @@ import * as dotenv from "dotenv"
 import initModels from "@models/initModels"
 import { Discord, UserManager } from "@lib/index"
 import { ScriptLoader } from "./ScriptLoader"
+import { GuildMember, Message } from "discord.js"
 
 export const initializeApp = () => {
     
@@ -55,7 +56,17 @@ export const initializeApp = () => {
         }
     })
 
- 
+
+    Discord.getInstance().on('guildMemberAdd', member => {
+        UserManager.onMemberJoined(member)
+    });
+
+
+    Discord.getInstance().on('guildMemberRemove', member => {
+        UserManager.onMemberLeft(<GuildMember>member)
+    });
+
+
     /**
      * Configure a global discord message listener, so any message starting with "/" is parsed by bot commander (commands must be added on each script)
      */

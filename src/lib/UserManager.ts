@@ -24,6 +24,8 @@ export class UserManager {
 
         // Create Users for non existing members and mark "present" previously left members.
         for(const [key, member] of currentMembers) {
+            if(member.user.bot) continue
+
             const user = allUsers.find(user => user.discordUserId == member.user.id)
             if(user) {
                 if(!user.isPresent) {
@@ -38,8 +40,8 @@ export class UserManager {
         }
 
         // Mark "left" all registered Users that don't have their member in the server
-        for(const user of allUsers) {
-            const member = currentMembers.find(member => member.user.id == user.discordUserId)
+        for(const user of allUsers.filter(user => user.isPresent)) {
+            const member = currentMembers.find(member => member.user.id == user.discordUserId && member.user.bot == false)
             if(!member) {
                 user.isPresent = false
                 await user.save()
@@ -74,7 +76,56 @@ export class UserManager {
             isAdmin: (discordMember.user.id == process.env.MASTER_ADMIN_DISCORD_USER_ID) ? true : false
         })
     }
+    
 
+
+    /**
+     * Create new member User or update it's "isPresent" attr if already exists
+     * @param discordMember 
+     */
+    public static async onMemberJoined(discordMember: DiscordJS.GuildMember) {
+
+        if(discordMember.user.bot) return
+
+        const user = await User.findByPk(discordMember.user.id)
+        if(user) {
+            user.isPresent = true
+            user.joinDate = new Date()
+            await user.save()
+
+            if(process.env.DEBUG == "true") {
+                logger.info(`Marking user id ${discordMember.user.id} (${discordMember.user.username}) as present, since they re-joined.`)
+            }
+
+        } else {
+            await this.createUserFromDiscordMember(discordMember)
+
+            if(process.env.DEBUG == "true") {
+                logger.info(`Creating new User for user id ${discordMember.user.id} (${discordMember.user.username}) who just joined.`)
+            }
+
+        }
+
+    }
+
+
+    /**
+     * Update a user and mark that it has left.
+     * @param userId 
+     */
+    public static async onMemberLeft(discordMember: DiscordJS.GuildMember) {
+        
+        if(discordMember.user.bot) return
+
+        await User.update(
+            { isPresent: false, leaveDate: new Date() }, 
+            { where: { discordUserId: discordMember.user.id }}
+        )
+
+        if(process.env.DEBUG == "true") {
+            logger.info(`Marked user id ${discordMember.user.id} (${discordMember.user.username}) absent since they left.`)
+        }
+    }
 
 
     /**

@@ -31,7 +31,7 @@ export default class PlayerStatusChecker {
     /**
      * Fetch and update status of all players
      */
-    public async checkAllPlayersStatus() {
+    /*public async checkAllPlayersStatus() {
 
         this.fetcherRunning = true
 
@@ -64,7 +64,7 @@ export default class PlayerStatusChecker {
         this.fetcherRunning = false
 
         this.comparePlayersRankingChanges() // async
-    }
+    }*/
 
 
     alterUserWithScoresaberPlayerData(user: User, player: Player) {
@@ -91,7 +91,7 @@ export default class PlayerStatusChecker {
     /**
      * Compare player ranking changes for all the players who had the ranking announcements enabled.
      */
-    comparePlayersRankingChanges() {
+    /*comparePlayersRankingChanges() {
 
 
         for(const updatedUser of this.comparedUsersAfterUpdate) {
@@ -122,7 +122,7 @@ export default class PlayerStatusChecker {
 
             
 
-    }
+    }*/
 
 
     /**
@@ -130,7 +130,7 @@ export default class PlayerStatusChecker {
      * @param user 
      * @param usersSurpassed 
      */
-    sendPlayerSurpassAnnouncement(user: UserRankInfo, usersSurpassed: UserRankInfo[]) {
+    /*sendPlayerSurpassAnnouncement(user: UserRankInfo, usersSurpassed: UserRankInfo[]) {
 
         const channel = <TextChannel>discordClient.channels.cache.find(channel => channel.id == SCORE_ANNOUNCEMENTS_CHANNEL_ID)
         
@@ -157,8 +157,7 @@ export default class PlayerStatusChecker {
         }
 
 
-    }
-
+    }*/
 
 
 

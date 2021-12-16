@@ -70,7 +70,7 @@ export class SpicySaberScript extends Script {
             
         })*/
 
-        this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
+        /*this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
 
             // Validar param
             const scoreSaberId = args[0]
@@ -136,14 +136,14 @@ export class SpicySaberScript extends Script {
             }
 
             message.channel.send(`Scoresaber: ${user.playerName}\nPP: ${user.currentPP}\nCountry rank: ${user.countryRank}\nWorld rank: ${user.globalRank}\nLast profile update: ${user.lastStatusCheck().format("DD/MM/Y H:mm:ss")}`)
-        })
+        })*/
 
 
         /**
          * Register cron each 30 mins to update player statuses (total score, rank, pp).
          */
-        this.addCustomCron("*/30 * * * *", async () => {
-            try {
+        //this.addCustomCron("*/30 * * * *", async () => {
+            /*try {
                 if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
                     return
                 }
@@ -154,15 +154,15 @@ export class SpicySaberScript extends Script {
                 this.playerStatusChecker.setFetchRunning(false)
                 logger.error(error) 
             }
-        })
+        })*/
         
 
         /**
          * Register cron each 10 mins to save the historic scores for all users.
          * It's very frecuent since the fetching may be interrupted for too many requests to scoresaber API.
          */
-        this.addCustomCron("*/10 * * * *", async () => {
-            try {
+        //this.addCustomCron("*/10 * * * *", async () => {
+            /*try {
                 if(this.scoreFetcher.isFetchRunning()) {
                     return
                 }
@@ -171,7 +171,7 @@ export class SpicySaberScript extends Script {
                 this.scoreFetcher.setFetchRunning(false)
                 logger.error(error)
             }
-        })
+        })*/
 
     }
     

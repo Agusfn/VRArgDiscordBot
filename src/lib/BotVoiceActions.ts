@@ -1,4 +1,4 @@
-import { VoiceChannel, VoiceConnection, StreamDispatcher } from "discord.js"
+import { VoiceChannel/*, VoiceConnection, StreamDispatcher*/ } from "discord.js"
 import * as path from 'path'
 import * as fs from "fs"
 
@@ -14,14 +14,14 @@ export default class BotVoiceActions {
     /**
      * Current channel connection
      */
-    private static currentConnection: VoiceConnection
+    //private static currentConnection: VoiceConnection
 
     /**
      * Current Stream Dispatcher (used to dispatch stream over voice channel). It will live and die at the same time with currentConnection.
      */
-    private static currentDispatcher: StreamDispatcher
+    /*private static currentDispatcher: StreamDispatcher
 
-    private static playQueue: PlayQueueItem[] = []
+    private static playQueue: PlayQueueItem[] = []*/
 
 
     /**
@@ -29,7 +29,7 @@ export default class BotVoiceActions {
      * If called while playing a sound in another channel, it will enqueue this action until it has finished.
      * The excecution will finish after the sound dispatcher was created, not after the sound finished playing.
      */
-    public static async playSoundInChannel(channel: VoiceChannel, soundFileName: string, volume?: number) {
+    /*public static async playSoundInChannel(channel: VoiceChannel, soundFileName: string, volume?: number) {
 
         const filePath = path.join(__dirname, "../../resources/mp3/"+soundFileName)
 
@@ -53,14 +53,14 @@ export default class BotVoiceActions {
         } catch(error) { // problem joining channel
             console.log(error)
         }
-    }
+    }*/
 
 
     /**
      * 
      * @param filePath absolute sound file path
      */
-    private static playSoundInCurrentChannel(filePath: string, volume?: number) {
+    /*private static playSoundInCurrentChannel(filePath: string, volume?: number) {
         
         // Create a dispatcher
         console.log("path", filePath)
@@ -75,12 +75,12 @@ export default class BotVoiceActions {
         // Always remember to handle errors appropriately!
         this.currentDispatcher.on('error', console.error);
     }
-
+*/
 
     /**
      * Called when a sound finished playing.
      */
-    private static async onSoundPlayFinish() {
+    /*private static async onSoundPlayFinish() {
         console.log("audio stopped")
         setTimeout(async () => {
             if(this.playQueue.length >= 1) {
@@ -104,25 +104,25 @@ export default class BotVoiceActions {
             }
         }, 1000)
 
-    }
+    }*/
 
 
     /**
      * Join a certain voice channel.
      * @param channel 
      */
-    private static async joinChannel(channel: VoiceChannel) {
+    /*private static async joinChannel(channel: VoiceChannel) {
         this.currentConnection = await channel.join()
-    }
+    }*/
 
     /**
      * Leaves channel. If there's no channel, nothing will happen.
      */
-    private static async leaveChannel() {
+    /*private static async leaveChannel() {
         this.currentDispatcher.destroy()
         this.currentDispatcher = null
         this.currentConnection.disconnect()
         this.currentConnection = null
-    }
+    }*/
 
 }

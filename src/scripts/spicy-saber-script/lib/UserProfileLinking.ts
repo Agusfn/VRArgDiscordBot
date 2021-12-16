@@ -18,7 +18,7 @@ export default class UserProfileLinking {
      * @param scoreSaberPlayerId 
      * @returns 
      */
-    public static async linkUser(discordUserId: string, discordUsername: string, scoreSaberPlayerId: string): Promise<User> {
+    /*public static async linkUser(discordUserId: string, discordUsername: string, scoreSaberPlayerId: string): Promise<User> {
 
         // Chequear que el usuario actual no tenga un scoresaber linkeado
         const currentUser = await User.findByPk(discordUserId)
@@ -68,7 +68,7 @@ export default class UserProfileLinking {
 
     public unlinkUser() {
 
-    }
+    }*/
 
 
 }

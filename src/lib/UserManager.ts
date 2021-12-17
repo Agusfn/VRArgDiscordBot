@@ -8,7 +8,7 @@ import logger from "@utils/logger"
 export class UserManager {
 
 
-    private static adminUserIds: string[]
+    private static adminUserIds: string[] = []
     
 
     /**
@@ -24,6 +24,7 @@ export class UserManager {
 
         // Create Users for non existing members and mark "present" previously left members.
         for(const [key, member] of currentMembers) {
+
             if(member.user.bot) continue
 
             const user = allUsers.find(user => user.discordUserId == member.user.id)
@@ -39,8 +40,11 @@ export class UserManager {
             }
         }
 
-        // Mark "left" all registered Users that don't have their member in the server
-        for(const user of allUsers.filter(user => user.isPresent)) {
+        for(const user of allUsers) {
+            if(user.isAdmin) this.adminUserIds.push(user.discordUserId) // for caching purposes
+
+            // Check and flag if user left the server
+            if(!user.isPresent) continue
             const member = currentMembers.find(member => member.user.id == user.discordUserId && member.user.bot == false)
             if(!member) {
                 user.isPresent = false
@@ -63,18 +67,22 @@ export class UserManager {
 
 
     /**
-     * Create a new user in the database from a Discord User
+     * Create a new user in the database from a Discord User. Adds the admin ids to the list if the user is admin.
      * @param discordUser 
      */
     public static async createUserFromDiscordMember(discordMember: DiscordJS.GuildMember) {
+        let isAdmin = (discordMember.user.id == process.env.MASTER_ADMIN_DISCORD_USER_ID) ? true : false
         await User.create({
             discordUserId: discordMember.user.id,
             username: discordMember.user.username,
             joinDate: discordMember.joinedAt,
             isPresent: true,
             leaveDate: null,
-            isAdmin: (discordMember.user.id == process.env.MASTER_ADMIN_DISCORD_USER_ID) ? true : false
+            isAdmin: isAdmin
         })
+        if(isAdmin) {
+            this.adminUserIds.push(discordMember.user.id)
+        }
     }
     
 

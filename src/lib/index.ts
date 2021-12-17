@@ -1,5 +1,5 @@
+export * from "./CommandManager"
 export * from "./Discord"
 export * from "./Script"
 export * from "./ScriptLoader"
 export * from "./UserManager"
-export * from "./initializeApp"

@@ -1,7 +1,4 @@
-import { CommandActionFunction, CommandMetadata } from "@ts/interfaces"
 import { CronFrequency } from "@ts/enums"
-// @ts-ignore
-import bot = require("bot-commander")
 import * as cron from "node-cron"
 import logger from "@utils/logger"
 
@@ -16,12 +13,7 @@ export abstract class Script {
     protected abstract scriptName: string
 
     /**
-     * When the bot is ready to start working.
-     */
-    protected abstract onDiscordReady?(): void
-
-    /**
-     * Register commands, crons, and other events. Shall only be called by ScriptLoader.
+     * Called when the bot is ready and the Script is initialized. May be used to register commands, crons, and other events. Shall only be called by ScriptLoader.
      */
     public abstract onInitialized?(): void
 
@@ -35,25 +27,6 @@ export abstract class Script {
      */
     protected abstract initDbModels?(): void
 
-
-    /**
-     * Register new command in bot-commander. Must not conflict with other commands from other scripts. May be done on script onInitialize() or at runtime.
-     * @param commandName 
-     */
-    protected addCommand(commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string) {
-        
-        // Add the callback action for when this command is interpreted
-        const cmdName = commandName + (args ? " " + args : "")
-        const command = bot.command(cmdName, null)
-        if(description) {
-            command.description(description)
-        }
-        command.showHelpOnEmpty()
-        .action( (metadata: CommandMetadata, ...params: any) => {
-            commandAction(metadata.message, params)
-        })
-
-    }
 
     /**
      * Add a new cron task
@@ -104,11 +77,6 @@ export abstract class Script {
         // Initialize db models (if defined)
         if(typeof this.initDbModels == "function") {
             this.initDbModels()
-        }
-
-        // Register discord ready event (if needed)
-        if(typeof this.onDiscordReady == "function") {
-            //discordClient.on("ready", this.onDiscordReady);
         }
 
     }

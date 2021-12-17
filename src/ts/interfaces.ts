@@ -4,11 +4,17 @@ import { CommandType } from "./enums"
 
 export type CommandActionFunction = (...args: any) => any
 
-
-export interface Command {
-    commandType: CommandType,
-    name: string
-    commandAction: CommandActionFunction
+/**
+ * A command, which is the medium of interaction with this bot. These commands are "classic" plain text discord message commands, not Discord Slash Commands.
+ */
+export interface BotCommand {
+    type: CommandType,
+    name: string,
+    args?: string,
+    description?: string,
+    //commandAction: CommandActionFunction,
+    /** Only for public commands. Id of channel if restricted. */
+    restrictedChannelId?: string
 }
 
 

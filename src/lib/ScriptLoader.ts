@@ -27,10 +27,10 @@ export class ScriptLoader {
         for(let ScriptClass of this.scriptClasses) {
             const script = new ScriptClass()
             this.scriptInstances.push(script)
-            script.initialize()
+            script.initialize() // initializes DB models (if any)
         }
 
-        // Sync the defined models on the scripts (if any) on the database
+        // Once all scripts were initialized, sync the new models (if any) in DB
         await SequelizeDBManager.syncModels()
 
         // Call script initialization events (if defined)

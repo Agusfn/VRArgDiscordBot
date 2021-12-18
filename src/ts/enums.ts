@@ -3,3 +3,9 @@ export enum CronFrequency {
     HOURLY,
     DAILY
 }
+
+
+export enum CommandType {
+    ADMIN = "admin",
+    PUBLIC = "public"
+}

@@ -1,23 +1,25 @@
 import { DataTypes as Types } from "sequelize"
-import { Song, UserScore } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
+import { User } from "../"
+
 
 export default () => {
 
-    Song.init({
-        songHash: {
+    User.init({
+        discordUserId: {
             type: Types.STRING,
             primaryKey: true
         },
-        songName: Types.STRING,
-        songSubName: Types.STRING,
-        songAuthorName: Types.STRING,
-        levelAuthorName: Types.STRING
+        username: Types.STRING,
+        joinDate: Types.DATE,
+        isPresent: Types.BOOLEAN,
+        leaveDate: Types.DATE,
+        isAdmin: Types.BOOLEAN,
     }, 
     { 
         sequelize: SequelizeDBManager.getInstance(), 
-        modelName: "Song",
-        tableName: "songs",
+        modelName: "User",
+        tableName: "users",
         timestamps: false
     })
 

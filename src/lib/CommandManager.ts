@@ -107,12 +107,14 @@ export class CommandManager {
         const userCommand = this.fetchCmdNameFromMsg(message.content)
         const command = this.commands.find(command => command.name == userCommand)
 
+        // Ignore if no recognized command
         if(command == null && !helpCommands.includes(userCommand)) {
             return
         }
 
         const isInAdminChannel = (UserManager.isAdmin(message.author.id) && message.channel.id == process.env.DISCORD_CHANNEL_ID_ADMIN)
 
+        // Override for "help" command
         if(helpCommands.includes(userCommand)) {
             if(isInAdminChannel) {
                 message.reply(this.getAdminCommandList())
@@ -147,7 +149,11 @@ export class CommandManager {
 
     }
 
-    
+    /**
+     * Check if a command name is valid (only alphanumeric+underscore, within char limit) and not a reserved "help" command.
+     * @param cmdName 
+     * @returns 
+     */
     private static isValidCmdName(cmdName: string) {
         const regex = new RegExp("^[a-zA-Z0-9_]{1," + maxCommandLength + "}$", "g")
         return regex.test(cmdName) && !helpCommands.includes(cmdName)
@@ -174,6 +180,7 @@ export class CommandManager {
 
         const commandsByChannelId: {[id: string]: BotCommand[]} = {}
         
+        // Group public commands by channel of restriction (if any)
         for(const command of publicCommands) {
             const channelId = command.restrictedChannelId ? command.restrictedChannelId : "none"
             if(Array.isArray(commandsByChannelId[channelId])) {
@@ -183,18 +190,20 @@ export class CommandManager {
             }
         }
 
-        let text = "Comandos:\n"
+        // Make list of commands grouped by list
+        let text = ""
         for(const channelId of Object.keys(commandsByChannelId)) {
             if(channelId == "none") {
+                text += "__Comandos generales:__\n"
                 for(const command of commandsByChannelId[channelId]) {
-                    text += "/" + command.name + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
+                    text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
                 }
             } else {
                 const channel = Discord.getInstance().channels.cache.find(channel => channel.id == channelId)
                 if(channel) {
-                    text += "\nComandos del canal <#"+channel.id+">:\n"
+                    text += "\n__Comandos del canal <#"+channel.id+">:__\n"
                     for(const command of commandsByChannelId[channelId]) {
-                        text += "/" + command.name + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
+                        text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
                     }
                 }
             }  
@@ -211,9 +220,9 @@ export class CommandManager {
     private static getAdminCommandList(): string {
         const publicCommands = this.commands.filter(command => command.type == CommandType.ADMIN)
 
-        let text = "Comandos Admin:\n"
+        let text = "__Comandos Admin:__\n"
         for(const command of publicCommands) {
-            text += "/" + command.name + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
+            text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
         }
         return text
     }

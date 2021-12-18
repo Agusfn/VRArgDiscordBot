@@ -5,11 +5,16 @@ import DiscordJS from "discord.js"
 import logger from "@utils/logger"
 
 
+/**
+ * This class manages the registration of members in the server into their own User entity in the bot, and synchronizes them upon bot startup.
+ */
 export class UserManager {
 
-
+    /**
+     * List that holds in runtime a cache of the current admins ids, to be able to quickly query whether a user is an admin or not.
+     */
     private static adminUserIds: string[] = []
-    
+
 
     /**
      * Synchronize all the users in the server with their User entity within this bot.
@@ -143,6 +148,64 @@ export class UserManager {
      */
     public static isAdmin(userId: string) {
         return this.adminUserIds.includes(userId)
+    }
+
+
+    /**
+     * Make a User admin.
+     * @param user 
+     */
+    public static async makeUserAdmin(user: User) {
+        user.isAdmin = true
+        await user.save()
+        this.adminUserIds.push(user.discordUserId)
+    }
+
+
+    /**
+     * Make a User admin.
+     * @param user 
+     */
+     public static async removeUserAdmin(user: User) {
+
+        if(user.isMasterAdmin()) return // master admin can't stop being admin
+
+        user.isAdmin = false
+        await user.save()
+        this.adminUserIds = this.adminUserIds.filter(id => id != user.discordUserId)
+
+        console.log(this.adminUserIds)
+    }
+
+
+    /**
+     * This is a check of the admin list cache if it's in sync with the admins in DB. This is called each time the admin command /admins is called.
+     * It serves debug purposes, since the list should never go out of sync.
+     * @param adminUsers 
+     */
+    public static checkAdminIdList(adminUsers: User[]) {
+
+        // flags
+        let userNotInList = false
+        let idNotInUserList = false
+
+        for(const user of adminUsers) {
+            if(!this.adminUserIds.includes(user.discordUserId)) userNotInList = true
+        }
+        for(const adminId of this.adminUserIds) {
+            if(!adminUsers.find(user => user.discordUserId == adminId)) idNotInUserList = true
+        }
+
+        if(!userNotInList && !idNotInUserList) return true // everything is ok
+        else {
+            if(userNotInList) {
+                logger.warn("Admin Users were found which did not have their id cached in UserManager")
+            }
+            if(idNotInUserList) {
+                logger.warn("User ids of admins were found cached in UserManager, but no corresponding User was found.")
+            }
+            return false
+        }
     }
 
 

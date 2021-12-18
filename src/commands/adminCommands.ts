@@ -82,7 +82,7 @@ export const registerAdminCommands = () => {
     /**
      * Make a user admin.
      */
-    CommandManager.newAdminCommand("haceradmin", "<id discord>", async (message: Message, args) => {
+    CommandManager.newAdminCommand("haceradmin", "<id usuario>", async (message: Message, args) => {
         if(message.author.id == args[0]) {
             message.reply("No podés usar este comando con tu propio usuario."); return
         }
@@ -109,7 +109,7 @@ export const registerAdminCommands = () => {
     /**
      * Remove admin from a user
      */
-     CommandManager.newAdminCommand("quitaradmin", "<id discord>", async (message: Message, args) => {
+     CommandManager.newAdminCommand("quitaradmin", "<id usuario>", async (message: Message, args) => {
         if(message.author.id == args[0]) {
             message.reply("No podés usar este comando con tu propio usuario."); return
         }

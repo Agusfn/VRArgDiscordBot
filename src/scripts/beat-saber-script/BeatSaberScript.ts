@@ -8,7 +8,7 @@ import PlayerStatusChecker from "./lib/PlayerStatusChecker"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 
-export class SpicySaberScript extends Script {
+export class BeatSaberScript extends Script {
 
     /**
      * Name of this script.

@@ -2,18 +2,19 @@ import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { UserScore, User } from "./model/index"
-import UserProfileLinking from "./lib/UserProfileLinking"
-import UserScoreFetcher from "./lib/UserScoreFetcher"
-import PlayerStatusChecker from "./lib/PlayerStatusChecker"
+//import UserProfileLinking from "./lib/UserProfileLinking"
+//import UserScoreFetcher from "./lib/UserScoreFetcher"
+//import PlayerStatusChecker from "./lib/PlayerStatusChecker"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
+import { ScoreSaberAPI } from "./utils"
 
 export class BeatSaberScript extends Script {
 
     /**
      * Name of this script.
      */
-    protected scriptName = "SpicySaber Script"
+    protected scriptName = "Beat Saber Script"
 
     /**
      * (Optional) Event when a user sends a message.
@@ -23,32 +24,27 @@ export class BeatSaberScript extends Script {
     /**
      * (Optional) Specify function to load for initializing sequelize db models.
      */
-    protected initDbModels = initModels
+    public initDbModels = initModels
 
 
-    // **** Our custom attrs *****
-    private scoreFetcher: UserScoreFetcher
-    private playerStatusChecker: PlayerStatusChecker
-
-
-    /**
-     * (Optional) Event when discord client is ready, called slightly after onInitialized()
-     */
-    protected async onDiscordReady() {       
-        /*console.log("discord channels", JSON.stringify(discordClient.channels.cache, null, 4))
-        const channel = <TextChannel>discordClient.channels.cache.find(channel => channel.id == "856383011443572766")
-        channel.send("Hola!! <@455891068580528153> tagueado rey")*/
-    }
-
-    /**
-     * (Optional) Register any commands here. Called slightly before onDiscordReady()
-     */
     public async onInitialized() {
 
+        const api = new ScoreSaberAPI()
+
+        //const a: any = {}
+        //const b = a.v.c.a.d.w
+        //try {
+        /*} catch(error) {
+            console.log("error: ", error)
+            console.log("error json:", JSON.stringify(error, null, 4))
+        }*/
+        
+
+
         // Initialize score fetcher
-        this.scoreFetcher = new UserScoreFetcher()
+        /*this.scoreFetcher = new UserScoreFetcher()
         this.playerStatusChecker = new PlayerStatusChecker()
-        this.scoreFetcher.initialize() // (async) 
+        this.scoreFetcher.initialize() // (async) */
 
 
         // Register commands

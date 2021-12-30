@@ -5,8 +5,6 @@ import logger from "@utils/logger"
 export abstract class Script {
 
 
-    private initialized = false
-
     /**
      * The name of our script.
      */
@@ -15,7 +13,7 @@ export abstract class Script {
     /**
      * Called when the bot is ready and the Script is initialized. May be used to register commands, crons, and other events. Shall only be called by ScriptLoader.
      */
-    public abstract onInitialized?(): void
+    public async onInitialized?(): Promise<void>
 
     /**
      * When a user sends a message.
@@ -25,7 +23,7 @@ export abstract class Script {
     /**
      * Function for initializing sequelize db models on script initialization.
      */
-    protected abstract initDbModels?(): void
+    public abstract initDbModels?(): void
 
 
     /**
@@ -62,23 +60,8 @@ export abstract class Script {
     }
 
 
-    /**
-     * Initialize script. Shall only be called by ScriptLoader.
-     */
-    public initialize() {
-        
-        if(this.initialized) {
-            throw new Error(this.scriptName + " has already been initialized.")
-        }
-        this.initialized = true
-
-        logger.info("Initializing "+this.scriptName+"!")
-
-        // Initialize db models (if defined)
-        if(typeof this.initDbModels == "function") {
-            this.initDbModels()
-        }
-
+    public  getName() {
+        return this.scriptName
     }
 
 

@@ -1,6 +1,6 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
-import { UserRankInfo } from "@ts/interfaces"
+import { UserRankInfo } from "../ts"
 import moment from "moment"
 
 export class User extends Model {

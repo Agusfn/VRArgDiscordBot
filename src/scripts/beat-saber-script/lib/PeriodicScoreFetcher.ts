@@ -1,6 +1,5 @@
-import { Player } from "@ts/interfaces"
 import { User } from "../model/index"
-import ScoreSaberApi from "@lib/ScoreSaberApi"
+import { ScoreSaberAPI } from "../utils/index"
 
 export default class PeriodicScoreFetcher {
 

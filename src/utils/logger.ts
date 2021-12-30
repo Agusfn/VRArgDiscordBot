@@ -1,5 +1,5 @@
 import winston, { format } from "winston"
-const { combine, timestamp, printf } = format;
+const { combine, timestamp, printf, errors } = format;
 
 const plainFormat = printf(({ level, message, label, timestamp }) => {
   return `[${timestamp}] ${level}: ${message}`;
@@ -10,6 +10,7 @@ const plainFormat = printf(({ level, message, label, timestamp }) => {
  */
 export default winston.createLogger({
     format: format.combine(
+        errors({ stack: true }),
         timestamp(),
         plainFormat
     ),    

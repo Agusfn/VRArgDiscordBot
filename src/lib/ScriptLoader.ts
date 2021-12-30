@@ -1,5 +1,6 @@
 import { Script } from "./Script"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
+import logger from "@utils/logger"
 
 
 type ScriptSubclass = new () => Script // some weird type to represent a "newable". (constructor function that constructs a Script)
@@ -25,22 +26,39 @@ export class ScriptLoader {
         
         // Instantiate scripts
         for(let ScriptClass of this.scriptClasses) {
+
             const script = new ScriptClass()
             this.scriptInstances.push(script)
-            script.initialize() // initializes DB models (if any)
+
+            if(typeof script.initDbModels == "function") {
+                script.initDbModels()
+            }
         }
 
         // Once all scripts were initialized, sync the new models (if any) in DB
         await SequelizeDBManager.syncModels()
 
-        // Call script initialization events (if defined)
+        // Call script onInitialized events defined by the user (if exists)
         for(let script of this.scriptInstances) {
-            if(typeof script.onInitialized == "function") {
-                script.onInitialized() // (async)
+            this.callScriptOnInitialized(script) // (async)
+        }
+    }
+
+
+    /**
+     * Call "onInitialized" for a script, asynchronously, catching any error that may appear.
+     * @param script 
+     */
+    private static async callScriptOnInitialized(script: Script) {
+        if(typeof script.onInitialized == "function") {
+            try {
+                await script.onInitialized() // custom defined initialization per-script
+                logger.info("Initialized "+script.getName()+"!")
+            } catch(error: any) {
+                logger.error("Error executing onInitialized() on script " + script.getName() + ": ", error)
+                logger.error(error?.stack)
             }
         }
-
-
     }
 
 

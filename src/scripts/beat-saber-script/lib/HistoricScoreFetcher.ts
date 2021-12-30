@@ -1,4 +1,4 @@
-import { User } from "../model/index"
+import {  } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 
 export default class HistoricScoreFetcher {

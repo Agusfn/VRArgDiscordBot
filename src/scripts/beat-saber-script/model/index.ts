@@ -1,3 +1,3 @@
-export * from "./Song"
-export * from "./User"
-export * from "./UserScore"
+export * from "./Leaderboard"
+export * from "./SSPlayer"
+export * from "./PlayerScore"

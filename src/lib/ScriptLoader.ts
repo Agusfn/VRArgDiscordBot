@@ -35,6 +35,7 @@ export class ScriptLoader {
             }
         }
 
+        logger.info("All models initialized. Synchronizing...")
         // Once all scripts were initialized, sync the new models (if any) in DB
         await SequelizeDBManager.syncModels()
 

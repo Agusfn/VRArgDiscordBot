@@ -57,7 +57,6 @@ export const initializeApp = () => {
             await ScriptLoader.initializeScripts()
 
         } catch(error: any) {
-            console.log(error)
             logger.error("Error initializing bot.", error)
             logger.error(error.stack)
             closeApp()

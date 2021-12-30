@@ -1,19 +1,27 @@
-import { User, UserScore, Song } from "../model"
+import { User } from "@models/index"
+import { SSPlayer, PlayerScore, Leaderboard } from "../model"
 
 export default () => {
 
-    User.hasMany(UserScore, {
+    User.hasOne(SSPlayer, {
         foreignKey: "discordUserId"
     })
-    UserScore.belongsTo(User, {
+    SSPlayer.belongsTo(User, {
         foreignKey: "discordUserId"
     })
 
-    Song.hasMany(UserScore, {
-        foreignKey: "songHash"
+    SSPlayer.hasMany(PlayerScore, {
+        foreignKey: "playerId"
     })
-    UserScore.belongsTo(Song, {
-        foreignKey: "songHash"
+    PlayerScore.belongsTo(SSPlayer, {
+        foreignKey: "playerId"
+    })
+
+    Leaderboard.hasMany(PlayerScore, {
+        foreignKey: "leaderboardId"
+    })
+    PlayerScore.belongsTo(Leaderboard, {
+        foreignKey: "leaderboardId"
     })
     
 }

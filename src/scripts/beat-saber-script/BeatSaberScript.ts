@@ -1,7 +1,7 @@
 import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
-import { UserScore, User } from "./model/index"
+import { PlayerScore } from "./model/index"
 //import UserProfileLinking from "./lib/UserProfileLinking"
 //import UserScoreFetcher from "./lib/UserScoreFetcher"
 //import PlayerStatusChecker from "./lib/PlayerStatusChecker"

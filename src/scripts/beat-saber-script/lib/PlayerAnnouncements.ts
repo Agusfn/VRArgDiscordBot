@@ -1,4 +1,4 @@
-import { User } from "../model/index"
+import {  } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 import { Discord } from "@lib/Discord"
 import { TextChannel } from "discord.js"

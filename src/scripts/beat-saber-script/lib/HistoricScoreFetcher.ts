@@ -1,19 +1,28 @@
-import {  } from "../model/index"
+import logger from "@utils/logger"
+import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 
 export default class HistoricScoreFetcher {
     
     private static fetchRunning: boolean = false
     private static waitingForRetry: boolean
-    private static playerFetchQueue: object[]
+    private static playerFetchQueue: SSPlayer[]
 
 
-    
-    public static startPlayerFetch(ssPlayerId?: number) {
-
-        // if player not already present in list
-            // get player from db 
-            // push to player fetch queue
+    /**
+     * 
+     * @param ssPlayerId 
+     */
+    public static async startPlayerFetch(ssPlayerId?: string) {
+        
+        if(!this.playerFetchQueue.find(player => player.id == ssPlayerId)) {
+            const player = await SSPlayer.findByPk(ssPlayerId)
+            if(player) {
+                this.playerFetchQueue.push(player)
+            } else {
+                logger.warn(`Player id ${ssPlayerId} was not found.`)
+            }
+        }
 
         if(!this.fetchRunning) {
             this.runFetcher()
@@ -51,9 +60,9 @@ export default class HistoricScoreFetcher {
 
         while(this.playerFetchQueue.length > 0) {
             try {
-                // get first element
-                this.fetchHistoricScoresForPlayer(null)
-                // remove user from playerFetchQueue
+                const player = this.playerFetchQueue[0]
+                this.fetchHistoricScoresForPlayer(player)
+                this.playerFetchQueue.shift()
             } catch(error) {
                 // if max retries
                     // set waitingForRetry true
@@ -70,7 +79,7 @@ export default class HistoricScoreFetcher {
 
 
 
-    private static fetchHistoricScoresForPlayer(player: any) {
+    private static fetchHistoricScoresForPlayer(player: SSPlayer) {
 
         // check last fetched page
         // fetch next page

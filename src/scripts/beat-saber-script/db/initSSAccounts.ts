@@ -1,11 +1,11 @@
 import { DataTypes as Types } from "sequelize"
 import { User } from "@models/index"
-import { SSPlayer } from "../model"
+import { SSAccount } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
 
-    SSPlayer.init({
+    SSAccount.init({
         id: {
             type: Types.STRING,
             primaryKey: true
@@ -17,8 +17,7 @@ export default () => {
                 key: "discordUserId"
             }
         },
-        registeredDate: Types.DATE,
-        enabled: Types.BOOLEAN,
+        linkedDate: Types.DATE,
         name: Types.STRING,
         profilePicture: Types.STRING,
         country: Types.STRING,
@@ -44,14 +43,12 @@ export default () => {
         milestoneAnnouncements: {
             type: Types.BOOLEAN,
             defaultValue: true
-        },
-        updatedDate: Types.DATE
+        }
     }, 
     { 
         sequelize: SequelizeDBManager.getInstance(), 
-        modelName: "SSPlayer",
-        tableName: "scoresaber_players",
-        timestamps: false
+        modelName: "SSAccount",
+        tableName: "scoresaber_accounts"
     })
 
 }

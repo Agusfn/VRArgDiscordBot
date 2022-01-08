@@ -1,12 +1,12 @@
 import logger from "@utils/logger"
-import { SSPlayer } from "../model/index"
+import { SSAccount } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 
 export default class HistoricScoreFetcher {
     
     private static fetchRunning: boolean = false
     private static waitingForRetry: boolean
-    private static playerFetchQueue: SSPlayer[]
+    private static playerFetchQueue: SSAccount[]
 
 
     /**
@@ -16,7 +16,7 @@ export default class HistoricScoreFetcher {
     public static async startPlayerFetch(ssPlayerId?: string) {
         
         if(!this.playerFetchQueue.find(player => player.id == ssPlayerId)) {
-            const player = await SSPlayer.findByPk(ssPlayerId)
+            const player = await SSAccount.findByPk(ssPlayerId)
             if(player) {
                 this.playerFetchQueue.push(player)
             } else {
@@ -79,7 +79,7 @@ export default class HistoricScoreFetcher {
 
 
 
-    private static fetchHistoricScoresForPlayer(player: SSPlayer) {
+    private static fetchHistoricScoresForPlayer(player: SSAccount) {
 
         // check last fetched page
         // fetch next page

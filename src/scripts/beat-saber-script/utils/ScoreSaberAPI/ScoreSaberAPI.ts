@@ -11,7 +11,7 @@ export class ScoreSaberAPI {
 
     /**
      * Get player profile information
-     * @param id 
+     * @param id Scoresaber player id
      * @returns 
      */
     public async getPlayer(id: string): Promise<Player> {

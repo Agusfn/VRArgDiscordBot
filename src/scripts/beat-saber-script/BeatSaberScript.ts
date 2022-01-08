@@ -1,4 +1,4 @@
-import { Script } from "@lib/index"
+import { CommandManager, Script } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { PlayerScore } from "./model/index"
@@ -8,6 +8,7 @@ import { PlayerScore } from "./model/index"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 import { ScoreSaberAPI } from "./utils"
+import { ScoreSaberAccountManager } from "./lib/index"
 
 export class BeatSaberScript extends Script {
 
@@ -29,7 +30,7 @@ export class BeatSaberScript extends Script {
 
     public async onInitialized() {
 
-        const api = new ScoreSaberAPI()
+        //const api = new ScoreSaberAPI()
 
         //const a: any = {}
         //const b = a.v.c.a.d.w
@@ -39,6 +40,25 @@ export class BeatSaberScript extends Script {
             console.log("error json:", JSON.stringify(error, null, 4))
         }*/
         
+        CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
+
+            // Validar param
+            const scoreSaberId = args[0]
+            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
+                message.reply("Ingresa un id numérico valido de entre 5 y 20 dígitos.")
+                return
+            }
+
+            const accountManager = new ScoreSaberAccountManager()
+            const ssAccount = await accountManager.linkScoreSaberPlayerToUser(message.author.id, scoreSaberId)
+
+            if(ssAccount) {
+                message.reply(`La cuenta de ScoreSaber ${ssAccount.name} se te vinculó correctamente!`)
+            } else {
+                message.reply(accountManager.getErrorMsg())
+            }
+
+        })
 
 
         // Initialize score fetcher

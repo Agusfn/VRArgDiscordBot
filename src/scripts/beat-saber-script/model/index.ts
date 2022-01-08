@@ -1,3 +1,3 @@
 export * from "./Leaderboard"
-export * from "./SSPlayer"
+export * from "./SSAccount"
 export * from "./PlayerScore"

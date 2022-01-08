@@ -20,13 +20,13 @@ export class ScoreSaberAccountManager {
      * @param discordUserId 
      * @param scoreSaberId 
      */
-    public async linkScoreSaberPlayerToUser(discordUserId: string, scoreSaberId: string): Promise<SSAccount> {
+    public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string): Promise<SSAccount> {
 
         // Check if user has already an account linked to them
         const currentAccount = await SSAccount.findOne({ where: { discordUserId: discordUserId } })
 
         if(currentAccount) {
-            this.errorMessage = `Ya tenés una cuenta de ScoreSaber vinculada, no podés vincular otra! (Cuenta: ${currentAccount.name}, id: ${currentAccount.id})`
+            this.errorMessage = `Ya tenés la cuenta de ScoreSaber _${currentAccount.name}_ (id ${currentAccount.id}) vinculada, no podés vincular otra! `
             return null
         }
         
@@ -34,7 +34,7 @@ export class ScoreSaberAccountManager {
 
         // Check if this account is already occupied by another User
         if(existingAccount && existingAccount.discordUserId != null) {
-            this.errorMessage = `La cuenta ingresada (${existingAccount.name}) ya está siendo ocupada por otro usuario del servidor.`
+            this.errorMessage = `La cuenta ingresada _${existingAccount.name}_ ya está siendo ocupada por otro usuario del servidor.`
             return null
         } 
         
@@ -43,7 +43,9 @@ export class ScoreSaberAccountManager {
         if(existingAccount) {
             // Link existing ScoreSaber account
             existingAccount.discordUserId = discordUserId
+            existingAccount.linkedDate = new Date()
             await existingAccount.save()
+
             ssAccount = existingAccount
         } else {
 
@@ -76,6 +78,28 @@ export class ScoreSaberAccountManager {
         return ssAccount 
     }
 
+    
+
+    /**
+     * Unlink the ScoreSaber account from a given User, given its discord user id.
+     * @param discordUserId 
+     * @param scoreSaberId 
+     */
+    public async unlinkScoreSaberAccountFromUser(discordUserId: string): Promise<SSAccount> {
+
+        // check user has linked scoresaber account
+        const ssAccount = await SSAccount.findOne({where: { discordUserId: discordUserId }})
+
+        if(!ssAccount) {
+            this.errorMessage = "No tenés una cuenta de ScoreSaber vinculada a tu cuenta!"
+            return null
+        }
+
+        ssAccount.discordUserId = null
+        await ssAccount.save()
+
+        return ssAccount
+    }
 
 
 

@@ -1,6 +1,6 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
-import { UserRankInfo } from "../ts"
+import { SSAccountI, UserRankInfo } from "../ts"
 import moment from "moment"
 import { Player } from "../utils/index"
 
@@ -8,36 +8,6 @@ import { Player } from "../utils/index"
  * A ScoreSaber account. It is equivalent to the Player in terms of ScoreSaber API.
  */
 export class SSAccount extends Model {
-
-    /** ScoreSaber player id (may be Steam id) */
-    public id: string
-    /** Foreign key to identify the bot/Discord User */
-    public discordUserId: string
-    public linkedDate: Date
-    /** ScoreSaber nickname */
-    public name: string
-    /** Full URL from scoresaber cdn */
-    public profilePicture: string
-    public country: string
-    public pp: number
-    /** Global rank */
-    public rank: number
-    public countryRank: number
-    public banned: boolean
-    public inactive: boolean
-    public totalScore: number
-    public totalRankedScore: number
-    public avgRankedAccuracy: number
-    public totalPlayCount: number
-    public rankedPlayCount: number
-    // Score:
-    public fetchedAllScoreHistory: boolean
-    public lastHistoryFetchPage: number
-    public lastPeriodicStatusCheck: Date
-    public milestoneAnnouncements: boolean
-
-    public createdAt: Date
-    public updatedAt: Date
 
 
     public getRankInfo(): UserRankInfo {
@@ -77,8 +47,8 @@ export class SSAccount extends Model {
         })
     }
 
-
-    
 }
 
+
+export interface SSAccount extends SSAccountI { }
 

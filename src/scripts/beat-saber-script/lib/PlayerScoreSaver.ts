@@ -1,22 +1,57 @@
-import {  } from "../model/index"
-import { ScoreSaberAPI } from "../utils/index"
+import { SSAccount, Leaderboard, PlayerScore } from "../model/index"
+import { LeaderboardI, PlayerScoreI } from "../ts"
+import { LeaderboardInfo, PlayerScoreCollection, Score, ScoreSaberAPI } from "../utils/index"
 
-export default class PlayerScoreSaver {
+
+export class PlayerScoreSaver {
     
 
-    private static leaderboardIds: string[]
+    /**
+     * Array that contains all of the currently existing Leaderboards in the database. 
+     * It's useful for checking the existence of leaderboards without having to make DB queries.
+     */
+    private static allLeaderboardIds: number[]
 
 
-    public static initialize() {
+    public static async initialize() {
         // load ids of all leaderboards into leaderboardIds
     }
 
 
-    public static saveHistoricScorePageForPlayer(player: any, page: any) {
+    /**
+     * Store a page of scores for a given ScoreSaber account, and store any map (Leaderboard) that was not previously stored.
+     * @param player 
+     * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
+     * @param scoreCollection 
+     */
+    public static async saveHistoricScorePageForPlayer(player: SSAccount, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
+
+
+        // plain objects to bulk create for each page
+        const leaderboardToSave: LeaderboardI[]  = []
+        const scoresToSave: PlayerScoreI[] = []
+        
+        for(const score of scoreCollection.playerScores) {
+
+            // Ignore already existing Leaderboards (maps)
+            if(!this.allLeaderboardIds.includes(score.leaderboard.id)) {
+                this.allLeaderboardIds.push(score.leaderboard.id)
+                leaderboardToSave.push(this.makeLeaderboardFromApiLeaderBoard(score.leaderboard))
+            }
+
+            if(!allPlayerScoreIds.includes(score.score.id)) { // user doesn't have this score registered
+                allPlayerScoreIds.push(score.score.id)
+                scoresToSave.push(this.makePlayerScoreFromApiScore(score.score, user.discordUserId))
+            }
+        }
+
+        //songsLoaded += leaderboardToSave.length
+        await Leaderboard.bulkCreate(leaderboardToSave)
+        await PlayerScore.bulkCreate(scoresToSave)
 
         // for each score in page
-            this.saveNewMapIfDoesntExist(null)
-            this.savePlayerScore(null)
+        this.saveNewMapIfDoesntExist(null)
+        this.savePlayerScore(null)
 
     }
 
@@ -46,6 +81,33 @@ export default class PlayerScoreSaver {
 
     }
 
+    /**
+     * Make a plain object for a Leaderboard from the Leaderboard data from the API.
+     * @param score 
+     * @returns 
+     */
+    private static makeLeaderboardFromApiLeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
+        return {
+            songHash: score.songHash,
+            songName: score.songName,
+            songSubName: score.songSubName,
+            songAuthorName: score.songAuthorName,
+            levelAuthorName: score.levelAuthorName
+        }
+    }
+
+    private static makePlayerScoreFromApiScore(score: Score, discordUserId: string): PlayerScoreI {
+        return {
+            scoreId: score.scoreId,
+            date: new Date(score.timeSet),
+            discordUserId: discordUserId,
+            songHash: score.songHash,
+            globalRank: score.rank,
+            score: score.score,
+            pp: score.pp,
+            weight: score.weight
+        }
+    }
  
     
 }

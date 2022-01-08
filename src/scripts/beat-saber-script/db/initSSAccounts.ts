@@ -1,4 +1,4 @@
-import { DataTypes as Types } from "sequelize"
+import { DataTypes as Types, Op } from "sequelize"
 import { User } from "@models/index"
 import { SSAccount } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
@@ -48,7 +48,19 @@ export default () => {
     { 
         sequelize: SequelizeDBManager.getInstance(), 
         modelName: "SSAccount",
-        tableName: "scoresaber_accounts"
+        tableName: "scoresaber_accounts",
+        scopes: { // query scopes
+
+            pendingHistoricFetch: {
+                where: {
+                    fetchedAllScoreHistory: false,
+                    discordUserId: {
+                        [Op.ne]: null
+                    }
+                }
+            }
+
+        }
     })
 
 }

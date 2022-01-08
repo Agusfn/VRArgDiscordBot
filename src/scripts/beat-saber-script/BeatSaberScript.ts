@@ -8,7 +8,7 @@ import { PlayerScore } from "./model/index"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 import { ScoreSaberAPI } from "./utils"
-import { ScoreSaberAccountManager } from "./lib/index"
+import { ScoreSaberAccountManager, HistoricScoreFetcher } from "./lib/index"
 
 export class BeatSaberScript extends Script {
 
@@ -30,15 +30,10 @@ export class BeatSaberScript extends Script {
 
     public async onInitialized() {
 
-        //const api = new ScoreSaberAPI()
 
-        //const a: any = {}
-        //const b = a.v.c.a.d.w
-        //try {
-        /*} catch(error) {
-            console.log("error: ", error)
-            console.log("error json:", JSON.stringify(error, null, 4))
-        }*/
+        // Start historic fetcher for any pending fetch scores from scoresaber accounts
+        HistoricScoreFetcher.startFetcher()
+
         
         CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
 

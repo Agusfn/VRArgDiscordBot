@@ -1,5 +1,6 @@
 import { SSAccount } from "../model/index"
 import { ScoreSaberAPI, Player } from "../utils/index"
+import { HistoricScoreFetcher } from "./HistoricScoreFetcher"
 
 /**
  * Class that handles the creation, update, enabling, and disabling of ScoreSaber accounts.
@@ -73,12 +74,12 @@ export class ScoreSaberAccountManager {
 
         }
 
-        // start sync
+        await HistoricScoreFetcher.addPlayerToFetchQueue(ssAccount.id)
 
         return ssAccount 
     }
 
-    
+
 
     /**
      * Unlink the ScoreSaber account from a given User, given its discord user id.

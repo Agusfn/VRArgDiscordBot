@@ -85,8 +85,14 @@ export class CommandManager {
             command.description(description)
         }
         command.showHelpOnEmpty()
-        .action( (metadata: CommandMetadata, ...params: any) => {
-            commandAction(metadata.message, params)
+        .action( async (metadata: CommandMetadata, ...params: any) => { // register the handler function for this command in bot-commander
+            try {
+                await commandAction(metadata.message, params) 
+            } catch(error: any) {
+                logger.error(error)
+                logger.error(error?.stack)
+                metadata.message.reply("Ocurrió un error ejecutando el comando. Revisa el log para más información.")
+            }
         })
 
 
@@ -126,7 +132,7 @@ export class CommandManager {
 
         const executeCommand = () => {
             const metadata: CommandMetadata = { message: message } // Include Discord Message object into the bot-commander command metadata so we can have it in the handler.
-            bot.parse(message.content, metadata)
+            bot.parse(message.content, metadata) // parse and execute command with bot-commander
         }
 
         if(command.type == CommandType.PUBLIC) {

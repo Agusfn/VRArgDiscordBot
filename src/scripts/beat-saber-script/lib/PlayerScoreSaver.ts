@@ -26,9 +26,8 @@ export class PlayerScoreSaver {
      */
     public static async saveHistoricScorePageForPlayer(player: SSAccount, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
 
-
         // plain objects to bulk create for each page
-        const leaderboardToSave: LeaderboardI[]  = []
+        const leaderboardToSave: LeaderboardI[] = []
         const scoresToSave: PlayerScoreI[] = []
         
         for(const score of scoreCollection.playerScores) {
@@ -41,7 +40,7 @@ export class PlayerScoreSaver {
 
             if(!allPlayerScoreIds.includes(score.score.id)) { // user doesn't have this score registered
                 allPlayerScoreIds.push(score.score.id)
-                scoresToSave.push(this.makePlayerScoreFromApiScore(score.score, user.discordUserId))
+                scoresToSave.push(this.makePlayerScoreFromApiScore(score.score, player.discordUserId))
             }
         }
 
@@ -88,11 +87,18 @@ export class PlayerScoreSaver {
      */
     private static makeLeaderboardFromApiLeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
         return {
-            songHash: score.songHash,
-            songName: score.songName,
-            songSubName: score.songSubName,
-            songAuthorName: score.songAuthorName,
-            levelAuthorName: score.levelAuthorName
+            id: leaderboard.id,
+            songHash: leaderboard.songHash,
+            songName: leaderboard.songName,
+            songSubName: leaderboard.songSubName,
+            songAuthorName: leaderboard.songAuthorName,
+            levelAuthorName: leaderboard.levelAuthorName,
+            difficultyNumber: leaderboard.difficulty.difficulty,
+            difficultyName: leaderboard.difficulty.difficultyRaw,
+            maxScore: leaderboard.maxScore,
+            ranked: leaderboard.ranked,
+            stars: leaderboard.stars,
+            createdDate: leaderboard.createdDate
         }
     }
 

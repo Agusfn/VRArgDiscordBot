@@ -2,6 +2,7 @@ import { Op } from "sequelize"
 import logger from "@utils/logger"
 import { SSAccount, PlayerScore } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
+import { PlayerScoreSaver } from "./PlayerScoreSaver"
 
 const SCORES_FETCHED_PER_PAGE = 100
 
@@ -34,7 +35,7 @@ export class HistoricScoreFetcher {
 
         this.playerFetchQueue.push(ssAccount)
 
-        if(!this.fetchRunning) {
+        if(!this.fetchRunning) { // run fetcher if not running
             this.startFetcher() // async
         }
 
@@ -69,7 +70,7 @@ export class HistoricScoreFetcher {
             try {
                 const ssAccount = this.playerFetchQueue[0]
                 await this.fetchHistoricScoresForSSPlayer(ssAccount)
-                this.playerFetchQueue.shift()
+                this.playerFetchQueue.shift() // remove first elem
             } catch(error) {
                 // if max retries
                     // set waitingForRetry true
@@ -99,7 +100,7 @@ export class HistoricScoreFetcher {
             attributes: ["id"]
         })).map(score => score.id)
 
-        console.log("playerScoreIds", playerScoreIds)
+        console.log("player " + player.name + "score ids: ", playerScoreIds)
 
         // check last fetched page
         // fetch next page
@@ -109,25 +110,21 @@ export class HistoricScoreFetcher {
         let nextFetchPage = player.lastHistoryFetchPage + 1
         const api = new ScoreSaberAPI()
 
-        let songsLoaded = 0
+        //let songsLoaded = 0
 
         while(endPageReached != true) {
 
             const scoreCollection = await api.getScores(player.id, "recent", nextFetchPage, SCORES_FETCHED_PER_PAGE)
 
             if(scoreCollection && scoreCollection.playerScores.length > 0) {
-                
 
+                logger.info(`Page ${nextFetchPage} of historic scores loaded.`)
 
-                if(nextFetchPage % 10 == 0) {
-                    logger.info(`Page ${nextFetchPage} of historic scores loaded. New songs loaded in last 10 pages: ${songsLoaded}`)
-                    songsLoaded = 0
-                }
+                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, playerScoreIds, scoreCollection)
 
                 player.lastHistoryFetchPage = nextFetchPage
                 await player.save()
                 nextFetchPage += 1
-
             } else { // end page reached
                 if(process.env.DEBUG == "true") {
                     logger.info(`Finished loading historic scores for ScoreSaber player ${player.name} (id ${player.id})`)

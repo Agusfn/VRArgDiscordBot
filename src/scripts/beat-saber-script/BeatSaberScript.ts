@@ -34,7 +34,11 @@ export class BeatSaberScript extends Script {
         // Start historic fetcher for any pending fetch scores from scoresaber accounts
         HistoricScoreFetcher.startFetcher()
 
-        
+    
+        /**
+         * Commands
+         */
+
         CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
 
             // Validar param

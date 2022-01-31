@@ -74,6 +74,7 @@ export class ScoreSaberAccountManager {
 
         }
 
+        // Start fetching this new player's scores
         await HistoricScoreFetcher.addPlayerToFetchQueue(ssAccount.id)
 
         return ssAccount 

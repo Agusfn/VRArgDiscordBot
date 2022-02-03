@@ -1,10 +1,16 @@
+import { LeaderboardInfo, PlayerScoreCollection, PlayerScore as PlayerScoreAPI, Score, ScoreSaberAPI } from "../utils/index"
 import { SSPlayer, Leaderboard, PlayerScore } from "../model/index"
 import { LeaderboardI, PlayerScoreI } from "../ts"
-import { LeaderboardInfo, PlayerScoreCollection, Score, ScoreSaberAPI } from "../utils/index"
+import logger from "@utils/logger"
 
 
+/**
+ * Class that handles the saving of player scores and the related leaderboards (song maps) into the database.
+ */
 export class PlayerScoreSaver {
     
+
+    private static initialized = false
 
     /**
      * Array that contains all of the currently existing Leaderboards in the database. 
@@ -13,52 +19,67 @@ export class PlayerScoreSaver {
     private static allLeaderboardIds: number[]
 
 
+    /**
+     * Initialize this class by loading all of the existing leaderboards ids into the array (to later check if a leaderboard exists or must be saved)
+     */
     public static async initialize() {
-        // load ids of all leaderboards into leaderboardIds
+        if(!this.initialized) {
+            this.initialized = true
+
+            // Fetch all leaderboard ids from DB into the array.
+            this.allLeaderboardIds = (await Leaderboard.findAll({
+                attributes: ["id"]
+            })).map(leaderboard => leaderboard.id)
+        }
     }
 
-
+    
     /**
-     * Store a page of scores for a given ScoreSaber account, and store any map (Leaderboard) that was not previously stored.
-     * @param player 
+     * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored.
+     * @param player The ScoreSaber Player
      * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
-     * @param scoreCollection 
+     * @param scoreCollection Collection of scores from ScoreSaber API for a given page
      */
     public static async saveHistoricScorePageForPlayer(player: SSPlayer, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
 
-        // plain objects to bulk create for each page
-        const leaderboardToSave: LeaderboardI[] = []
+        // We will bulk save the PlayerScores and Leaderboards unlike with periodic fetching, since historic fetching saves scores and maps in a larger scale
+        const leaderboardsToSave: LeaderboardI[] = []
         const scoresToSave: PlayerScoreI[] = []
         
         for(const score of scoreCollection.playerScores) {
 
-            // Ignore already existing Leaderboards (maps)
+            // Save new Leaderboards (song map info) associated with the score
             if(!this.allLeaderboardIds.includes(score.leaderboard.id)) {
+                const newLeaderboard: LeaderboardI = this.makeLeaderboardFromApiLeaderBoard(score.leaderboard)
+                leaderboardsToSave.push(newLeaderboard)
                 this.allLeaderboardIds.push(score.leaderboard.id)
-                leaderboardToSave.push(this.makeLeaderboardFromApiLeaderBoard(score.leaderboard))
             }
 
-            if(!allPlayerScoreIds.includes(score.score.id)) { // user doesn't have this score registered
+            // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
+            if(!allPlayerScoreIds.includes(score.score.id)) {
+                const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score.score, player.discordUserId)
+                scoresToSave.push(newScore)
                 allPlayerScoreIds.push(score.score.id)
-                scoresToSave.push(this.makePlayerScoreFromApiScore(score.score, player.discordUserId))
             }
         }
 
-        //songsLoaded += leaderboardToSave.length
-        await Leaderboard.bulkCreate(leaderboardToSave)
+        await Leaderboard.bulkCreate(leaderboardsToSave)
+        logger.info("Bulk created " + leaderboardsToSave.length + " leaderboards")
         await PlayerScore.bulkCreate(scoresToSave)
-
-        // for each score in page
-        this.saveNewMapIfDoesntExist(null)
-        this.savePlayerScore(null)
-
+        logger.info("bulk created " + scoresToSave.length + " scores")
     }
 
 
+    /**
+     * Given a new score submitted by a player
+     * @param player 
+     * @param score 
+     */
+    public static saveNewScoreForPlayer(player: SSPlayer, score: PlayerScoreAPI) {
 
-    public static saveNewScoreForPlayer(player: any, score: any) {
+        
 
-        this.savePlayerScore(score)
+        //this.savePlayerScore(score)
         
 
 

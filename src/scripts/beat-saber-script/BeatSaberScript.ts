@@ -8,7 +8,7 @@ import { PlayerScore } from "./model/index"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 import { ScoreSaberAPI } from "./utils"
-import { ScoreSaberAccountManager, HistoricScoreFetcher } from "./lib/index"
+import { ScoreSaberAccountManager, HistoricScoreFetcher, PlayerScoreSaver } from "./lib/index"
 
 export class BeatSaberScript extends Script {
 
@@ -30,10 +30,10 @@ export class BeatSaberScript extends Script {
 
     public async onInitialized() {
 
+        // Initialize important score fetching/saving classes
+        await PlayerScoreSaver.initialize()
 
-        /**
-         * Start historic fetcher for any pending fetch scores from scoresaber accounts
-         */
+        // Start historic fetcher for any pending fetch scores from scoresaber accounts
         HistoricScoreFetcher.startFetcher()
 
     

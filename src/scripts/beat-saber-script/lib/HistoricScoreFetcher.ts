@@ -65,14 +65,14 @@ export class HistoricScoreFetcher {
     }
 
 
-
-
-
+    /**
+     * Fetch the historic scores for each SSPlayer of the fetch queue.
+     */
     private static async processFetchQueue() {
 
         while(this.playerFetchQueue.length > 0) {
             try {
-                const ssPlayer = this.playerFetchQueue[0]
+                const ssPlayer = this.playerFetchQueue[0] // grab first in queue
                 await this.fetchHistoricScoresForSSPlayer(ssPlayer)
                 this.playerFetchQueue.shift() // remove first elem
             } catch(error) {
@@ -98,33 +98,30 @@ export class HistoricScoreFetcher {
             logger.info(`Starting historic score fetch for ScoreSaber player ${player.name}`)
         }
 
-        // Get an array of all existing player score ids, so we can make sure to add only new scores
-        const playerScoreIds = (await PlayerScore.findAll({
+        // Get an array from DB of ALL existing score ids of this player, so we can make sure to add only new scores
+        const allPlayerScoreIds = (await PlayerScore.findAll({
             where: { playerId: player.id },
             attributes: ["id"]
         })).map(score => score.id)
 
-        console.log("player " + player.name + "score ids: ", playerScoreIds)
-
-        // check last fetched page
-        // fetch next page
-        // save said page of scores
+        console.log("player " + player.name + " all score ids: ", allPlayerScoreIds)
         
         let endPageReached = false
-        let nextFetchPage = player.lastHistoryFetchPage + 1
+        let nextFetchPage = player.lastHistoryFetchPage + 1 // most recent page is 1
         const api = new ScoreSaberAPI()
 
         //let songsLoaded = 0
 
         while(endPageReached != true) {
 
-            const scoreCollection = await api.getScores(player.id, "recent", nextFetchPage, SCORES_FETCHED_PER_PAGE)
+            // Fetch scores of following page
+            const scorePageCollection = await api.getScores(player.id, "recent", nextFetchPage, SCORES_FETCHED_PER_PAGE)
 
-            if(scoreCollection && scoreCollection.playerScores.length > 0) {
+            if(scorePageCollection && scorePageCollection.playerScores.length > 0) {
 
                 logger.info(`Page ${nextFetchPage} of historic scores loaded.`)
 
-                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, playerScoreIds, scoreCollection)
+                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, allPlayerScoreIds, scorePageCollection)
 
                 player.lastHistoryFetchPage = nextFetchPage
                 await player.save()

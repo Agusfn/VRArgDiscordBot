@@ -31,7 +31,9 @@ export class BeatSaberScript extends Script {
     public async onInitialized() {
 
 
-        // Start historic fetcher for any pending fetch scores from scoresaber accounts
+        /**
+         * Start historic fetcher for any pending fetch scores from scoresaber accounts
+         */
         HistoricScoreFetcher.startFetcher()
 
     
@@ -49,10 +51,10 @@ export class BeatSaberScript extends Script {
             }
 
             const accountManager = new ScoreSaberAccountManager()
-            const ssAccount = await accountManager.linkScoreSaberAccountToUser(message.author.id, scoreSaberId)
+            const ssPlayer = await accountManager.linkScoreSaberAccountToUser(message.author.id, scoreSaberId)
 
-            if(ssAccount) {
-                message.reply(`La cuenta de ScoreSaber _${ssAccount.name}_ se te vinculó correctamente!`)
+            if(ssPlayer) {
+                message.reply(`La cuenta de ScoreSaber _${ssPlayer.name}_ se te vinculó correctamente!`)
             } else {
                 message.reply(accountManager.getErrorMsg())
             }
@@ -62,10 +64,10 @@ export class BeatSaberScript extends Script {
         CommandManager.newCommand("deslinkear_ss", null, async (message: Message, args) => {
 
             const accountManager = new ScoreSaberAccountManager()
-            const ssAccount = await accountManager.unlinkScoreSaberAccountFromUser(message.author.id)
+            const ssPlayer = await accountManager.unlinkScoreSaberAccountFromUser(message.author.id)
 
-            if(ssAccount) {
-                message.reply(`La cuenta de ScoreSaber _${ssAccount.name}_ (id ${ssAccount.id}) se desvinculó correctamente!`)
+            if(ssPlayer) {
+                message.reply(`La cuenta de ScoreSaber _${ssPlayer.name}_ (id ${ssPlayer.id}) se desvinculó correctamente!`)
             } else {
                 message.reply(accountManager.getErrorMsg())
             }

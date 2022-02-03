@@ -1,6 +1,6 @@
 import { Op } from "sequelize"
 import logger from "@utils/logger"
-import { SSAccount, PlayerScore } from "../model/index"
+import { SSPlayer, PlayerScore } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 import { PlayerScoreSaver } from "./PlayerScoreSaver"
 
@@ -14,17 +14,39 @@ const SCORES_FETCHED_PER_PAGE = 100
 export class HistoricScoreFetcher {
     
     private static fetchRunning: boolean = false
-    private static playerFetchQueue: SSAccount[] = []
+    private static playerFetchQueue: SSPlayer[] = []
+
+
+    /**
+     * Start historic score fetcher by adding all pending fetch users to fetch queue and processing it.
+     */
+     public static async startFetcher() {
+
+        if(this.fetchRunning) return
+        this.fetchRunning = true
+
+        // Load in queue all pending players from DB that are not already in the queue (useful when resuming the fetch after an interruption)
+        const playersPendingFetch = await SSPlayer.scope("pendingHistoricFetch").findAll()
+        playersPendingFetch.forEach(playerPending => {
+            if(!this.playerFetchQueue.find(player => player.id == playerPending.id)) { // ommit players if already in queue (queue was pre filled with players)
+                this.playerFetchQueue.push(playerPending)
+            }
+        })
+
+        await this.processFetchQueue()
+
+        this.fetchRunning = false
+    }
 
 
     /**
      * Add a player to the fetch queue and start the fetcher (if not already running)
      * @param ssPlayerId 
      */
-    public static async addPlayerToFetchQueue(ssPlayerId: string) {
+    public static async addPlayerToQueueAndStartFetcher(ssPlayerId: string) {
         
-        const ssAccount = await SSAccount.findByPk(ssPlayerId)
-        if(!ssAccount) {
+        const ssPlayer = await SSPlayer.findByPk(ssPlayerId)
+        if(!ssPlayer) {
             logger.warn(`ScoreSaber player id ${ssPlayerId} was not found in DB.`)
             return
         }
@@ -33,43 +55,25 @@ export class HistoricScoreFetcher {
             return
         }
 
-        this.playerFetchQueue.push(ssAccount)
+        this.playerFetchQueue.push(ssPlayer)
 
-        if(!this.fetchRunning) { // run fetcher if not running
+        // run fetcher if not already running
+        if(!this.fetchRunning) { 
             this.startFetcher() // async
         }
 
     }
 
-    /**
-     * start fetching user by user historic score in user fetch queue
-     */
-    public static async startFetcher() {
 
-        if(this.fetchRunning) return
-        this.fetchRunning = true
 
-        // Load in queue all pending players from DB that are not already in the queue (useful when resuming the fetch after an interruption)
-        const playersPendingFetch = await SSAccount.scope("pendingHistoricFetch").findAll()
-        playersPendingFetch.forEach(playerInDb => {
-            if(!this.playerFetchQueue.find(playerInQueue => playerInQueue.id == playerInDb.id)) {
-                this.playerFetchQueue.push(playerInDb)
-            }
-        })
-
-        await this.processFetchQueue()
-
-        this.fetchRunning = false
-
-    }
 
 
     private static async processFetchQueue() {
 
         while(this.playerFetchQueue.length > 0) {
             try {
-                const ssAccount = this.playerFetchQueue[0]
-                await this.fetchHistoricScoresForSSPlayer(ssAccount)
+                const ssPlayer = this.playerFetchQueue[0]
+                await this.fetchHistoricScoresForSSPlayer(ssPlayer)
                 this.playerFetchQueue.shift() // remove first elem
             } catch(error) {
                 // if max retries
@@ -85,10 +89,10 @@ export class HistoricScoreFetcher {
 
 
     /**
-     * Fetch all historic scores for a given ScoreSaber player (or SSAccount)
+     * Fetch all historic scores for a given ScoreSaberPlayer (SSPlayer)
      * @param player 
      */
-    private static async fetchHistoricScoresForSSPlayer(player: SSAccount) {
+    private static async fetchHistoricScoresForSSPlayer(player: SSPlayer) {
 
         if(process.env.DEBUG == "true") {
             logger.info(`Starting historic score fetch for ScoreSaber player ${player.name}`)

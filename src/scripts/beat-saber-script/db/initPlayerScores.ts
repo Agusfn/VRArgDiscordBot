@@ -1,5 +1,5 @@
 import { DataTypes as Types } from "sequelize"
-import { PlayerScore, SSAccount, Leaderboard } from "../model"
+import { PlayerScore, SSPlayer, Leaderboard } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
@@ -12,7 +12,7 @@ export default () => {
         playerId: {
             type: Types.INTEGER,
             references: {
-                model: SSAccount,
+                model: SSPlayer,
                 key: "id"
             }
         },

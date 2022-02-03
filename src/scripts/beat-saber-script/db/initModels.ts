@@ -1,6 +1,6 @@
 import initLeaderboards from "./initLeaderboards"
 import initPlayerScores from "./initPlayerScores"
-import initSSPlayers from "./initSSAccounts"
+import initSSPlayers from "./initSSPlayers"
 import setRelationships from "./setRelationships"
 
 /**

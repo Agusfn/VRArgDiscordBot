@@ -1,13 +1,13 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
-import { SSAccountI, UserRankInfo } from "../ts"
+import { SSPlayerI, UserRankInfo } from "../ts"
 import moment from "moment"
 import { Player } from "../utils/index"
 
 /**
  * A ScoreSaber account. It is equivalent to the Player in terms of ScoreSaber API.
  */
-export class SSAccount extends Model {
+export class SSPlayer extends Model {
 
 
     public getRankInfo(): UserRankInfo {
@@ -50,5 +50,5 @@ export class SSAccount extends Model {
 }
 
 
-export interface SSAccount extends SSAccountI { }
+export interface SSPlayer extends SSPlayerI { }
 

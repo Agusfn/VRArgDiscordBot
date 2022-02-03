@@ -1,4 +1,4 @@
-import { SSAccount, Leaderboard, PlayerScore } from "../model/index"
+import { SSPlayer, Leaderboard, PlayerScore } from "../model/index"
 import { LeaderboardI, PlayerScoreI } from "../ts"
 import { LeaderboardInfo, PlayerScoreCollection, Score, ScoreSaberAPI } from "../utils/index"
 
@@ -24,7 +24,7 @@ export class PlayerScoreSaver {
      * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
      * @param scoreCollection 
      */
-    public static async saveHistoricScorePageForPlayer(player: SSAccount, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
+    public static async saveHistoricScorePageForPlayer(player: SSPlayer, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
 
         // plain objects to bulk create for each page
         const leaderboardToSave: LeaderboardI[] = []

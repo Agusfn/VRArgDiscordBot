@@ -1,19 +1,19 @@
 import { User } from "@models/index"
-import { SSAccount, PlayerScore, Leaderboard } from "../model"
+import { SSPlayer, PlayerScore, Leaderboard } from "../model"
 
 export default () => {
 
-    User.hasOne(SSAccount, {
+    User.hasOne(SSPlayer, {
         foreignKey: "discordUserId"
     })
-    SSAccount.belongsTo(User, {
+    SSPlayer.belongsTo(User, {
         foreignKey: "discordUserId"
     })
 
-    SSAccount.hasMany(PlayerScore, {
+    SSPlayer.hasMany(PlayerScore, {
         foreignKey: "playerId"
     })
-    PlayerScore.belongsTo(SSAccount, {
+    PlayerScore.belongsTo(SSPlayer, {
         foreignKey: "playerId"
     })
 

@@ -18,7 +18,7 @@ export interface PlayerScoreI {
 }
 
 
-export interface SSAccountI {
+export interface SSPlayerI {
     /** ScoreSaber player id (may be Steam id) */
     id: string
     /** Foreign key to identify the bot/Discord User */

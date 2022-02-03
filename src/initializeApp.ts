@@ -44,13 +44,13 @@ export const initializeApp = () => {
             // Initialize global (application-wide) models
             await initGlobalModels()
 
-            // Load some important Discord objects into our Discord helper
+            // Load some important Discord objects into our Discord helper class
             await Discord.loadGuild()
 
             // Initialize user manager and load unregistered users
             await UserManager.initialize()
 
-            // Register all base commands (these may only be called after Discord client initializes)
+            // Register all base commands (these can be called only after Discord client initializes)
             registerBaseCommands()
 
             // Initialize the user defined scripts
@@ -78,7 +78,7 @@ export const initializeApp = () => {
      * Configure a global discord message listener, so any message starting with "/" is parsed by bot commander (commands must be added on each script)
      */
     Discord.getInstance().on("messageCreate", (message: Message) => {
-        if(!message.author.bot && message.content.startsWith(COMMAND_PREFIX)) { // is likely a command, inspect further in handler.
+        if(!message.author.bot && message.content.startsWith(COMMAND_PREFIX)) { // is likely a command, inspect further in handler method.
             CommandManager.onUserSubmitCommand(message)
         }
     })

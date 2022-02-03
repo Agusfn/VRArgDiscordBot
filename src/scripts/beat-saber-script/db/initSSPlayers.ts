@@ -1,11 +1,11 @@
 import { DataTypes as Types, Op } from "sequelize"
 import { User } from "@models/index"
-import { SSAccount } from "../model"
+import { SSPlayer } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 
 export default () => {
 
-    SSAccount.init({
+    SSPlayer.init({
         id: {
             type: Types.STRING,
             primaryKey: true
@@ -47,8 +47,8 @@ export default () => {
     }, 
     { 
         sequelize: SequelizeDBManager.getInstance(), 
-        modelName: "SSAccount",
-        tableName: "scoresaber_accounts",
+        modelName: "SSPlayer",
+        tableName: "scoresaber_players",
         scopes: { // query scopes
 
             pendingHistoricFetch: {

@@ -1,4 +1,4 @@
-import { SSAccount } from "../model/index"
+import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI, Player } from "../utils/index"
 import { HistoricScoreFetcher } from "./HistoricScoreFetcher"
 
@@ -21,17 +21,17 @@ export class ScoreSaberAccountManager {
      * @param discordUserId 
      * @param scoreSaberId 
      */
-    public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string): Promise<SSAccount> {
+    public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string): Promise<SSPlayer> {
 
         // Check if user has already an account linked to them
-        const currentAccount = await SSAccount.findOne({ where: { discordUserId: discordUserId } })
+        const currentAccount = await SSPlayer.findOne({ where: { discordUserId: discordUserId } })
 
         if(currentAccount) {
             this.errorMessage = `Ya tenés la cuenta de ScoreSaber _${currentAccount.name}_ (id ${currentAccount.id}) vinculada, no podés vincular otra! `
             return null
         }
         
-        const existingAccount = await SSAccount.findByPk(scoreSaberId)
+        const existingAccount = await SSPlayer.findByPk(scoreSaberId)
 
         // Check if this account is already occupied by another User
         if(existingAccount && existingAccount.discordUserId != null) {
@@ -39,7 +39,7 @@ export class ScoreSaberAccountManager {
             return null
         } 
         
-        let ssAccount: SSAccount
+        let ssPlayer: SSPlayer
 
         if(existingAccount) {
             // Link existing ScoreSaber account
@@ -47,7 +47,7 @@ export class ScoreSaberAccountManager {
             existingAccount.linkedDate = new Date()
             await existingAccount.save()
 
-            ssAccount = existingAccount
+            ssPlayer = existingAccount
         } else {
 
             // Fetch from API
@@ -65,19 +65,19 @@ export class ScoreSaberAccountManager {
                 return null
             }
 
-            ssAccount = SSAccount.build({
+            /*ssPlayer = SSPlayer.build({
                 discordUserId: discordUserId,
                 linkedDate: new Date()
             })
-            ssAccount.fillWithSSPlayerData(ssPlayer)
-            await ssAccount.save()
+            ssPlayer.fillWithSSPlayerData(ssPlayer)
+            await ssPlayer.save()*/
 
         }
 
         // Start fetching this new player's scores
-        await HistoricScoreFetcher.addPlayerToFetchQueue(ssAccount.id)
+        await HistoricScoreFetcher.addPlayerToQueueAndStartFetcher(ssPlayer.id)
 
-        return ssAccount 
+        return ssPlayer 
     }
 
 
@@ -87,20 +87,20 @@ export class ScoreSaberAccountManager {
      * @param discordUserId 
      * @param scoreSaberId 
      */
-    public async unlinkScoreSaberAccountFromUser(discordUserId: string): Promise<SSAccount> {
+    public async unlinkScoreSaberAccountFromUser(discordUserId: string): Promise<SSPlayer> {
 
         // check user has linked scoresaber account
-        const ssAccount = await SSAccount.findOne({where: { discordUserId: discordUserId }})
+        const ssPlayer = await SSPlayer.findOne({where: { discordUserId: discordUserId }})
 
-        if(!ssAccount) {
+        if(!ssPlayer) {
             this.errorMessage = "No tenés una cuenta de ScoreSaber vinculada a tu cuenta!"
             return null
         }
 
-        ssAccount.discordUserId = null
-        await ssAccount.save()
+        ssPlayer.discordUserId = null
+        await ssPlayer.save()
 
-        return ssAccount
+        return ssPlayer
     }
 
 

@@ -3,7 +3,11 @@ import { Message, TextChannel } from "discord.js"
 import { CommandManager, Discord } from "@lib/index"
 
 
-const MAX_MSGS_IN_CHANNEL_FOR_INDEX = 90
+/**
+ * The maximum amount of messages allowed to exist in a channel for indexes to be generated (to avoid accidentally generating indexes in conversation channels)
+ */
+const MAX_MSGS_INDEXES = 200
+
 
 
 export class ServerHelper extends Script {
@@ -19,44 +23,54 @@ export class ServerHelper extends Script {
         CommandManager.newAdminCommand("generar_indices", "<id canal>", async (userMessage: Message, args) => {
 
             try {
-                const selectedChannel = <TextChannel>Discord.getGuild().channels.cache.find(channel => channel.id == args[0] && channel.isText())
-
+                const selectedChannel = await Discord.getTextChannel(args[0])
                 if(!selectedChannel) {
                     userMessage.reply("No se encontró el canal de texto con el id indicado."); return
                 }
 
-                const channelMessages = (await selectedChannel.messages.fetch({limit: MAX_MSGS_IN_CHANNEL_FOR_INDEX + 10})).sort((a, b) => a.createdAt > b.createdAt ? 1 : -1)
-                if(channelMessages.size > MAX_MSGS_IN_CHANNEL_FOR_INDEX) {
-                    userMessage.reply("El índice no se puede generar sobre canales con más de 50 mensajes."); return
+                const channelMessages = await Discord.fetchMultipleMsgsFromChannel(args[0], MAX_MSGS_INDEXES)
+                if(channelMessages.length > MAX_MSGS_INDEXES) {
+                    userMessage.reply("El índice no se puede generar sobre canales con más de "+MAX_MSGS_INDEXES+" mensajes. El canal seleccionado tiene " + channelMessages.length + " mensajes."); return
                 }
 
-                // Remove previous self messages
+                // Remove previous self (bot) messages
                 const botMessages = channelMessages.filter(message => message.author.id == process.env.DISCORD_BOT_USER_ID)
-                for(const [msgId, message] of botMessages) {
+                for(const message of botMessages) {
                     await message.delete()
                 }
 
                 // Generate string message with index
-                let indexText = "**__ÍNDICE__**\n\n"
-                for(const [msgId, message] of channelMessages) {
-                    const plainMsg = message.content.replace(/[_*`~]/g, "") // remove any text format chars: * _ ` ~
+                //let indexMarkdownText = "**__ÍNDICE__**\n\n"
+                let indexMarkdownText = ""
 
-                    const titlesRegex = new RegExp("^(##?) (.*)$","gm") // match titles and subtitles
+                for(const message of channelMessages) {
 
-                    let match
-                    while(match = titlesRegex.exec(plainMsg)) {
-                        console.log("match", match)
-                        if(match[1] == "#") { // title
-                            indexText += match[2] + " ---> " + message.url + "\n"
-                        } else if(match[1] == "##") { // subtitle
-                            indexText += "  |-> " + match[2] + /*" ---> " + message.url +*/ "\n"
+                    const plainMsg = message.content.replace(/[_*`~]/g, "") // remove any text format chars, which are these: * _ ` ~
+                    const titlesRegex = new RegExp("^(##?) (.*)$","gm") // matcher for titles and subtitles
+
+                    let matches
+                    while(matches = titlesRegex.exec(plainMsg)) {
+                        //console.log("match", matches)
+                        const title = matches[2]
+                        if(matches[1] == "#") { // title
+                            indexMarkdownText += `[${title}](${message.url})\n` // new line with hyperlink for title
+                        } else if(matches[1] == "##") { // subtitle
+                            indexMarkdownText += `\u200b \u200b \u200b|-> [${title}](${message.url})\n` // symbols at beginning are white spaces
                         }
                     }
 
                 }
 
                 // Submit index as last reply
-                selectedChannel.send(indexText)
+                console.log(indexMarkdownText)
+                selectedChannel.send({
+                    embeds: [{
+                        title: 'ÍNDICE',
+                        description: indexMarkdownText,
+                    }],
+                });
+
+
             } catch(error) {
                 console.log(error)
             }

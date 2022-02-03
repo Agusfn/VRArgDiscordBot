@@ -8,7 +8,7 @@ import * as dotenv from "dotenv"
 import initGlobalModels from "@models/initModels"
 import { Discord, UserManager, CommandManager } from "@lib/index"
 import { ScriptLoader } from "./lib/ScriptLoader"
-import { GuildMember, Message } from "discord.js"
+import { GuildMember, Message, TextChannel } from "discord.js"
 import registerBaseCommands from "./commands/registerBaseCommands"
 
 
@@ -33,8 +33,8 @@ export const initializeApp = () => {
     Discord.getInstance().on("ready", async () => {
         try {
             // Add discord logging channel to logger
-            const logChannel = await Discord.getTextChannel(process.env.DISCORD_CHANNEL_ID_LOGGING)
-            logger.add(new DiscordTransport(logChannel))
+            const logChannel = await Discord.getInstance().channels.fetch(process.env.DISCORD_CHANNEL_ID_LOGGING)
+            logger.add(new DiscordTransport(<TextChannel>logChannel))
 
             logger.info("Discord Client Logged In successfully!")
 

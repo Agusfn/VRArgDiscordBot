@@ -20,57 +20,65 @@ export class ScoreSaberAccountManager {
      * Link a ScoreSaber account (or ScoreSaberPlayer) to a user. The user must not have any currently linked SS account. Validation is performed.
      * @param discordUserId 
      * @param scoreSaberId 
+     * @param isSelfUser If the discordUserId is the one making this request (for validation msg purposes)
      */
-    public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string): Promise<SSPlayer> {
+    public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string, isSelfUser = true): Promise<SSPlayer> {
 
-        // Check if user has already an account linked to them
+        // Check if the Discord user has already any ScoreSaber account linked to them
         const currentAccount = await SSPlayer.findOne({ where: { discordUserId: discordUserId } })
 
         if(currentAccount) {
-            this.errorMessage = `Ya tenés la cuenta de ScoreSaber _${currentAccount.name}_ (id ${currentAccount.id}) vinculada, no podés vincular otra! `
+            if(isSelfUser) {
+                this.errorMessage = `Ya tenés la cuenta de ScoreSaber **${currentAccount.name}** (id ${currentAccount.id}) vinculada, no podés vincular otra! `
+            } else {
+                this.errorMessage = `El usuario de Discord seleccionado ya tiene la cuenta ScoreSaber **${currentAccount.name}** (ID ${currentAccount.id}) vinculada, no se puede vincular otra.`
+            }
             return null
         }
         
-        const existingAccount = await SSPlayer.findByPk(scoreSaberId)
+        const existingPlayer = await SSPlayer.findByPk(scoreSaberId)
 
         // Check if this account is already occupied by another User
-        if(existingAccount && existingAccount.discordUserId != null) {
-            this.errorMessage = `La cuenta ingresada _${existingAccount.name}_ ya está siendo ocupada por otro usuario del servidor.`
+        if(existingPlayer && existingPlayer.discordUserId != null) {
+            this.errorMessage = `La cuenta ScoreSaber ingresada **${existingPlayer.name}** ya está siendo ocupada por otro usuario del servidor.`
             return null
         } 
         
         let ssPlayer: SSPlayer
 
-        if(existingAccount) {
+        if(existingPlayer) { // Player exists but is not linked to any discord user, so let's link to current user.
+
             // Link existing ScoreSaber account
-            existingAccount.discordUserId = discordUserId
-            existingAccount.linkedDate = new Date()
-            await existingAccount.save()
+            existingPlayer.discordUserId = discordUserId
+            existingPlayer.linkedDate = new Date()
+            await existingPlayer.save()
 
-            ssPlayer = existingAccount
-        } else {
+            ssPlayer = existingPlayer
 
-            // Fetch from API
+        } else { // SSPlayer is not registered, so let's fetch and register it
+
+            // Fetch player from API
             const api = new ScoreSaberAPI()
-            let ssPlayer: Player
+            let ssAPIPlayer: Player
+
             try {
-                ssPlayer = await api.getPlayer(scoreSaberId)
+                ssAPIPlayer = await api.getPlayer(scoreSaberId)
             } catch(error) {
                 this.errorMessage = "Ocurrió un error obteniendo la información del jugador."
                 return null
             }
 
-            if(!ssPlayer) {
+            if(!ssAPIPlayer) {
                 this.errorMessage = "No se encontró la cuenta de ScoreSaber solicitada con el id ingresado."
                 return null
             }
 
-            /*ssPlayer = SSPlayer.build({
+            ssPlayer = SSPlayer.build({
                 discordUserId: discordUserId,
                 linkedDate: new Date()
             })
-            ssPlayer.fillWithSSPlayerData(ssPlayer)
-            await ssPlayer.save()*/
+            ssPlayer.fillWithSSPlayerData(ssAPIPlayer)
+            await ssPlayer.save()
 
         }
 
@@ -86,14 +94,19 @@ export class ScoreSaberAccountManager {
      * Unlink the ScoreSaber account from a given User, given its discord user id.
      * @param discordUserId 
      * @param scoreSaberId 
+     * @param isSelfUser If the discordUserId is the one making this request (for validation msg purposes)
      */
-    public async unlinkScoreSaberAccountFromUser(discordUserId: string): Promise<SSPlayer> {
+    public async unlinkScoreSaberAccountFromUser(discordUserId: string, isSelfUser = true): Promise<SSPlayer> {
 
         // check user has linked scoresaber account
         const ssPlayer = await SSPlayer.findOne({where: { discordUserId: discordUserId }})
 
         if(!ssPlayer) {
-            this.errorMessage = "No tenés una cuenta de ScoreSaber vinculada a tu cuenta!"
+            if(isSelfUser) {
+                this.errorMessage = "No tenés una cuenta de ScoreSaber vinculada a tu cuenta!"
+            } else {
+                this.errorMessage = `El usuario de Discord seleccionado no tiene ninguna cuenta de ScoreSaber vinculada.`
+            }
             return null
         }
 

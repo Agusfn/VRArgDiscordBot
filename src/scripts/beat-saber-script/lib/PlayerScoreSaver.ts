@@ -1,8 +1,8 @@
-import { LeaderboardInfo, PlayerScoreCollection, PlayerScore as PlayerScoreAPI, Score, ScoreSaberAPI } from "../utils/index"
+import { LeaderboardInfo, PlayerScoreCollection, PlayerScore as PlayerScoreAPI, ScoreSaberAPI } from "../utils/index"
 import { SSPlayer, Leaderboard, PlayerScore } from "../model/index"
 import { LeaderboardI, PlayerScoreI } from "../ts"
 import logger from "@utils/logger"
-
+import { roundNumber } from "@utils/index"
 
 /**
  * Class that handles the saving of player scores and the related leaderboards (song maps) into the database.
@@ -30,6 +30,10 @@ export class PlayerScoreSaver {
             this.allLeaderboardIds = (await Leaderboard.findAll({
                 attributes: ["id"]
             })).map(leaderboard => leaderboard.id)
+
+            if(process.env.DEBUG == "true") {
+                logger.info(`Initialized PlayerScoreSaver. Loaded ${this.allLeaderboardIds.length} leaderboard ids`)
+            }
         }
     }
 
@@ -57,16 +61,21 @@ export class PlayerScoreSaver {
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
             if(!allPlayerScoreIds.includes(score.score.id)) {
-                const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score.score, player.discordUserId)
+                const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score, player.id)
                 scoresToSave.push(newScore)
                 allPlayerScoreIds.push(score.score.id)
             }
         }
 
         await Leaderboard.bulkCreate(leaderboardsToSave)
-        logger.info("Bulk created " + leaderboardsToSave.length + " leaderboards")
         await PlayerScore.bulkCreate(scoresToSave)
-        logger.info("bulk created " + scoresToSave.length + " scores")
+
+        if(process.env.DEBUG == "true") {
+            logger.info("Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+            logger.info("Bulk saved " + scoresToSave.length + " new scores")
+        }
+
+
     }
 
 
@@ -117,22 +126,46 @@ export class PlayerScoreSaver {
             difficultyNumber: leaderboard.difficulty.difficulty,
             difficultyName: leaderboard.difficulty.difficultyRaw,
             maxScore: leaderboard.maxScore,
+            createdDate: new Date(leaderboard.createdDate),
+            rankedDate: leaderboard.rankedDate ? new Date(leaderboard.rankedDate) : null,
+            qualifiedDate: leaderboard.qualifiedDate ? new Date(leaderboard.qualifiedDate) : null,
             ranked: leaderboard.ranked,
             stars: leaderboard.stars,
-            createdDate: leaderboard.createdDate
+            coverImage: leaderboard.coverImage
         }
     }
 
-    private static makePlayerScoreFromApiScore(score: Score, discordUserId: string): PlayerScoreI {
+    /**
+     * Create a PlayerScore javascript plain object given a PlayerScoreAPI response object, which contains both score and leaderboard (map) information
+     * @param apiScore 
+     * @param ssPlayerId 
+     * @returns 
+     */
+    private static makePlayerScoreFromApiScore(apiScore: PlayerScoreAPI, ssPlayerId: string): PlayerScoreI {
+        const score = apiScore.score
+
+        let accuracy = null
+        if(apiScore.leaderboard.maxScore != null && apiScore.leaderboard.maxScore > 0) { // lboard maxScore may be 0 in rare cases
+            accuracy = roundNumber((score.modifiedScore / apiScore.leaderboard.maxScore) * 100, 2)
+        }
+
         return {
-            scoreId: score.scoreId,
-            date: new Date(score.timeSet),
-            discordUserId: discordUserId,
-            songHash: score.songHash,
-            globalRank: score.rank,
-            score: score.score,
+            id: score.id,
+            playerId: ssPlayerId,
+            leaderboardId: apiScore.leaderboard.id,
+            rank: score.rank,
+            baseScore: score.baseScore,
+            modifiedScore: score.modifiedScore,
             pp: score.pp,
-            weight: score.weight
+            accuracy: accuracy,
+            weight: roundNumber(score.weight, 8),
+            modifiers: score.modifiers,
+            multiplier: score.multiplier,
+            badCuts: score.badCuts,
+            missedNotes: score.missedNotes,
+            maxCombo: score.maxCombo,
+            fullCombo: score.fullCombo,
+            timeSet: new Date(score.timeSet)
         }
     }
  

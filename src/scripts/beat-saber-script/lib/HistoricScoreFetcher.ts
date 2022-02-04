@@ -55,6 +55,10 @@ export class HistoricScoreFetcher {
             return
         }
 
+        if(process.env.DEBUG == "true") {
+            logger.info("Adding SS player " + ssPlayerId + " to historic fetch queue")
+        }
+
         this.playerFetchQueue.push(ssPlayer)
 
         // run fetcher if not already running
@@ -70,19 +74,31 @@ export class HistoricScoreFetcher {
      */
     private static async processFetchQueue() {
 
+        if(process.env.DEBUG == "true") {
+            logger.info("Starting historic scoresaber fetch queue with " + this.playerFetchQueue.length + " players in it.")
+        }
+
         while(this.playerFetchQueue.length > 0) {
             try {
                 const ssPlayer = this.playerFetchQueue[0] // grab first in queue
                 await this.fetchHistoricScoresForSSPlayer(ssPlayer)
                 this.playerFetchQueue.shift() // remove first elem
+
+                if(process.env.DEBUG == "true") {
+                    logger.info("Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
+                }
+                
             } catch(error) {
                 // if max retries
                     // set waitingForRetry true
                     // set timer in X seconds to re-run
-                // if other error
-                    // log and break excecution
-                    
+                console.log(error)
+                break
             }
+        }
+
+        if(process.env.DEBUG == "true") {
+            logger.info("Finished historic SS score fetcher queue.")
         }
 
     }
@@ -104,13 +120,12 @@ export class HistoricScoreFetcher {
             attributes: ["id"]
         })).map(score => score.id)
 
-        console.log("player " + player.name + " all score ids: ", allPlayerScoreIds)
+        //console.log("player " + player.name + " all score ids: ", allPlayerScoreIds)
         
         let endPageReached = false
         let nextFetchPage = player.lastHistoryFetchPage + 1 // most recent page is 1
+        
         const api = new ScoreSaberAPI()
-
-        //let songsLoaded = 0
 
         while(endPageReached != true) {
 
@@ -119,7 +134,9 @@ export class HistoricScoreFetcher {
 
             if(scorePageCollection && scorePageCollection.playerScores.length > 0) {
 
-                logger.info(`Page ${nextFetchPage} of historic scores loaded.`)
+                if(process.env.DEBUG == "true") {
+                    logger.info(`Fetched page ${nextFetchPage} of historic scores of player ${player.id}. Got ${scorePageCollection.playerScores.length} scores.`)
+                }
 
                 await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, allPlayerScoreIds, scorePageCollection)
 

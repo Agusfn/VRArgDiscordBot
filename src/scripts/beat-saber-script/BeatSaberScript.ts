@@ -1,4 +1,4 @@
-import { CommandManager, Script } from "@lib/index"
+import { CommandManager, Script, Discord } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { PlayerScore } from "./model/index"
@@ -37,12 +37,8 @@ export class BeatSaberScript extends Script {
         HistoricScoreFetcher.startFetcher()
 
     
-        /**
-         * Commands
-         */
 
         CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
-
             // Validar param
             const scoreSaberId = args[0]
             if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
@@ -54,12 +50,43 @@ export class BeatSaberScript extends Script {
             const ssPlayer = await accountManager.linkScoreSaberAccountToUser(message.author.id, scoreSaberId)
 
             if(ssPlayer) {
-                message.reply(`La cuenta de ScoreSaber _${ssPlayer.name}_ se te vinculó correctamente!`)
+                message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** se te vinculó correctamente!`)
             } else {
                 message.reply(accountManager.getErrorMsg())
             }
-
         })
+
+
+        CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id>", async (message: Message, args) => {
+            // Validar params
+            const discordUserId = args[0]
+            const scoreSaberId = args[1]
+
+            if(!discordUserId || !/^\d{5,20}$/.test(discordUserId)) {
+                message.reply("Ingresa un id de Discord numérico valido de entre 5 y 20 dígitos.")
+                return
+            }
+            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
+                message.reply("Ingresa un id de ScoreSaber numérico valido de entre 5 y 20 dígitos.")
+                return
+            }
+
+            const discordUser = Discord.getGuild().members.cache.find(member => member.id == discordUserId)
+            if(!discordUser) {
+                message.reply("No se encontró el usuario de Discord con dicho ID.")
+                return
+            }
+
+            const accountManager = new ScoreSaberAccountManager()
+            const ssPlayer = await accountManager.linkScoreSaberAccountToUser(discordUserId, scoreSaberId, false)
+
+            if(ssPlayer) {
+                message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** se vinculó correctamente al usuario de Discord ${discordUser.user.username}!`)
+            } else {
+                message.reply(accountManager.getErrorMsg())
+            }
+        })
+
 
         CommandManager.newCommand("deslinkear_ss", null, async (message: Message, args) => {
 
@@ -67,7 +94,7 @@ export class BeatSaberScript extends Script {
             const ssPlayer = await accountManager.unlinkScoreSaberAccountFromUser(message.author.id)
 
             if(ssPlayer) {
-                message.reply(`La cuenta de ScoreSaber _${ssPlayer.name}_ (id ${ssPlayer.id}) se desvinculó correctamente!`)
+                message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** (ID ${ssPlayer.id}) se te desvinculó correctamente!`)
             } else {
                 message.reply(accountManager.getErrorMsg())
             }
@@ -75,50 +102,37 @@ export class BeatSaberScript extends Script {
         })
 
 
+        CommandManager.newAdminCommand("deslinkear_ss_admin", "<discord user id>", async (message: Message, args) => {
+            
+            // Validar params
+            const discordUserId = args[0]
+            if(!discordUserId || !/^\d{5,20}$/.test(discordUserId)) {
+                message.reply("Ingresa un id de Discord numérico valido de entre 5 y 20 dígitos.")
+                return
+            }
+
+            const discordUser = Discord.getGuild().members.cache.find(member => member.id == discordUserId)
+            if(!discordUser) {
+                message.reply("No se encontró el usuario de Discord con dicho ID.")
+                return
+            }
+
+            const accountManager = new ScoreSaberAccountManager()
+            const ssPlayer = await accountManager.unlinkScoreSaberAccountFromUser(discordUserId, false)
+
+            if(ssPlayer) {
+                message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** (ID ${ssPlayer.id}) se desvinculó correctamente del usario de Discord ${discordUser.user.username}!`)
+            } else {
+                message.reply(accountManager.getErrorMsg())
+            }
+
+        })
+
 
         // Initialize score fetcher
         /*this.scoreFetcher = new UserScoreFetcher()
         this.playerStatusChecker = new PlayerStatusChecker()
-        this.scoreFetcher.initialize() // (async) */
-
-
-        // Register commands
-        /*this.addCommand("linkear_trucho", "<nick discord> <id user discord> <id scoresaber>", async (message: Message, args) => {
-
-            // Validar param
-            const scoreSaberId = args[2]
-            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
-                message.channel.send("Ingresa un id numérico valido de entre 5 y 20 dígitos.")
-                return
-            }
-
-            const newUser = await UserProfileLinking.linkUser(args[1], args[0], scoreSaberId)
-            if(newUser) {
-                message.channel.send(`El usuario de ScoreSaber ${newUser.playerName} se ha vinculado exitosamente a tu cuenta!`)
-            } else {
-                message.channel.send(UserProfileLinking.getErrorText())
-            }
-            
-        })*/
-
-        /*this.addCommand("linkear", "<id scoresaber>", async (message: Message, args) => {
-
-            // Validar param
-            const scoreSaberId = args[0]
-            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
-                message.channel.send("Ingresa un id numérico valido de entre 5 y 20 dígitos.")
-                return
-            }
-
-            const newUser = await UserProfileLinking.linkUser(message.author.id, message.author.username, scoreSaberId)
-            if(newUser) {
-                message.channel.send(`El usuario de ScoreSaber ${newUser.playerName} se ha vinculado exitosamente a tu cuenta!`)
-            } else {
-                message.channel.send(UserProfileLinking.getErrorText())
-            }
-            
-        })
-
+      
 
         this.addCommand("anuncios_scores", null, async (message: Message, args) => {
 

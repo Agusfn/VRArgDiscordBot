@@ -10,7 +10,7 @@ export default () => {
             primaryKey: true
         },
         playerId: {
-            type: Types.INTEGER,
+            type: Types.STRING,
             references: {
                 model: SSPlayer,
                 key: "id"
@@ -27,11 +27,12 @@ export default () => {
         baseScore: Types.INTEGER,
         modifiedScore: Types.INTEGER,
         pp: Types.DECIMAL(7, 3),
+        accuracy: Types.DECIMAL(4, 2),
         weight: Types.DECIMAL(10, 9),
         modifiers: Types.STRING,
         multiplier: Types.DECIMAL(7, 6),
         badCuts: Types.INTEGER,
-        missedNoted: Types.INTEGER,
+        missedNotes: Types.INTEGER,
         maxCombo: Types.INTEGER,
         fullCombo: Types.BOOLEAN,
         timeSet: Types.DATE

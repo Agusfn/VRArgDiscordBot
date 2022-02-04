@@ -48,6 +48,7 @@ export interface LeaderboardPlayer {
 
 export interface Score {
     id: number
+    /** Apparently not included in score fetches. */
     leaderboardPlayerInfo?: LeaderboardPlayer
     rank: number,
     baseScore: number,
@@ -83,14 +84,19 @@ export interface LeaderboardInfo {
     songAuthorName: string,
     levelAuthorName: string,
     difficulty: Difficulty,
+    /** Max score that can be obtained in this map. In some rare cases it may be zero. */
     maxScore: number,
     createdDate: string,
+    /** (Optional) date in string ISO 8601 format */
     rankedDate?: string,
+    /** (Optional) date in string ISO 8601 format */
     qualifiedDate?: string,
+    /** (Optional) date in string ISO 8601 format */
     lovedDate?: string,
     ranked: boolean,
     qualified: boolean,
     loved: boolean,
+    /** For some reason it is always -1 */
     maxPP: number,
     stars: number,
     positiveModifiers: boolean,

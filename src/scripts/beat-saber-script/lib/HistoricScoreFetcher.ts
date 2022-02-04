@@ -22,7 +22,7 @@ export class HistoricScoreFetcher {
      */
      public static async startFetcher() {
 
-        if(this.fetchRunning) return
+        if(this.fetchRunning) return // don't start if already running
         this.fetchRunning = true
 
         // Load in queue all pending players from DB that are not already in the queue (useful when resuming the fetch after an interruption)

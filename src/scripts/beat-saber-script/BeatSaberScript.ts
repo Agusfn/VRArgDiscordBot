@@ -54,7 +54,7 @@ export class BeatSaberScript extends Script {
             } else {
                 message.reply(accountManager.getErrorMsg())
             }
-        })
+        }, "Vincular una cuenta de ScoreSaber a tu cuenta de Discord.", "BeatSaber")
 
 
         CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id>", async (message: Message, args) => {
@@ -85,7 +85,7 @@ export class BeatSaberScript extends Script {
             } else {
                 message.reply(accountManager.getErrorMsg())
             }
-        })
+        }, "Vincular una cuenta de ScoreSaber a una cuenta de Discord.", "BeatSaber")
 
 
         CommandManager.newCommand("deslinkear_ss", null, async (message: Message, args) => {
@@ -99,7 +99,7 @@ export class BeatSaberScript extends Script {
                 message.reply(accountManager.getErrorMsg())
             }
 
-        })
+        }, "Desvincular la cuenta de ScoreSaber de tu cuenta de Discord.", "BeatSaber")
 
 
         CommandManager.newAdminCommand("deslinkear_ss_admin", "<discord user id>", async (message: Message, args) => {
@@ -126,7 +126,7 @@ export class BeatSaberScript extends Script {
                 message.reply(accountManager.getErrorMsg())
             }
 
-        })
+        }, "Desvincular una cuenta de ScoreSaber de una cuenta de Discord.", "BeatSaber")
 
 
         // Initialize score fetcher

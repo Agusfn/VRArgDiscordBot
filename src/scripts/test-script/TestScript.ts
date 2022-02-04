@@ -15,13 +15,13 @@ export class TestScript extends Script {
 
             message.reply({content: "hola"})
 
-        }, "Descripcion del comando.", "913629201377165332")
+        }, "Descripcion del comando.", null, "913629201377165332")
 
         CommandManager.newCommand("testcommand2", null, async (message: Message, args) => {
 
             message.reply({content: "hola"})
 
-        }, "Descripcion del comando.", "asdasd")
+        }, "Descripcion del comando.", null, "asdasd")
 
 
 

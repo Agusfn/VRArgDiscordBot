@@ -9,6 +9,7 @@ export type CommandActionFunction = (...args: any) => any
  */
 export interface BotCommand {
     type: CommandType,
+    groupName: string,
     name: string,
     args?: string,
     description?: string,

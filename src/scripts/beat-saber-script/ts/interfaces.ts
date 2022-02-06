@@ -57,10 +57,19 @@ export interface SSPlayerI {
     avgRankedAccuracy: number
     totalPlayCount: number
     rankedPlayCount: number
-    // Score:
+
+    /** Whether all historic scores (from the time of registration to past) have been fetched from this player, and they are all saved in DB. */
     fetchedAllScoreHistory: boolean
+    /** 
+     * The last page that was fetched from score history. Is used only in the process of fetching historic scores to be able to resume fetching after any interruption. 
+     * When registering any SSPlayer, their score pages are fetched from 1 (most recent) to N (oldest), ignoring any repeated scores.
+     * So if a new page is inserted while in the fetching process, it will only result in fetching two duplicate pages, but the fetcher will still iterate until the last page (n+1).
+     * The new pages will be fetched by periodic fetcher.
+     */
     lastHistoryFetchPage: number
+    /** Last time the profile of this SS Player was updated from ScoreSaber API. This is used to do frequent profile updates. */
     lastPeriodicStatusCheck: Date
+    /** Whether this player is subscribed for milestone announcements in the milestone announcements channel. */
     milestoneAnnouncements: boolean
 
     createdAt: Date

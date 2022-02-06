@@ -1,8 +1,10 @@
-import { LeaderboardInfo, PlayerScoreCollection, PlayerScore as PlayerScoreAPI, ScoreSaberAPI } from "../utils/index"
+import { LeaderboardInfo, PlayerScoreCollection, PlayerScore as PlayerScoreAPI } from "../utils/index"
 import { SSPlayer, Leaderboard, PlayerScore } from "../model/index"
 import { LeaderboardI, PlayerScoreI } from "../ts"
+import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
 import logger from "@utils/logger"
 import { roundNumber } from "@utils/index"
+
 
 /**
  * Class that handles the saving of player scores and the related leaderboards (song maps) into the database.
@@ -10,34 +12,6 @@ import { roundNumber } from "@utils/index"
 export class PlayerScoreSaver {
     
 
-    private static initialized = false
-
-    /**
-     * Array that contains all of the currently existing Leaderboards in the database. 
-     * It's useful for checking the existence of leaderboards without having to make DB queries.
-     */
-    private static allLeaderboardIds: number[]
-
-
-    /**
-     * Initialize this class by loading all of the existing leaderboards ids into the array (to later check if a leaderboard exists or must be saved)
-     */
-    public static async initialize() {
-        if(!this.initialized) {
-            this.initialized = true
-
-            // Fetch all leaderboard ids from DB into the array.
-            this.allLeaderboardIds = (await Leaderboard.findAll({
-                attributes: ["id"]
-            })).map(leaderboard => leaderboard.id)
-
-            if(process.env.DEBUG == "true") {
-                logger.info(`Initialized PlayerScoreSaver. Loaded ${this.allLeaderboardIds.length} leaderboard ids`)
-            }
-        }
-    }
-
-    
     /**
      * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored.
      * @param player The ScoreSaber Player
@@ -53,10 +27,10 @@ export class PlayerScoreSaver {
         for(const score of scoreCollection.playerScores) {
 
             // Save new Leaderboards (song map info) associated with the score
-            if(!this.allLeaderboardIds.includes(score.leaderboard.id)) {
+            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
                 const newLeaderboard: LeaderboardI = this.makeLeaderboardFromApiLeaderBoard(score.leaderboard)
                 leaderboardsToSave.push(newLeaderboard)
-                this.allLeaderboardIds.push(score.leaderboard.id)
+                ScoreSaberDataCache.addLeaderboardId(score.leaderboard.id)
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)

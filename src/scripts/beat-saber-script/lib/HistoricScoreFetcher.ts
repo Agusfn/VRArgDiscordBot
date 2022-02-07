@@ -3,8 +3,9 @@ import logger from "@utils/logger"
 import { SSPlayer, PlayerScore } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 import { PlayerScoreSaver } from "./PlayerScoreSaver"
+import { ScoreSaberDataCache, FetcherModule } from "./ScoreSaberDataCache"
+import { SCORES_FETCHED_PER_PAGE } from "../config"
 
-const SCORES_FETCHED_PER_PAGE = 100
 
 
 /**
@@ -114,14 +115,8 @@ export class HistoricScoreFetcher {
             logger.info(`Starting historic score fetch for ScoreSaber player ${player.name}`)
         }
 
-        // Get an array from DB of ALL existing score ids of this player, so we can make sure to add only new scores
-        const allPlayerScoreIds = (await PlayerScore.findAll({
-            where: { playerId: player.id },
-            attributes: ["id"]
-        })).map(score => score.id)
+        await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.HISTORIC_FETCHER) // fetch player score ids from cache if not already fetched
 
-        //console.log("player " + player.name + " all score ids: ", allPlayerScoreIds)
-        
         let endPageReached = false
         let nextFetchPage = player.lastHistoryFetchPage + 1 // most recent page is 1
         
@@ -138,7 +133,7 @@ export class HistoricScoreFetcher {
                     logger.info(`Fetched page ${nextFetchPage} of historic scores of player ${player.id}. Got ${scorePageCollection.playerScores.length} scores.`)
                 }
 
-                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, allPlayerScoreIds, scorePageCollection)
+                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
 
                 player.lastHistoryFetchPage = nextFetchPage
                 await player.save()
@@ -154,7 +149,7 @@ export class HistoricScoreFetcher {
 
         }
 
-        
+        ScoreSaberDataCache.finishUsingPlayerScores(player.id, FetcherModule.HISTORIC_FETCHER) // erase score cache for player (if not other module is using it)
 
     }
     

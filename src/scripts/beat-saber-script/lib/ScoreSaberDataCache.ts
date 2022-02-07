@@ -36,7 +36,7 @@ export class ScoreSaberDataCache {
     /**
      * Cache of score ids for players by its player id.
      */
-    private static playerScores: {[ssPlayerId: string]: PlayerScoreItem}
+    private static playerScores: {[ssPlayerId: string]: PlayerScoreItem} = {}
 
 
     /**
@@ -91,7 +91,7 @@ export class ScoreSaberDataCache {
     public static async fetchPlayerScores(ssPlayerId: string, fetcherModule: FetcherModule) {
 
         const scores = this.playerScores[ssPlayerId]
-        if(this.playerScores[ssPlayerId] != null) {
+        if(scores != null) {
             if(scores.accessedBy.includes(fetcherModule)) {
                 logger.warn("Scores have already been loaded for SS Player id " + ssPlayerId + " by module " + fetcherModule + ". Fetching was called two times by same module without finishing its use in the middle.")
             } else {
@@ -108,13 +108,15 @@ export class ScoreSaberDataCache {
                 scoreIds: playerScoreIds,
                 accessedBy: [fetcherModule]
             }
+
+            console.log("Fetched scoreId cache for player " + ssPlayerId)
         }
 
     }
 
 
     /**
-     * Fetch the scoreIds cache from a given ScoreSaber player (given it's been already loaded into the cache)
+     * Fetch the scoreIds cache from a given ScoreSaber player. Scores MUST have already been fetched previously.
      * @param ssPlayerId 
      * @param scoreId 
      * @returns 
@@ -129,11 +131,26 @@ export class ScoreSaberDataCache {
 
 
     /**
+     * Push a scoreId to the cache for a given ScoreSaber player. Scores MUST have already been fetched previously.
+     * @param ssPlayerId 
+     * @param scoreId 
+     * @returns 
+     */
+     public static pushScoreForPlayer(ssPlayerId: string, scoreId: number) {
+        const scores = this.playerScores[ssPlayerId]
+        if(!scores) {
+            throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
+        }
+        return scores.scoreIds.push(scoreId)
+    }
+
+
+    /**
      * Finish using the scores of a given player. If no modules are using this data, it will be deleted.
      * @param ssPlayerId 
      * @param fetcherModule 
      */
-    public static async finishUsingPlayerScores(ssPlayerId: string, fetcherModule: FetcherModule) {
+    public static finishUsingPlayerScores(ssPlayerId: string, fetcherModule: FetcherModule) {
 
         const scores = this.playerScores[ssPlayerId]
 
@@ -143,7 +160,7 @@ export class ScoreSaberDataCache {
         }
 
         if(scores.accessedBy.includes(fetcherModule)) {
-            scores.accessedBy = scores.accessedBy.filter(item => item != fetcherModule) // remove accessor module from list
+            scores.accessedBy = scores.accessedBy.filter(item => item != fetcherModule) // remove fetcher module who accessed this data, from list
         } else {
             logger.warn("Fetcher module " + fetcherModule + " hasn't accessed player id " + ssPlayerId + " scores, but now it's finishing its use.")
         }
@@ -151,6 +168,7 @@ export class ScoreSaberDataCache {
         // Delete user score ids cache if no longer being used by any module
         if(scores.accessedBy.length == 0) {
             this.playerScores[ssPlayerId] = null
+            console.log("Cleaning scoreId cache for player " + ssPlayerId)
         }
     }
 

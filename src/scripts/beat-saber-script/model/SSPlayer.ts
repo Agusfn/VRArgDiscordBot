@@ -18,9 +18,9 @@ export class SSPlayer extends Model {
     }
 
 
-    public lastStatusCheck() {
+    /*public lastStatusCheck() {
         return moment(this.lastPeriodicStatusCheck)
-    }
+    }*/
 
 
     /**

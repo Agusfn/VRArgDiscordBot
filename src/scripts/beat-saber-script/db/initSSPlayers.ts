@@ -39,7 +39,7 @@ export default () => {
             type: Types.INTEGER,
             defaultValue: 0
         },
-        lastPeriodicStatusCheck: Types.DATE,
+        lastPeriodicScoreFetch: Types.DATE,
         milestoneAnnouncements: {
             type: Types.BOOLEAN,
             defaultValue: true
@@ -51,9 +51,16 @@ export default () => {
         tableName: "scoresaber_players",
         scopes: { // query scopes
 
-            pendingHistoricFetch: {
+            pendingHistoricFetch: { // players which haven't had their historic score fetching finished yet
                 where: {
                     fetchedAllScoreHistory: false,
+                    discordUserId: {
+                        [Op.ne]: null
+                    }
+                }
+            },
+            discordAccountLinked: { // players that are linked to a Discord account
+                where: {
                     discordUserId: {
                         [Op.ne]: null
                     }

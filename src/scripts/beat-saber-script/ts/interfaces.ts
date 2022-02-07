@@ -67,8 +67,8 @@ export interface SSPlayerI {
      * The new pages will be fetched by periodic fetcher.
      */
     lastHistoryFetchPage: number
-    /** Last time the profile of this SS Player was updated from ScoreSaber API. This is used to do frequent profile updates. */
-    lastPeriodicStatusCheck: Date
+    /** Last time the new scores of this SS Player were fetched from ScoreSaber API. Is useful to prioritize players in case of limitations of fetching API. */
+    lastPeriodicScoreFetch: Date
     /** Whether this player is subscribed for milestone announcements in the milestone announcements channel. */
     milestoneAnnouncements: boolean
 

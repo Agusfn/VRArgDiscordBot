@@ -1,11 +1,11 @@
 
 
-
 export enum SSCountries {
     ARG = "AR",
 }
 
-
+/** Amount of scores fetched in each page from ScoreSaberAPI (evaluate thouroughly the consequences before changing this value) */
+export const SCORES_FETCHED_PER_PAGE = 100
 
 /** Time in minutes for each player status check (status = rank, pp, country rank, playename, etc) */
 export const PLAYER_STATUS_CHECK_INTERVAL_MIN = 30

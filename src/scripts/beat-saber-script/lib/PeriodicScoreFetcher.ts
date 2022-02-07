@@ -1,19 +1,27 @@
-import {  } from "../model/index"
+import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
+import { SCORES_FETCHED_PER_PAGE } from "../config"
+
+
 
 export default class PeriodicScoreFetcher {
 
 
 
-    public static startPeriodicFetch() {
+    public static async startPeriodicFetch() {
 
-        // get players that will be fetched (the ones with discordUserIds linked)
+        const playersToFetch = await SSPlayer.scope("discordAccountLinked").findAll()
+        const api = new ScoreSaberAPI()
 
-        // for each player
+        for(const player of playersToFetch) {
 
-            // while hasn't ended fetching
-            
-                // fetch i most recent page of 100 scores
+            const fetchingEnded = false
+
+            let pageToFetch = 1 // start from first (most recent) page
+
+            while(fetchingEnded == false) {
+
+                const scoresCollection = await api.getScores(player.id, "recent", pageToFetch, SCORES_FETCHED_PER_PAGE)
 
                 // for each score
 
@@ -24,15 +32,16 @@ export default class PeriodicScoreFetcher {
                         // mark ended fetching = true
                         // break
 
+            }
+
             // bulk create scores
             // bulk create maps
+
+        }
 
 
 
     }
 
-    // <copy the old one here>
-
-    
     
 }

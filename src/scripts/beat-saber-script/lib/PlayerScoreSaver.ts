@@ -18,7 +18,7 @@ export class PlayerScoreSaver {
      * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
      * @param scoreCollection Collection of scores from ScoreSaber API for a given page
      */
-    public static async saveHistoricScorePageForPlayer(player: SSPlayer, allPlayerScoreIds: number[], scoreCollection: PlayerScoreCollection) {
+    public static async saveHistoricScorePageForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
         // We will bulk save the PlayerScores and Leaderboards unlike with periodic fetching, since historic fetching saves scores and maps in a larger scale
         const leaderboardsToSave: LeaderboardI[] = []
@@ -34,10 +34,10 @@ export class PlayerScoreSaver {
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
-            if(!allPlayerScoreIds.includes(score.score.id)) {
+            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) {
                 const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score, player.id)
                 scoresToSave.push(newScore)
-                allPlayerScoreIds.push(score.score.id)
+                ScoreSaberDataCache.pushScoreForPlayer(player.id, score.score.id)
             }
         }
 
@@ -54,16 +54,32 @@ export class PlayerScoreSaver {
 
 
     /**
-     * Given a new score submitted by a player
+     * Save multiple scores (and new leaderboards) from a recent page of scores of a player. Each score will be saved until a repeated score is found, in which case it will stop the loop.
      * @param player 
      * @param score 
      */
-    public static saveNewScoreForPlayer(player: SSPlayer, score: PlayerScoreAPI) {
+    public static savePageOfNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
-        
+        let repeatedScoreFound = false
 
-        //this.savePlayerScore(score)
+        const leaderboardsToSave: LeaderboardI[] = []
+        const scoresToSave: PlayerScoreI[] = []
+
+        for(const score of scoreCollection.playerScores) {
+
+            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) {
+                repeatedScoreFound = true
+                break
+            }
+
+            
+
+
+        }
         
+        return {
+            repeatedScoresReached: repeatedScoreFound
+        }
 
 
     }

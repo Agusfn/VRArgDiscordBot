@@ -1,3 +1,4 @@
+import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, PeriodicScoreFetcher } from "./lib/index"
 import { CommandManager, Script, Discord } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
@@ -8,7 +9,7 @@ import { PlayerScore } from "./model/index"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
 import { ScoreSaberAPI } from "./utils"
-import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, PlayerScoreSaver } from "./lib/index"
+
 
 export class BeatSaberScript extends Script {
 
@@ -128,6 +129,11 @@ export class BeatSaberScript extends Script {
 
         }, "Desvincular una cuenta de ScoreSaber de una cuenta de Discord.", "BeatSaber")
 
+
+        this.addCustomCron("*/30 * * * *", async () => {
+            console.log("cron running each 30 min...")
+            await PeriodicScoreFetcher.startPeriodicFetch()
+        })
 
         // Initialize score fetcher
         /*this.scoreFetcher = new UserScoreFetcher()

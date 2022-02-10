@@ -1,9 +1,8 @@
-import {  } from "../model/index"
-import { ScoreSaberAPI } from "../utils/index"
+import { SSPlayer } from "../model/index"
+import { PlayerScoreI } from "../ts"
 
 
-
-export default class PlayerTriggerEvents {
+export class PlayerTriggerEvents {
     
 
     private static playerGlobalRanks: {playerId: number, rank: number}[]
@@ -20,7 +19,10 @@ export default class PlayerTriggerEvents {
     }
 
 
-    public static onPlayerSubmitNewScore(player: any, score: any) {
+    public static onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScoreI[]) {
+
+        console.log("event handler called for player " + player.name + " submitting new score page of " + scores.length)
+
         // if score is best among all players (existing at least one). needs db query
             // send top score announcement
         // else if score is best among all players of said country (existing at least once). needs db query, maybe use prior

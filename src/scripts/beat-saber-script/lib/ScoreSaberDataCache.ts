@@ -73,13 +73,17 @@ export class ScoreSaberDataCache {
 
     /**
      * Add a Leaderboard id to ids cache
-     * @param leaderboardId 
+     * @param leaderboardIds 
      */
-    public static addLeaderboardId(leaderboardId: number) {
+    public static addLeaderboardIds(leaderboardIds: number | number[]) {
         if(!this.allLeaderboardIds == null) {
             throw new Error("ScoreSaberDataCache was not initialized!")
         }
-        this.allLeaderboardIds.push(leaderboardId)
+        if(Array.isArray(leaderboardIds)) {
+            this.allLeaderboardIds = [...this.allLeaderboardIds, ...leaderboardIds]
+        } else {
+            this.allLeaderboardIds.push(leaderboardIds)
+        }
     }
 
 
@@ -133,15 +137,19 @@ export class ScoreSaberDataCache {
     /**
      * Push a scoreId to the cache for a given ScoreSaber player. Scores MUST have already been fetched previously.
      * @param ssPlayerId 
-     * @param scoreId 
+     * @param scoreIds 
      * @returns 
      */
-     public static pushScoreForPlayer(ssPlayerId: string, scoreId: number) {
+     public static pushScoresForPlayer(ssPlayerId: string, scoreIds: number | number[]) {
         const scores = this.playerScores[ssPlayerId]
         if(!scores) {
             throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
         }
-        return scores.scoreIds.push(scoreId)
+        if(Array.isArray(scoreIds)) {
+            scores.scoreIds = [...scores.scoreIds, ...scoreIds]
+        } else {
+            scores.scoreIds.push(scoreIds)
+        }
     }
 
 

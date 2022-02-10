@@ -1,6 +1,7 @@
 import { CronFrequency } from "@ts/enums"
 import * as cron from "node-cron"
 import logger from "@utils/logger"
+import { logException } from "@utils/index"
 
 export abstract class Script {
 
@@ -53,8 +54,9 @@ export abstract class Script {
         cron.schedule(cronExpression, async () => {
             try {
                 await task()
-            } catch(error) {
-                logger.error(error)
+            } catch(error: any) {
+                logger.error("Error running custom cron from Script " + this.scriptName)
+                logException(error)
             }
         })
     }

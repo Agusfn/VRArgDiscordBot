@@ -1,6 +1,7 @@
 import { Script } from "./Script"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 import logger from "@utils/logger"
+import { logException } from "@utils/index"
 
 
 type ScriptSubclass = new () => Script // some weird type to represent a "newable". (constructor function that constructs a Script)
@@ -56,8 +57,8 @@ export class ScriptLoader {
                 await script.onInitialized() // custom defined initialization per-script
                 logger.info("Initialized "+script.getName()+"!")
             } catch(error: any) {
-                logger.error("Error executing onInitialized() on script " + script.getName() + ": ", error)
-                logger.error(error?.stack)
+                logger.error("Error executing onInitialized() on script " + script.getName())
+                logException(error)
             }
         }
     }

@@ -4,6 +4,7 @@ import { LeaderboardI, PlayerScoreI } from "../ts"
 import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
 import logger from "@utils/logger"
 import { roundNumber } from "@utils/index"
+import { PlayerTriggerEvents } from "./PlayerTriggerEvents"
 
 
 /**
@@ -27,22 +28,25 @@ export class PlayerScoreSaver {
         for(const score of scoreCollection.playerScores) {
 
             // Save new Leaderboards (song map info) associated with the score
-            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
+            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id) && !leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
                 const newLeaderboard: LeaderboardI = this.makeLeaderboardFromApiLeaderBoard(score.leaderboard)
                 leaderboardsToSave.push(newLeaderboard)
-                ScoreSaberDataCache.addLeaderboardId(score.leaderboard.id)
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
-            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) {
+            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
                 const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score, player.id)
                 scoresToSave.push(newScore)
-                ScoreSaberDataCache.pushScoreForPlayer(player.id, score.score.id)
             }
         }
 
+        // Save Leaderboards and PlayerScores in DB
         await Leaderboard.bulkCreate(leaderboardsToSave)
         await PlayerScore.bulkCreate(scoresToSave)
+
+        // Add Leaderboard and Score ids to cache
+        ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
+        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
 
         if(process.env.DEBUG == "true") {
             logger.info("Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
@@ -58,7 +62,7 @@ export class PlayerScoreSaver {
      * @param player 
      * @param score 
      */
-    public static savePageOfNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
+    public static async saveNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
         let repeatedScoreFound = false
 
@@ -67,38 +71,46 @@ export class PlayerScoreSaver {
 
         for(const score of scoreCollection.playerScores) {
 
-            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) {
+            if(ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) { // we'll break upon the first repeated score of the player
                 repeatedScoreFound = true
                 break
             }
 
-            
+            // Set new score to be saved in DB
+            if(!scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) { // there should never be repeated scores from api collection, but we check just in case
+                scoresToSave.push(this.makePlayerScoreFromApiScore(score, player.id))
+            }
 
+            // Set new Leaderboards (song map info) associated with the score to save in db (if it doesn't exist in DB)
+            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id) && !leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
+                leaderboardsToSave.push(this.makeLeaderboardFromApiLeaderBoard(score.leaderboard))
+            }
 
         }
         
+        // Save Leaderboards and PlayerScores in DB
+        await Leaderboard.bulkCreate(leaderboardsToSave)
+        await PlayerScore.bulkCreate(scoresToSave)  
+
+        // Add Leaderboard and Score ids to cache
+        ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
+        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
+
+        if(process.env.DEBUG == "true") {
+            logger.info("Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+            logger.info("Bulk saved " + scoresToSave.length + " new scores")
+        }
+
+        // (ASYNC) Call event trigger of player submitting new score page
+        PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
+
+
         return {
             repeatedScoresReached: repeatedScoreFound
         }
 
-
     }
 
-
-
-    private static savePlayerScore(score: any) {
-        // create PlayerScore and save
-    }
-
-
-    private static saveNewMapIfDoesntExist(leaderboard: any) {
-
-        // if in leaderboardIds map exists
-            // return
-
-        // create new leaderboard and save
-
-    }
 
     /**
      * Make a plain object for a Leaderboard from the Leaderboard data from the API.

@@ -22,7 +22,7 @@ export class PeriodicScoreFetcher {
     public static async startPeriodicFetch() {
 
         if(this.fetchRunning) {
-            logger.warn(`Periodic Score Fetcher is already running. `)
+            logger.warn(`Periodic fetcher: Periodic Score Fetcher is already running. `)
             return
         }
 
@@ -34,7 +34,7 @@ export class PeriodicScoreFetcher {
         for(const player of playersToFetch) {
 
             if(process.env.DEBUG == "true") {
-                logger.info(`Fetching periodic scores for ScoreSaber player ${player.name}`)
+                logger.info(`Periodic fetcher: Fetching scores for ScoreSaber player ${player.name}`)
             }
 
             // Fetch whole player score list in cache because they will be needed by PlayerScoreSaver for storing player scores
@@ -47,16 +47,16 @@ export class PeriodicScoreFetcher {
 
                 const scoresCollection = await api.getScores(player.id, "recent", pageToFetch, SCORES_FETCHED_PER_PAGE)
                 
-                if(process.env.DEBUG == "true") {
-                    logger.info(`Fetched page ${pageToFetch} for periodic score fetch of player ${player.id}. Got ${scoresCollection.playerScores.length} scores.`)
-                }
-
                 if(scoresCollection && scoresCollection.playerScores.length > 0) {
 
-                    // Save scores and leaderboards for this player
-                    const { repeatedScoresReached } = await PlayerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
+                    if(process.env.DEBUG == "true") {
+                        logger.info(`Periodic fetcher: Fetched page ${pageToFetch} of player ${player.name}. Got ${scoresCollection.playerScores.length} scores.`)
+                    }
 
-                    if(repeatedScoresReached) {
+                    // Save scores and leaderboards for this player
+                    const { newScoreListEndReached } = await PlayerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
+
+                    if(newScoreListEndReached) {
                         keepFetching = false
                     } else {
                         pageToFetch += 1

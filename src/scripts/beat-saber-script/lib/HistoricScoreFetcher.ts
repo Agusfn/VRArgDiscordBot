@@ -48,16 +48,16 @@ export class HistoricScoreFetcher {
         
         const ssPlayer = await SSPlayer.findByPk(ssPlayerId)
         if(!ssPlayer) {
-            logger.warn(`ScoreSaber player id ${ssPlayerId} was not found in DB.`)
+            logger.warn(`Historic fetcher: ScoreSaber player id ${ssPlayerId} was not found in DB.`)
             return
         }
         if(this.playerFetchQueue.find(player => player.id == ssPlayerId)) {
-            logger.warn(`ScoreSaber player id ${ssPlayerId} is already present in fetch queue, did not add again.`)
+            logger.warn(`Historic fetcher: ScoreSaber player id ${ssPlayerId} is already present in fetch queue, did not add again.`)
             return
         }
 
         if(process.env.DEBUG == "true") {
-            logger.info("Adding SS player " + ssPlayerId + " to historic fetch queue")
+            logger.info("Historic fetcher: Adding SS player " + ssPlayerId + " to fetch queue")
         }
 
         this.playerFetchQueue.push(ssPlayer)
@@ -76,7 +76,7 @@ export class HistoricScoreFetcher {
     private static async processFetchQueue() {
 
         if(process.env.DEBUG == "true") {
-            logger.info("Starting historic scoresaber fetch queue with " + this.playerFetchQueue.length + " players in it.")
+            logger.info("Historic fetcher: Starting fetch queue with " + this.playerFetchQueue.length + " players in it.")
         }
 
         while(this.playerFetchQueue.length > 0) {
@@ -86,7 +86,7 @@ export class HistoricScoreFetcher {
                 this.playerFetchQueue.shift() // remove first elem
 
                 if(process.env.DEBUG == "true") {
-                    logger.info("Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
+                    logger.info("Historic fetcher: Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
                 }
                 
             } catch(error) {
@@ -99,7 +99,7 @@ export class HistoricScoreFetcher {
         }
 
         if(process.env.DEBUG == "true") {
-            logger.info("Finished historic SS score fetcher queue.")
+            logger.info("Historic fetcher: Finished historic SS score fetcher queue.")
         }
 
     }
@@ -112,7 +112,7 @@ export class HistoricScoreFetcher {
     private static async fetchHistoricScoresForSSPlayer(player: SSPlayer) {
 
         if(process.env.DEBUG == "true") {
-            logger.info(`Starting historic score fetch for ScoreSaber player ${player.name}`)
+            logger.info(`Historic fetcher: Starting fetch for ScoreSaber player ${player.name}`)
         }
 
         await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.HISTORIC_FETCHER) // fetch player score ids from cache if not already fetched
@@ -130,7 +130,7 @@ export class HistoricScoreFetcher {
             if(scorePageCollection && scorePageCollection.playerScores.length > 0) {
 
                 if(process.env.DEBUG == "true") {
-                    logger.info(`Fetched page ${nextFetchPage} of historic scores of player ${player.id}. Got ${scorePageCollection.playerScores.length} scores.`)
+                    logger.info(`Historic fetcher: Fetched page ${nextFetchPage} of player ${player.name}. Got ${scorePageCollection.playerScores.length} scores.`)
                 }
 
                 await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
@@ -140,7 +140,7 @@ export class HistoricScoreFetcher {
                 nextFetchPage += 1
             } else { // end page reached
                 if(process.env.DEBUG == "true") {
-                    logger.info(`Finished loading historic scores for ScoreSaber player ${player.name} (id ${player.id})`)
+                    logger.info(`Historic fetcher: Finished loading scores for ScoreSaber player ${player.name} (id ${player.id})`)
                 }
                 endPageReached = true
                 player.fetchedAllScoreHistory = true

@@ -113,7 +113,10 @@ export interface LeaderboardI {
 
 
 
-export interface UserRankInfo {
+export interface PlayerPerformanceInfo {
+    playerId: string,
     discordUserId: string,
-    globalRank: number
+    globalRank: number,
+    countryRank: number,
+    avgAccuracy: number
 }

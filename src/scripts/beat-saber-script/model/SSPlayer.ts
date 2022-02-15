@@ -1,6 +1,6 @@
 import { Model } from "sequelize"
 import { SSCountries } from "../config"
-import { SSPlayerI, UserRankInfo } from "../ts"
+import { SSPlayerI, PlayerPerformanceInfo } from "../ts"
 import moment from "moment"
 import { Player } from "../utils/index"
 
@@ -10,10 +10,13 @@ import { Player } from "../utils/index"
 export class SSPlayer extends Model {
 
 
-    public getRankInfo(): UserRankInfo {
+    public getPerformanceInfo(): PlayerPerformanceInfo {
         return {
+            playerId: this.id,
             discordUserId: this.discordUserId,
-            globalRank: this.rank
+            globalRank: this.rank,
+            countryRank: this.countryRank,
+            avgAccuracy: this.avgRankedAccuracy
         }
     }
 

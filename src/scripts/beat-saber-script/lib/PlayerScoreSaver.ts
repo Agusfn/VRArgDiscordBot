@@ -6,7 +6,6 @@ import logger from "@utils/logger"
 import { roundNumber } from "@utils/index"
 import { PlayerTriggerEvents } from "./PlayerTriggerEvents"
 
-
 /**
  * Class that handles the saving of player scores and the related leaderboards (song maps) into the database.
  */
@@ -14,7 +13,7 @@ export class PlayerScoreSaver {
     
 
     /**
-     * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored.
+     * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored. Used in historic fetcher.
      * @param player The ScoreSaber Player
      * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
      * @param scoreCollection Collection of scores from ScoreSaber API for a given page
@@ -49,8 +48,8 @@ export class PlayerScoreSaver {
         ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
 
         if(process.env.DEBUG == "true") {
-            logger.info("Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
-            logger.info("Bulk saved " + scoresToSave.length + " new scores")
+            logger.info("Historic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+            logger.info("Historic fetcher: Bulk saved " + scoresToSave.length + " new scores")
         }
 
 
@@ -58,21 +57,22 @@ export class PlayerScoreSaver {
 
 
     /**
-     * Save multiple scores (and new leaderboards) from a recent page of scores of a player. Each score will be saved until a repeated score is found, in which case it will stop the loop.
+     * Save multiple scores (and new leaderboards) from a recent page of scores of a player for periodic fetcher. Each score will be saved until a repeated score is found, in which case it will stop the loop.
      * @param player 
      * @param score 
      */
     public static async saveNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
-        let repeatedScoreFound = false
+        let newScoreListEndReached = false
 
         const leaderboardsToSave: LeaderboardI[] = []
         const scoresToSave: PlayerScoreI[] = []
 
         for(const score of scoreCollection.playerScores) {
 
-            if(ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) { // we'll break upon the first repeated score of the player
-                repeatedScoreFound = true
+            // we'll break upon the first repeated score of the player, or the first score older than the registration Date (score page lists are ordered chronologically from API)
+            if((new Date(score.score.timeSet)) < player.createdAt || ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) { 
+                newScoreListEndReached = true
                 break
             }
 
@@ -97,16 +97,17 @@ export class PlayerScoreSaver {
         ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
 
         if(process.env.DEBUG == "true") {
-            logger.info("Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
-            logger.info("Bulk saved " + scoresToSave.length + " new scores")
+            logger.info("Periodic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+            logger.info("Periodic fetcher: Bulk saved " + scoresToSave.length + " new scores")
         }
 
-        // (ASYNC) Call event trigger of player submitting new score page
-        PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
-
+        // (async) Call event trigger of player submitting new score page
+        if(scoresToSave.length > 0) {
+            PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
+        }
 
         return {
-            repeatedScoresReached: repeatedScoreFound
+            newScoreListEndReached: newScoreListEndReached
         }
 
     }

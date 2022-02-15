@@ -1,7 +1,7 @@
 
 
 export enum SSCountries {
-    ARG = "AR",
+    ARGENTINA = "AR",
 }
 
 /** Amount of scores fetched in each page from ScoreSaberAPI (evaluate thouroughly the consequences before changing this value) */

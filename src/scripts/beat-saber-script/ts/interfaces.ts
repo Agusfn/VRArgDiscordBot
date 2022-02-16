@@ -32,6 +32,9 @@ export interface PlayerScoreI {
     fullCombo: boolean
     /** Date and time in which this score was set. */
     timeSet: Date
+
+    /** For eager loading from sequelize */
+    SSPlayer?: SSPlayerI
 }
 
 
@@ -115,8 +118,11 @@ export interface LeaderboardI {
 
 export interface PlayerPerformanceInfo {
     playerId: string,
+    playerName: string,
     discordUserId: string,
-    globalRank: number,
+    /** Global rank */
+    rank: number,
     countryRank: number,
-    avgAccuracy: number
+    avgAccuracy: number,
+    milestoneAnnouncements: boolean
 }

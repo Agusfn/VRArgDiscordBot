@@ -13,10 +13,12 @@ export class SSPlayer extends Model {
     public getPerformanceInfo(): PlayerPerformanceInfo {
         return {
             playerId: this.id,
+            playerName: this.name,
             discordUserId: this.discordUserId,
-            globalRank: this.rank,
+            rank: this.rank,
             countryRank: this.countryRank,
-            avgAccuracy: this.avgRankedAccuracy
+            avgAccuracy: this.avgRankedAccuracy,
+            milestoneAnnouncements: this.milestoneAnnouncements
         }
     }
 

@@ -2,7 +2,7 @@ import { SSPlayer } from "../model/index"
 import logger from "@utils/logger"
 import { ScoreSaberAPI } from "../utils/index"
 import { PlayerTriggerEvents } from "./PlayerTriggerEvents"
-import { PlayerPerformanceInfo } from "../ts"
+import { PlayerPerformanceInfo, SSPlayerI } from "../ts"
 
 
 /**
@@ -43,16 +43,16 @@ export class PlayerProfileUpdater {
 
             previousPerformances.push(player.getPerformanceInfo())
 
+            const oldPlayerData: SSPlayerI = player.toJSON()
+
             const ssPlayerData = await api.getPlayer(player.id)
-            
-            const oldPlayer = SSPlayer.build(player)
             player.fillWithSSPlayerData(ssPlayerData)
             await player.save()
 
             newPerformances.push(player.getPerformanceInfo())
 
             // (async) send player updated profile event to PlayerTriggerEvents
-            PlayerTriggerEvents.onPlayerUpdateProfile(player, oldPlayer)
+            PlayerTriggerEvents.onPlayerUpdateProfile(player, oldPlayerData)
         }
 
         // (async) Call on all players update performance info at once for accurate rank comparison.

@@ -18,7 +18,9 @@ export const logException = (error: any) => {
 
         if(error?.name && (<string>error.name).toLowerCase().includes("sequelize")) { // is a sequelize exception (they are loaded with data)
 
-            logger.error("Sequelize error: " + error.errors.map((error: any) => error.message).join(", "))
+            if(typeof error.errors == "object") {
+                logger.error("Sequelize error: " + error.errors.map((error: any) => error.message).join(", "))
+            }
 
             if(process.env.DEBUG == "true") {
                 console.log(error) // show a bunch of data of sequelize error

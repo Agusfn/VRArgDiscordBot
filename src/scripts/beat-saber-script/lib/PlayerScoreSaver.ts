@@ -120,7 +120,7 @@ export class PlayerScoreSaver {
      */
     private static makeLeaderboardFromApiLeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
         return {
-            id: leaderboard.id,
+            id: leaderboard.id, // PK is ScoreSaber Leaderboard id
             songHash: leaderboard.songHash,
             songName: leaderboard.songName,
             songSubName: leaderboard.songSubName,
@@ -153,7 +153,7 @@ export class PlayerScoreSaver {
         }
 
         return {
-            id: score.id,
+            id: score.id, // PK is ScoreSaber Score id
             playerId: ssPlayerId,
             leaderboardId: apiScore.leaderboard.id,
             rank: score.rank,

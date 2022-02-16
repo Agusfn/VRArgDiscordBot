@@ -2,13 +2,14 @@ import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, Pe
 import { CommandManager, Script, Discord } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
-import { PlayerScore } from "./model/index"
+import { PlayerScore, SSPlayer } from "./model/index"
 //import UserProfileLinking from "./lib/UserProfileLinking"
 //import UserScoreFetcher from "./lib/UserScoreFetcher"
 //import PlayerStatusChecker from "./lib/PlayerStatusChecker"
 import {TextChannel} from "discord.js"
 import logger from "@utils/logger"
-import { ScoreSaberAPI } from "./utils"
+import { isScoreSignificantlyImproved, ScoreSaberAPI } from "./utils/index"
+import { Sequelize } from "sequelize"
 
 
 export class BeatSaberScript extends Script {
@@ -36,10 +37,27 @@ export class BeatSaberScript extends Script {
         await PlayerTriggerEvents.initialize()
 
         // Start historic fetcher for any pending fetch scores from scoresaber accounts
-        HistoricScoreFetcher.startFetcher()
+        //HistoricScoreFetcher.startFetcher()
 
-    
 
+        // this.addCustomCron("*/2 * * * *", async () => {
+        //     console.log("cron running each 2 min...")
+        //     await PeriodicScoreFetcher.startPeriodicFetch()
+        // })
+
+        //await PlayerProfileUpdater.startProfileUpdater()
+        // this.addCustomCron("*/3 * * * *", async () => {
+        //     console.log("cron running at every 3rd min...")
+        //     await PlayerProfileUpdater.startProfileUpdater()
+        // })
+
+        /*const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", 3, 123]}).findAll()
+        const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
+        console.log(topScore)*/
+
+        isScoreSignificantlyImproved(65, 92)
+
+        
         CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
             // Validar param
             const scoreSaberId = args[0]
@@ -131,15 +149,7 @@ export class BeatSaberScript extends Script {
         }, "Desvincular una cuenta de ScoreSaber de una cuenta de Discord.", "BeatSaber")
 
 
-        this.addCustomCron("*/2 * * * *", async () => {
-            console.log("cron running each 2 min...")
-            await PeriodicScoreFetcher.startPeriodicFetch()
-        })
 
-        this.addCustomCron("*/3 * * * *", async () => {
-            console.log("cron running at every 3rd min...")
-            await PlayerProfileUpdater.startProfileUpdater()
-        })
 
         // Initialize score fetcher
         /*this.scoreFetcher = new UserScoreFetcher()

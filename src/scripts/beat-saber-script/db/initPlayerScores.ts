@@ -1,4 +1,4 @@
-import { DataTypes as Types } from "sequelize"
+import { DataTypes as Types, Sequelize, Op } from "sequelize"
 import { PlayerScore, SSPlayer, Leaderboard } from "../model"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 
@@ -41,7 +41,30 @@ export default () => {
         sequelize: SequelizeDBManager.getInstance(), 
         modelName: "PlayerScore",
         tableName: "player_scores",
-        timestamps: false
+        timestamps: false,
+        scopes: {
+
+            // Query scope to retrieve only the top score of a given leaderboardId for each existing SSPlayer, joined with the data of said SSPlayer
+            topScoresForEachPlayer(leaderboardId: number, ignoreScoreId: number) {
+                return {
+                    include: SSPlayer,
+                    attributes: {
+                        include: [
+                            [Sequelize.fn("max", Sequelize.col("modifiedScore")), "playerTopScore"]
+                        ],
+                    },
+                    where: {
+                        id: {
+                            [Op.ne]: ignoreScoreId
+                        },
+                        leaderboardId: leaderboardId
+                    },
+                    group: ["playerId"],
+                    raw: true
+                }
+            }
+
+        }
     })
 
 

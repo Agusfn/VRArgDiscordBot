@@ -1,7 +1,11 @@
-import { SSPlayer } from "../model/index"
-import { PlayerPerformanceInfo, PlayerScoreI } from "../ts"
+import { SSPlayer, PlayerScore } from "../model/index"
+import { PlayerPerformanceInfo, PlayerScoreI, SSPlayerI } from "../ts"
 import logger from "@utils/logger"
 import { PlayerAnnouncements } from "./PlayerAnnouncements"
+import { logException } from "@utils/other"
+import { Sequelize } from "sequelize"
+import { isScoreSignificantlyImproved } from "../utils/index"
+import { SSCountries } from "../config"
 
 export class PlayerTriggerEvents {
 
@@ -26,6 +30,7 @@ export class PlayerTriggerEvents {
      * Cache with all of the SSPlayers countries. Either with their Discord account linked or not, or subscribed to announcements or not.
      */
     private static playerCountries: {[playerId: string]: string} = {}
+
 
 
     public static async initialize() {
@@ -53,7 +58,7 @@ export class PlayerTriggerEvents {
      * @param player ScoreSaber Player with their Discord account linked
      * @param oldPlayer 
      */
-    public static onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayer) {
+    public static onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayerI) {
 
         logger.info("event handler called for player " + player.name + " updating profile")
 
@@ -80,54 +85,141 @@ export class PlayerTriggerEvents {
      * @param oldPerformances 
      * @param newPerformances 
      */
-    public static onAllPlayersUpdatePerformanceInfo(oldPerformances: PlayerPerformanceInfo[], newPerformances: PlayerPerformanceInfo[]) {
+    public static async onAllPlayersUpdatePerformanceInfo(oldPerformances: PlayerPerformanceInfo[], newPerformances: PlayerPerformanceInfo[]) {
 
-        for(const updatedPlayer of newPerformances) {
-            
-            const oldPlayer = oldPerformances.find(player => player.discordUserId == updatedPlayer.discordUserId) // this must exist so we don't event need to check
-            
-            if(updatedPlayer.globalRank < oldPlayer.globalRank) { // player improved (lowered) their country ranking
+        // for testing only
+        // newPerformances.find(p => p.playerId == "76561198128883308").rank = 200
+        // newPerformances.find(p => p.playerId == "76561198291000367").rank = 1391
+        // newPerformances.find(p => p.playerId == "76561198057450492").rank = 1
 
-                const playersSurpassed: UserRankInfo[] = []
-                const usersBelowUpdatedUser = this.comparedUsersAfterUpdate.filter(user => user.globalRank > updatedPlayer.globalRank) // users which are now worse (higher) rank than updatedUser
-                
-                for(const lowerRankUser of usersBelowUpdatedUser) { // iterate over all of the players with currently lower rank than the user we're iterating
+        // newPerformances.find(p => p.playerId == "76561198128883308").avgAccuracy = 91.85
+        // newPerformances.find(p => p.playerId == "76561198291000367").avgAccuracy = 92
+        // newPerformances.find(p => p.playerId == "76561198057450492").avgAccuracy = 93
+        
+        //console.log("onAllPlayersUpdatePerformanceInfo called. oldPerformances: ", oldPerformances, "newPerformances: ", newPerformances)
 
-                    const lowerRankUserBeforeUpdate = this.comparedUsersBeforeUpdate.find(user => user.discordUserId == lowerRankUser.discordUserId)
+        try {
+            // Send announcement about players surpassing others in global rank
+            await this.announcePlayersPerformanceDifference(oldPerformances, newPerformances, "rank", "lower")
 
-                    if(lowerRankUserBeforeUpdate.globalRank < oldPlayer.globalRank) { // the lowerRankUser had better (lower) rank than updatedUser before the update => it was surpassed by updatedUser
-                        playersSurpassed.push(lowerRankUser)
-                    }
-                }
-
-                if(playersSurpassed.length > 0) {
-                    this.sendPlayerSurpassAnnouncement(updatedPlayer, playersSurpassed)
-                }
-
-            }
-
+            // Send announcement about players surpassing others in avg accuracy
+            await this.announcePlayersPerformanceDifference(oldPerformances, newPerformances, "avgAccuracy", "higher")
+        } catch (error) {
+            logException(error)
         }
 
 
     }
 
 
-    public static onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScoreI[]) {
+    /**
+     * 
+     * @param oldPerformances 
+     * @param newPlayerPerformances 
+     * @param announceFunction 
+     */
+    private static async announcePlayersPerformanceDifference(oldPerformances: PlayerPerformanceInfo[], newPlayerPerformances: PlayerPerformanceInfo[], attributeName: "rank" | "avgAccuracy", metricCriteria: "higher" | "lower") {
+
+        /** Returns true if metric "a" is better than "b" according to the specified criteria. */
+        const higherMetric = (a: number, b: number) => {
+            if(metricCriteria == "higher") {
+                return a > b
+            } else {
+                return b > a
+            }
+        }
+
+        for(const player of newPlayerPerformances) {
+
+            // Get old performance for this player
+            const playerOldPerformance = oldPerformances.find(playerPerf => playerPerf.playerId == player.playerId) // this must exist so we don't event need to check
+            if(higherMetric(player[attributeName], playerOldPerformance[attributeName])) { // player improved (lowered) their global ranking (or given metric)
+
+                // The players surpassed by our current player
+                const playersSurpassed: PlayerPerformanceInfo[] = []
+
+                const opponentsBelow = newPlayerPerformances.filter(playerPerf => playerPerf.playerId != player.playerId && 
+                    !higherMetric(playerPerf[attributeName], player[attributeName])) // users which are now worse (higher) in rank (or given metric) than updatedUser
+                
+                for(const opponentBelow of opponentsBelow) { // iterate over all of the players with currently lower rank than the user we're iterating
+                    
+                    // Get the info of the player with lower rank prior to this updatae
+                    const opponentBeforeUpdate = oldPerformances.find(playerPerf => playerPerf.playerId == opponentBelow.playerId)
+
+                    // The player with lower rank was before higher rank (or given metric) thank "player"
+                    if(higherMetric(opponentBeforeUpdate[attributeName], playerOldPerformance[attributeName])) {
+                        playersSurpassed.push(opponentBelow)
+                    }
+                }
+
+                if(playersSurpassed.length > 0) {
+                    console.log("players surpassed by " + player.playerId + ": ", playersSurpassed)
+                    if(attributeName == "rank") {
+                        await PlayerAnnouncements.playerSurpassedPlayersInRank(player, playersSurpassed)
+                    } else if(attributeName == "avgAccuracy") {
+                        await PlayerAnnouncements.playerSurpassedPlayersInAccuracy(player, playersSurpassed)
+                    }
+                }
+
+            }
+
+        }
+
+    }
+
+
+    /**
+     * Handler event for when a player gets a page of new scores saved. Usually will range from 0 to 10 scores, given a fetch per hour.
+     * @param player 
+     * @param scores 
+     */
+    public static async onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScoreI[]) {
 
         console.log("event handler called for player " + player.name + " submitting new score page of " + scores.length)
 
-        // if score is best among all players (existing at least one). needs db query
-            // send top score announcement
-        // else if score is best among all players of said country (existing at least once). needs db query, maybe use prior
-            // send top score of map in said country announcement
-        // else if score is first among all players
-            // send announcement of first score in song
-        // else if score is "significantly improved" than before score of user
-            // send announcement about significant improvement of score
+        for(const score of scores) {
 
-        
-        // if player improved score than any of their opponents (use existing query)
-            // send announcement for each opponent
+            // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score (which is already stored in db)
+            const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", score.leaderboardId, score.id]}).findAll()
+
+            if(totalScores.length > 0) {
+
+                const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
+
+                if(score.modifiedScore > topScore.modifiedScore) {
+                    await PlayerAnnouncements.playerMadeTopScore(player, score, topScore)
+                } else {
+                    const topScoreOfCountry = (player.country == SSCountries.ARGENTINA) ? totalScores
+                        .filter(score => score.SSPlayer.country == player.country)
+                        .reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
+
+                    if(topScoreOfCountry && score.modifiedScore > topScoreOfCountry.modifiedScore) {
+                        await PlayerAnnouncements.playerMadeCountryTopScore(player, score, topScoreOfCountry)
+                    } else {
+
+                        const previousPlayerTopScore = totalScores
+                            .filter(score => score.playerId == player.id)
+                            .reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
+                        
+                        if(previousPlayerTopScore && isScoreSignificantlyImproved(previousPlayerTopScore.accuracy, score.accuracy)) {
+                            await PlayerAnnouncements.playerSignificantlyImprovedOwnScore(player, score, previousPlayerTopScore)
+                        }
+                    }
+                }
+
+            } else { // no players submitted any score for this leaderboard
+                await PlayerAnnouncements.playerHasFirstScoredMap(player, score)
+            }
+
+            // future: if player improved score than any of their opponents (use existing query)
+                // send announcement for each opponent
+
+
+        }
+
+
+
+
     }
 
 

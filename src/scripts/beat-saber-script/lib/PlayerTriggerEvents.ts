@@ -175,50 +175,48 @@ export class PlayerTriggerEvents {
      */
     public static async onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScoreI[]) {
 
-        console.log("event handler called for player " + player.name + " submitting new score page of " + scores.length)
+        try {
 
-        for(const score of scores) {
+            console.log("Event handler called for player " + player.name + " submitting new score page of " + scores.length + " scores")
 
-            // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score (which is already stored in db)
-            const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", score.leaderboardId, score.id]}).findAll()
-
-            if(totalScores.length > 0) {
-
-                const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
-
-                if(score.modifiedScore > topScore.modifiedScore) {
-                    await PlayerAnnouncements.playerMadeTopScore(player, score, topScore)
-                } else {
-                    const topScoreOfCountry = (player.country == SSCountries.ARGENTINA) ? totalScores
-                        .filter(score => score.SSPlayer.country == player.country)
-                        .reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
-
-                    if(topScoreOfCountry && score.modifiedScore > topScoreOfCountry.modifiedScore) {
-                        await PlayerAnnouncements.playerMadeCountryTopScore(player, score, topScoreOfCountry)
+            for(const newScore of scores) {
+    
+                // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score (which is already stored in db)
+                const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", newScore.leaderboardId, newScore.id]}).findAll()
+    
+                if(totalScores.length > 0) {
+    
+                    const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
+    
+                    if(newScore.modifiedScore > topScore.modifiedScore) {
+                        await PlayerAnnouncements.playerMadeTopScore(player, newScore, topScore)
                     } else {
-
-                        const previousPlayerTopScore = totalScores
-                            .filter(score => score.playerId == player.id)
-                            .reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
-                        
-                        if(previousPlayerTopScore && isScoreSignificantlyImproved(previousPlayerTopScore.accuracy, score.accuracy)) {
-                            await PlayerAnnouncements.playerSignificantlyImprovedOwnScore(player, score, previousPlayerTopScore)
+                        const scoresFromCountry = totalScores.filter(score => score.SSPlayer.country == player.country) 
+                        const topScoreOfCountry = scoresFromCountry.length > 0 ? scoresFromCountry.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
+    
+                        if(player.country == SSCountries.ARGENTINA && topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore) { // argentina is temporarily the only who has top country announcement
+                            await PlayerAnnouncements.playerMadeCountryTopScore(player, newScore, topScoreOfCountry)
+                        } else {
+                            const playerPreviousScores = totalScores.filter(score => score.playerId == player.id)
+                            const previousPlayerTopScore = playerPreviousScores.length > 0 ? playerPreviousScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
+                            
+                            if(previousPlayerTopScore && isScoreSignificantlyImproved(previousPlayerTopScore.accuracy, newScore.accuracy)) {
+                                await PlayerAnnouncements.playerSignificantlyImprovedOwnScore(player, newScore, previousPlayerTopScore)
+                            }
                         }
                     }
+    
+                } else { // no players submitted any score for this leaderboard
+                    await PlayerAnnouncements.playerHasFirstScoredRankedMap(player, newScore)
                 }
-
-            } else { // no players submitted any score for this leaderboard
-                await PlayerAnnouncements.playerHasFirstScoredMap(player, score)
+    
+                // future: if player improved score than any of their opponents (use existing query)
+                    // send announcement for each opponent
             }
 
-            // future: if player improved score than any of their opponents (use existing query)
-                // send announcement for each opponent
-
-
+        } catch(error) {
+            logException(error)
         }
-
-
-
 
     }
 
@@ -246,7 +244,7 @@ export class PlayerTriggerEvents {
 
     private static onPlayerUpdateCountryRank(player: SSPlayer, oldRank: number, newRank: number) {
         if(newRank == 1) {
-            PlayerAnnouncements.sendForPlayerTop1Country(player, player.country)
+            PlayerAnnouncements.sendForPlayerTop1Country(player, <SSCountries>player.country)
         }
     }
 

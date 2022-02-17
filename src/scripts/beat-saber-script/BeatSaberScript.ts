@@ -37,27 +37,21 @@ export class BeatSaberScript extends Script {
         await PlayerTriggerEvents.initialize()
 
         // Start historic fetcher for any pending fetch scores from scoresaber accounts
-        //HistoricScoreFetcher.startFetcher()
+        HistoricScoreFetcher.startFetcher()
 
 
-        // this.addCustomCron("*/2 * * * *", async () => {
-        //     console.log("cron running each 2 min...")
-        //     await PeriodicScoreFetcher.startPeriodicFetch()
-        // })
+        this.addCustomCron("*/20 * * * *", async () => {
+            console.log("cron running each 20 min...")
+            await PeriodicScoreFetcher.startPeriodicFetch()
+        })
 
-        //await PlayerProfileUpdater.startProfileUpdater()
-        // this.addCustomCron("*/3 * * * *", async () => {
-        //     console.log("cron running at every 3rd min...")
-        //     await PlayerProfileUpdater.startProfileUpdater()
-        // })
+         await PlayerProfileUpdater.startProfileUpdater()
+         this.addCustomCron("*/25 * * * *", async () => {
+             console.log("cron running each 25 min...")
+             await PlayerProfileUpdater.startProfileUpdater()
+        })
 
-        /*const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", 3, 123]}).findAll()
-        const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
-        console.log(topScore)*/
 
-        isScoreSignificantlyImproved(65, 92)
-
-        
         CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
             // Validar param
             const scoreSaberId = args[0]

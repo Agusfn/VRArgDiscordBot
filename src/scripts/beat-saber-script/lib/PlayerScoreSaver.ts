@@ -101,6 +101,31 @@ export class PlayerScoreSaver {
             logger.info("Periodic fetcher: Bulk saved " + scoresToSave.length + " new scores")
         }
 
+        // *** TEST SCORES ****
+        /*if(player.id == "76561198252658652") {
+            const testScore: PlayerScoreI = {
+                id: 111111111,
+                playerId: "76561198252658652",
+                leaderboardId: 100024,
+                rank: 123,
+                baseScore: 123,
+                modifiedScore: 1300000,
+                pp: 480,
+                accuracy: 85.5,
+                weight: 1,
+                modifiers: "",
+                multiplier: 1,
+                badCuts: 0,
+                missedNotes: 0,
+                maxCombo: 1231,
+                fullCombo: true,
+                timeSet: new Date()
+            }
+            scoresToSave.push(testScore)
+        }*/
+
+        // ****************
+
         // (async) Call event trigger of player submitting new score page
         if(scoresToSave.length > 0) {
             PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)

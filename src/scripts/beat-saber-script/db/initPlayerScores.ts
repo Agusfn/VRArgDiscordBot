@@ -59,8 +59,7 @@ export default () => {
                         },
                         leaderboardId: leaderboardId
                     },
-                    group: ["playerId"],
-                    raw: true
+                    group: ["playerId"]
                 }
             }
 

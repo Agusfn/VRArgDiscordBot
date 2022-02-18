@@ -10,8 +10,18 @@ export enum FetcherModule {
     PERIODIC_FETCHER = "periodic_fetcher"
 }
 
-interface PlayerScoreItem {
-    scoreIds: number[],
+/** Many submissions may correspond to a same score. This identifies the submission. */
+interface ScoreSubmission {
+    ssScoreId: number // ScoreSaber Score ID
+    timeSetUnix: number
+}
+
+
+/**
+ * An object conaining the score id list for a given player.
+ */
+interface PlayerScoresCacheItem {
+    scoreSubmissions: ScoreSubmission[]
     accessedBy: FetcherModule[]
 }
 
@@ -36,7 +46,7 @@ export class ScoreSaberDataCache {
     /**
      * Cache of score ids for players by its player id.
      */
-    private static playerScores: {[ssPlayerId: string]: PlayerScoreItem} = {}
+    private static playerScores: {[ssPlayerId: string]: PlayerScoresCacheItem} = {}
 
 
     /**
@@ -103,13 +113,19 @@ export class ScoreSaberDataCache {
             }
         } else {
             // fetch player scores and create entry for this player
-            const playerScoreIds = (await PlayerScore.findAll({
+            const playerScores = await PlayerScore.findAll({
                 where: { playerId: ssPlayerId },
-                attributes: ["id"]
-            })).map(score => score.id)
+                attributes: ["ssId", "timeSet"]
+            })
+            
+            // Array with all the scores of the user, only one per map (the most recent)
+            const scoreIdsAndDates = playerScores.map(score => ({
+                ssScoreId: score.ssId,
+                timeSetUnix: score.timeSet.getTime()
+            }))
 
             this.playerScores[ssPlayerId] = {
-                scoreIds: playerScoreIds,
+                scoreSubmissions: scoreIdsAndDates,
                 accessedBy: [fetcherModule]
             }
 
@@ -122,15 +138,17 @@ export class ScoreSaberDataCache {
     /**
      * Fetch the scoreIds cache from a given ScoreSaber player. Scores MUST have already been fetched previously.
      * @param ssPlayerId 
-     * @param scoreId 
+     * @param ssScoreId The ScoreSaber Score ID (is one per Leaderboard per player)
+     * @param timeSetUnix The time in which the score was set (there may be multiple set)
      * @returns 
      */
-    public static playerHasScoreId(ssPlayerId: string, scoreId: number) {
+    public static playerHasScoreSubmission(ssPlayerId: string, ssScoreId: number, timeSetUnix: number) {
         const scores = this.playerScores[ssPlayerId]
         if(!scores) {
             throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
         }
-        return scores.scoreIds.includes(scoreId)
+        const scoreInfo = scores.scoreSubmissions.find(submission => submission.ssScoreId == ssScoreId && submission.timeSetUnix == timeSetUnix)
+        return scoreInfo != null ? true : false
     }
 
 
@@ -140,15 +158,13 @@ export class ScoreSaberDataCache {
      * @param scoreIds 
      * @returns 
      */
-     public static pushScoresForPlayer(ssPlayerId: string, scoreIds: number | number[]) {
+     public static pushScoresForPlayer(ssPlayerId: string, scoreSubmissions: ScoreSubmission[]) {
         const scores = this.playerScores[ssPlayerId]
         if(!scores) {
             throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
         }
-        if(Array.isArray(scoreIds)) {
-            scores.scoreIds = [...scores.scoreIds, ...scoreIds]
-        } else {
-            scores.scoreIds.push(scoreIds)
+        if(Array.isArray(scoreSubmissions)) {
+            scores.scoreSubmissions = [...scores.scoreSubmissions, ...scoreSubmissions]
         }
     }
 

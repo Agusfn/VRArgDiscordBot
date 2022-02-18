@@ -33,7 +33,7 @@ export class PlayerScoreSaver {
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
-            if(!ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
+            if(!ScoreSaberDataCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() ) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
                 const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score, player.id)
                 scoresToSave.push(newScore)
             }
@@ -45,7 +45,8 @@ export class PlayerScoreSaver {
 
         // Add Leaderboard and Score ids to cache
         ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
-        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
+        const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
+        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
         if(process.env.DEBUG == "true") {
             logger.info("Historic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
@@ -71,7 +72,7 @@ export class PlayerScoreSaver {
         for(const score of scoreCollection.playerScores) {
 
             // we'll break upon the first repeated score of the player, or the first score older than the registration Date (score page lists are ordered chronologically from API)
-            if((new Date(score.score.timeSet)) < player.createdAt || ScoreSaberDataCache.playerHasScoreId(player.id, score.score.id)) { 
+            if((new Date(score.score.timeSet)) < player.createdAt || ScoreSaberDataCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() )) { 
                 newScoreListEndReached = true
                 break
             }
@@ -94,7 +95,8 @@ export class PlayerScoreSaver {
 
         // Add Leaderboard and Score ids to cache
         ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
-        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoresToSave.map(score => score.id))
+        const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
+        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
         if(process.env.DEBUG == "true") {
             logger.info("Periodic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
@@ -178,7 +180,8 @@ export class PlayerScoreSaver {
         }
 
         return {
-            id: score.id, // PK is ScoreSaber Score id
+            id: null, // PK id is auto generated
+            ssId: score.id, // ScoreSaber Score id
             playerId: ssPlayerId,
             leaderboardId: apiScore.leaderboard.id,
             rank: score.rank,

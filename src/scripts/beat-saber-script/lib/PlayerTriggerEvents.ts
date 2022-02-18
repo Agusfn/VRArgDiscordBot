@@ -181,8 +181,8 @@ export class PlayerTriggerEvents {
 
             for(const newScore of scores) {
     
-                // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score (which is already stored in db)
-                const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", newScore.leaderboardId, newScore.id]}).findAll()
+                // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score submission (which is already stored in db)
+                const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", newScore.leaderboardId, newScore.ssId, newScore.timeSet]}).findAll()
     
                 if(totalScores.length > 0) {
     

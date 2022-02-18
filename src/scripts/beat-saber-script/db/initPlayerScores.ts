@@ -7,8 +7,10 @@ export default () => {
     PlayerScore.init({
         id: {
             type: Types.INTEGER,
-            primaryKey: true
+            primaryKey: true,
+            autoIncrement: true
         },
+        ssId: Types.INTEGER,
         playerId: {
             type: Types.STRING,
             references: {
@@ -45,7 +47,7 @@ export default () => {
         scopes: {
 
             // Query scope to retrieve only the top score of a given leaderboardId for each existing SSPlayer, joined with the data of said SSPlayer
-            topScoresForEachPlayer(leaderboardId: number, ignoreScoreId: number) {
+            topScoresForEachPlayer(leaderboardId: number, ignoreSSScoreId: number, ignoreSSScoreDate: Date) {
                 return {
                     include: SSPlayer,
                     attributes: {
@@ -54,14 +56,29 @@ export default () => {
                         ],
                     },
                     where: {
-                        id: {
-                            [Op.ne]: ignoreScoreId
-                        },
-                        leaderboardId: leaderboardId
+                        leaderboardId: leaderboardId,
+                        [Op.not]: { // ignore specified submission
+                            ssId: ignoreSSScoreId,
+                            timeSet: ignoreSSScoreDate 
+                        }
                     },
                     group: ["playerId"]
                 }
-            }
+            },
+            // Scope to retrieve only the most recent scores for a given player.
+            // recentScoresForPlayer(ssPlayerId: string) {
+            //     return {
+            //         attributes: {
+            //             include: [
+            //                 [Sequelize.fn("max", Sequelize.col("timeSet")), "recentSubmissionDate"]
+            //             ],
+            //         },
+            //         where: {
+            //             playerId: ssPlayerId
+            //         },
+            //         group: ["ssId"]
+            //     }
+            // }
 
         }
     })

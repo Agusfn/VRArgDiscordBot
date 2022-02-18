@@ -80,7 +80,7 @@ export class PlayerAnnouncements {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = this.discordMention(player) + " hizo un top score en todo el server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" con un acc de **" + this.formatAcc(newScore.accuracy) + "**"
+        let message = this.discordMention(player) + " hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" con un acc de **" + this.formatAcc(newScore.accuracy) + "**"
         
         if(leaderboard.ranked) {
             message += ` y obteniendo **${roundNumber(newScore.pp, 1)}pp**`
@@ -166,11 +166,11 @@ export class PlayerAnnouncements {
      * @returns 
      */
     private static discordMentionFromInfo(playerInfo: PlayerPerformanceInfo) {
-        if(playerInfo.milestoneAnnouncements) { // mention it on Discord
-            return "<@" + playerInfo.discordUserId + ">"
-        } else {
+        // if(playerInfo.milestoneAnnouncements) { // mention it on Discord
+        //     return "<@" + playerInfo.discordUserId + ">"
+        // } else {
             return "**" + playerInfo.playerName + "**" // bold
-        }
+        // }
     }
 
     /**
@@ -178,11 +178,11 @@ export class PlayerAnnouncements {
      * @param player 
      */
     private static discordMention(player: SSPlayerI) {
-        if(player.milestoneAnnouncements) {
-           return "<@" + player.discordUserId + ">"
-        } else {
+        // if(player.milestoneAnnouncements) {
+        //    return "<@" + player.discordUserId + ">"
+        // } else {
             return "**" + player.name + "**"
-        }
+        // }
     }
 
 

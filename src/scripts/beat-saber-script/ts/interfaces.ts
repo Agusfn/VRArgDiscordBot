@@ -1,7 +1,9 @@
 
 export interface PlayerScoreI {
-    /** Id of score in ScoreSaber */
+    /** Internal id to identify score. Does not reflect any id in ScoreSaber API. Differs from ssId because there may be multiple scores of a player in a given map. */
     id: number
+    /** Id of score in ScoreSaber. In ScoreSaber, each player may only have 1 score per map, subsequent submits are improvements of said score. */
+    ssId: number
     /** Id of ScoreSaber player (FK with SSPlayer) */
     playerId: string
     /** If of played leaderboard/map (FK with Leaderboard) */

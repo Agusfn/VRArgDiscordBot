@@ -92,6 +92,24 @@ export class PlayerAnnouncements {
     }
 
     /**
+     * Player has improved his score in a leaderboard he already had a top score in the server.
+     * @param player 
+     * @param newScore Plain js object or NewScore model.
+     * @param snipedScore PlayerScore object with SSPlayer eager loaded.
+     */
+     public static async playerImprovedTopScore(player: SSPlayer, newScore: PlayerScoreI, oldScore: PlayerScore) {
+
+        const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
+
+        if(leaderboard.ranked) {
+            let message = this.discordMention(player) + " mejoró su top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" (**" + 
+            this.formatAcc(oldScore.accuracy) + "** --> **" + this.formatAcc(newScore.accuracy) + "**) obteniendo **"+ roundNumber(newScore.pp, 1) + "pp**!"
+            await this.outputChannel.send(message)
+        }
+    }
+
+
+    /**
      * Player has made a new top score in a Leaderboard (map) among all registered players of their country (only for Argentina currently).
      * @param player 
      * @param newScore Plain js object or NewScore model.

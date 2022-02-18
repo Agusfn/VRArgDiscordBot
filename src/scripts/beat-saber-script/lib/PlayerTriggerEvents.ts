@@ -181,7 +181,7 @@ export class PlayerTriggerEvents {
 
             for(const newScore of scores) {
     
-                // Get all of the submitted scores between all players in the server for this map (Leaderboard), ignoring current score submission (which is already stored in db)
+                // Get all of the submitted scores between all players (including self) in the server for this map (Leaderboard), ignoring current score submission (which is already stored in db)
                 const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", newScore.leaderboardId, newScore.ssId, newScore.timeSet]}).findAll()
     
                 if(totalScores.length > 0) {
@@ -189,13 +189,18 @@ export class PlayerTriggerEvents {
                     const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
     
                     if(newScore.modifiedScore > topScore.modifiedScore) {
-                        await PlayerAnnouncements.playerMadeTopScore(player, newScore, topScore)
+                        if(topScore.playerId != player.id) {
+                            await PlayerAnnouncements.playerMadeTopScore(player, newScore, topScore) // player sniped another player's top score
+                        } else {
+                            await PlayerAnnouncements.playerImprovedTopScore(player, newScore, topScore) // topScore is players own score
+                        }
                     } else {
                         const scoresFromCountry = totalScores.filter(score => score.SSPlayer.country == player.country) 
                         const topScoreOfCountry = scoresFromCountry.length > 0 ? scoresFromCountry.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
     
-                        if(player.country == SSCountries.ARGENTINA && topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore) { // argentina is temporarily the only who has top country announcement
-                            await PlayerAnnouncements.playerMadeCountryTopScore(player, newScore, topScoreOfCountry)
+                        if(player.country == SSCountries.ARGENTINA && // argentina is temporarily the only who has top country announcement
+                            topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore && topScoreOfCountry.playerId != player.id) { 
+                            await PlayerAnnouncements.playerMadeCountryTopScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
                         } else {
                             const playerPreviousScores = totalScores.filter(score => score.playerId == player.id)
                             const previousPlayerTopScore = playerPreviousScores.length > 0 ? playerPreviousScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null

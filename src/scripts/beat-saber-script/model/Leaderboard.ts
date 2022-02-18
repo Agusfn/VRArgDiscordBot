@@ -28,6 +28,10 @@ export class Leaderboard extends Model {
 
         text += " en " + this.readableDifficulty()
 
+        if(this.ranked && this.stars) {
+            text += " (" + this.stars + "★)"
+        }
+
         return text
     }
 

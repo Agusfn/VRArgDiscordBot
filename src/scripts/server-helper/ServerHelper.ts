@@ -15,9 +15,9 @@ export class ServerHelper extends Script {
     protected scriptName = "Server Helper Script"
 
     protected onUserMessage: undefined
-    protected initDbModels: undefined
+    public initDbModels: undefined
 
-    public onInitialized() {
+    public async onInitialized() {
 
         // Generate indexes command
         CommandManager.newAdminCommand("generar_indices", "<id canal>", async (userMessage: Message, args) => {

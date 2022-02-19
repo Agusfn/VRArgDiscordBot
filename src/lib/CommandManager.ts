@@ -17,6 +17,8 @@ const helpCommands = ["ayuda", "help"]
 
 const maxCommandLength = 30
 
+const COMMAND_GRAL_GROUP_NAME = "general"
+
 
 /**
  * Class that handles the registration and submition of all commands in the discord server for this bot.
@@ -26,7 +28,8 @@ export class CommandManager {
 
 
     /**
-     * List of all registered commands.
+     * List of all registered commands. Used mostly for validating against not registering already existing commands, and for listing them to the user.
+     * This list is not involved in the handler and execution of commands; handler is registered in bot-commander when registering the command.
      */
     private static commands: BotCommand[] = []
 
@@ -37,10 +40,11 @@ export class CommandManager {
      * @param args The arguments, in the syntax of bot-commander library. https://github.com/friscoMad/botCommander#specify-the-argument-syntax
      * @param commandAction 
      * @param description 
+     * @param groupName Command group name. Used to group commands when displaying list to the user. Use NULL for general group.
      * @param restrictedChannelId 
      */
-    public static newCommand(commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string, restrictedChannelId?: string) {
-        this.registerCommand(CommandType.PUBLIC, commandName, args, commandAction, description, restrictedChannelId)
+    public static newCommand(commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string, groupName?: string, restrictedChannelId?: string) {
+        this.registerCommand(CommandType.PUBLIC, commandName, args, commandAction, description, groupName, restrictedChannelId)
     }
 
 
@@ -50,19 +54,24 @@ export class CommandManager {
      * @param args The arguments, in the syntax of bot-commander library. https://github.com/friscoMad/botCommander#specify-the-argument-syntax
      * @param commandAction 
      * @param description 
+     * @param groupName Command group name. Used to group commands when displaying list to the user. Use NULL for general group.
      */
-    public static newAdminCommand(commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string) {
-        this.registerCommand(CommandType.ADMIN, commandName, args, commandAction, description)
+    public static newAdminCommand(commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string, groupName?: string) {
+        this.registerCommand(CommandType.ADMIN, commandName, args, commandAction, description, groupName)
     }
 
 
     /**
      * Register new command. For internal use of this class.
      */
-    private static registerCommand(commandType: CommandType, commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string, restrictedChannelId?: string) {
+    private static registerCommand(commandType: CommandType, commandName: string, args: string | null, commandAction: CommandActionFunction, description?: string, groupName?: string, restrictedChannelId?: string) {
 
         if(!this.isValidCmdName(commandName)) {
             throw new Error("Error registering command. Command name '" + commandName + "' is invalid.")
+        }
+
+        if(groupName == COMMAND_GRAL_GROUP_NAME) {
+            throw new Error("Command group name '"+COMMAND_GRAL_GROUP_NAME+"' is reserved.")
         }
 
         if(this.commands.find(command => command.name == commandName)) {
@@ -72,11 +81,12 @@ export class CommandManager {
         // Push new command to our commands list
         this.commands.push({
             type: commandType,
+            groupName: groupName,
             name: commandName,
             args: args,
             description: description,
             //commandAction: commandAction, // to-do: check if necessary
-            restrictedChannelId: restrictedChannelId
+            restrictedChannelId: (commandType == CommandType.PUBLIC && restrictedChannelId) ? restrictedChannelId : null
         })
 
         // Register the new command in bot-commander, with its action handler
@@ -85,21 +95,27 @@ export class CommandManager {
             command.description(description)
         }
         command.showHelpOnEmpty()
-        .action( (metadata: CommandMetadata, ...params: any) => {
-            commandAction(metadata.message, params)
+        .action( async (metadata: CommandMetadata, ...params: any) => { // register the handler function for this command in bot-commander
+            try {
+                await commandAction(metadata.message, params) 
+            } catch(error: any) {
+                logger.error(error)
+                logger.error(error?.stack)
+                metadata.message.reply("Ocurrió un error ejecutando el comando. Revisa el log para más información.")
+            }
         })
 
 
-        if(process.env.DEBUG == "true") {
+        /*if(process.env.DEBUG == "true") {
             logger.info("Registered command /" + commandName + "!")
-        }
+        }*/
 
     }
 
 
 
     /**
-     * This is the handler called when a user submits a command-like text message in any channel. 
+     * This is the handler called when any user submits a command-like text message (starting with slash) in any channel (ex: /hello)
      * Shall not be called from other parts of the app other than on initialization.
      */
     public static onUserSubmitCommand(message: Message) {
@@ -107,26 +123,27 @@ export class CommandManager {
         const userCommand = this.fetchCmdNameFromMsg(message.content)
         const command = this.commands.find(command => command.name == userCommand)
 
-        // Ignore if no recognized command
+        // Ignore if command is not registered in command list or in reserved help command list
         if(command == null && !helpCommands.includes(userCommand)) {
             return
         }
 
+        // Check if the user is admin AND is in the admin commands channel id
         const isInAdminChannel = (UserManager.isAdmin(message.author.id) && message.channel.id == process.env.DISCORD_CHANNEL_ID_ADMIN)
 
         // Override for "help" command
         if(helpCommands.includes(userCommand)) {
             if(isInAdminChannel) {
-                message.reply(this.getAdminCommandList())
+                message.reply(this.getCommandList(CommandType.ADMIN))
             } else {
-                message.reply(this.getPublicCommandList())
+                message.reply(this.getCommandList(CommandType.PUBLIC))
             }
             return
         }
 
         const executeCommand = () => {
             const metadata: CommandMetadata = { message: message } // Include Discord Message object into the bot-commander command metadata so we can have it in the handler.
-            bot.parse(message.content, metadata)
+            bot.parse(message.content, metadata) // parse and execute command with bot-commander
         }
 
         if(command.type == CommandType.PUBLIC) {
@@ -171,40 +188,31 @@ export class CommandManager {
 
 
     /**
-     * Get public command list, grouped by channel ids. For outputting to user.
+     * Get command list, grouped by channel ids. For outputting to user.
      * @returns 
      */
-    private static getPublicCommandList(): string {
+    private static getCommandList(commandType: CommandType): string {
 
-        const publicCommands = this.commands.filter(command => command.type == CommandType.PUBLIC)
+        const publicCommands = this.commands.filter(command => command.type == commandType)
+        const groupedCommands = this.groupCommandsByGroupName(publicCommands)
 
-        const commandsByChannelId: {[id: string]: BotCommand[]} = {}
-        
-        // Group public commands by channel of restriction (if any)
-        for(const command of publicCommands) {
-            const channelId = command.restrictedChannelId ? command.restrictedChannelId : "none"
-            if(Array.isArray(commandsByChannelId[channelId])) {
-                commandsByChannelId[channelId].push(command)
-            } else {
-                commandsByChannelId[channelId] = [command]
-            }
+        // Make list of commands grouped by command group name
+        let text = ""
+
+        if(commandType == CommandType.ADMIN) {
+            text += "__**COMANDOS ADMIN**__\n"
         }
 
-        // Make list of commands grouped by list
-        let text = ""
-        for(const channelId of Object.keys(commandsByChannelId)) {
-            if(channelId == "none") {
+        for(const groupName of Object.keys(groupedCommands)) {
+            if(groupName == COMMAND_GRAL_GROUP_NAME) {
                 text += "__Comandos generales:__\n"
-                for(const command of commandsByChannelId[channelId]) {
-                    text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
+                for(const command of groupedCommands[groupName]) {
+                    text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + (command.description ? ": " + command.description : null) + "\n"
                 }
             } else {
-                const channel = Discord.getInstance().channels.cache.find(channel => channel.id == channelId)
-                if(channel) {
-                    text += "\n__Comandos del canal <#"+channel.id+">:__\n"
-                    for(const command of commandsByChannelId[channelId]) {
-                        text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
-                    }
+                text += "\n__" + groupName + "__\n"
+                for(const command of groupedCommands[groupName]) {
+                    text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + (command.description ? ": " + command.description : null) + "\n"
                 }
             }  
         }
@@ -214,17 +222,24 @@ export class CommandManager {
 
 
     /**
-     * Get admin command list as string, for outputting to user.
+     * Given an array of commands, group them and return them into an object which keys are the group names, and the values are the command list of said group.
+     * @param commands 
      * @returns 
      */
-    private static getAdminCommandList(): string {
-        const publicCommands = this.commands.filter(command => command.type == CommandType.ADMIN)
+    private static groupCommandsByGroupName(commands: BotCommand[]): {[id: string]: BotCommand[]} {
 
-        let text = "__Comandos Admin:__\n"
-        for(const command of publicCommands) {
-            text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + ": " + command.description + "\n"
+        const commandsByGroupName: {[id: string]: BotCommand[]} = {}
+
+        for(const command of commands) {
+            const groupName = command.groupName ? command.groupName : COMMAND_GRAL_GROUP_NAME
+            if(Array.isArray(commandsByGroupName[groupName])) {
+                commandsByGroupName[groupName].push(command)
+            } else {
+                commandsByGroupName[groupName] = [command]
+            }
         }
-        return text
+
+        return commandsByGroupName
     }
 
 

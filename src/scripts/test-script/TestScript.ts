@@ -7,21 +7,21 @@ export class TestScript extends Script {
     protected scriptName = "Test Script"
 
     protected onUserMessage: undefined
-    protected initDbModels: undefined
+    public initDbModels: undefined
 
-    public onInitialized() {
+    public async onInitialized() {
 
         CommandManager.newCommand("testcommand", "<param1> <param2>", async (message: Message, args) => {
 
             message.reply({content: "hola"})
 
-        }, "Descripcion del comando.", "913629201377165332")
+        }, "Descripcion del comando.", null, "913629201377165332")
 
         CommandManager.newCommand("testcommand2", null, async (message: Message, args) => {
 
             message.reply({content: "hola"})
 
-        }, "Descripcion del comando.", "asdasd")
+        }, "Descripcion del comando.", null, "asdasd")
 
 
 

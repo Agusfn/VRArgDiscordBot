@@ -36,7 +36,8 @@ export const registerAdminCommands = () => {
         const query = (<string>args[0]).toLowerCase()
 
         const membersFound = Discord.getGuild().members.cache.filter(member => {
-            return member.user.username.toLowerCase().includes(query) || (member.nickname != null && member.nickname.toLowerCase().includes(query))
+            return member.user.username.toLowerCase().includes(query) || // username is the account username (always present)
+                (member.nickname != null && member.nickname.toLowerCase().includes(query)) // nickname is an optional pseudonim of this user in the server
         })
 
         let text = ""

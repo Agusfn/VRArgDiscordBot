@@ -2,7 +2,6 @@ import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import * as path from 'path'
 import BotVoiceActions from "@lib/BotVoiceActions"
-import ScoreSaberApi from "@lib/ScoreSaberApi"
 
 const MEME_IMGS = [
     
@@ -13,14 +12,10 @@ export class MemeScript extends Script {
 
     protected scriptName = "Meme Script"
 
-    protected onDiscordReady() {
-        
-    }
-
     protected onUserMessage: undefined
-    protected initDbModels: undefined
+    public initDbModels: undefined
 
-    public onInitialized() {
+    public async onInitialized() {
 
         /*const api = new ScoreSaberApi()
         api.getPlayer("76561198021081220").then(info => {

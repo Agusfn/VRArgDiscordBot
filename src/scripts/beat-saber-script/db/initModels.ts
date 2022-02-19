@@ -1,6 +1,6 @@
-import initUsers from "./initUsers"
-import initSongs from "./initSongs"
-import initUserScores from "./initUserScores"
+import initLeaderboards from "./initLeaderboards"
+import initPlayerScores from "./initPlayerScores"
+import initSSPlayers from "./initSSPlayers"
 import setRelationships from "./setRelationships"
 
 /**
@@ -8,9 +8,10 @@ import setRelationships from "./setRelationships"
  */
 export default () => {
 
-    initUsers()
-    initSongs()
-    initUserScores()
+    initSSPlayers()
+    initLeaderboards()
+    initPlayerScores()
+
 
     // Load any relationship after models have been initialized
     setRelationships()

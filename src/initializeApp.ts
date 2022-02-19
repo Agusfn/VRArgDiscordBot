@@ -18,7 +18,7 @@ export const initializeApp = () => {
     /**
      * Initialize dotenv
      */
-    dotenv.config()
+    dotenv.config({path:__dirname+'/./../.env'})
 
 
     /**

@@ -44,8 +44,9 @@ export default class SequelizeDBManager {
         await this.sequelize.authenticate()
 
         logger.info("Sequelize DB initialized and authenticated (db file "+process.env.DB_FILE+").")
-
-        this.setMaintenanceCron()
+        
+        /** DO NOT UNCOMMENT UNTIL BACKUP IS FIXED */
+        // this.setMaintenanceCron()
     }
 
 

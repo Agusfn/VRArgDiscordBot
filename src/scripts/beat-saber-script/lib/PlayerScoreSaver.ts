@@ -175,7 +175,7 @@ export class PlayerScoreSaver {
         const score = apiScore.score
 
         let accuracy = null
-        if(apiScore.leaderboard.maxScore != null && apiScore.leaderboard.maxScore > 0) { // lboard maxScore may be 0 in rare cases
+        if(apiScore.leaderboard.maxScore != null && apiScore.leaderboard.maxScore > 0) { // maxScore is 0 if map is unranked
             accuracy = roundNumber((score.modifiedScore / apiScore.leaderboard.maxScore) * 100, 2)
         }
 

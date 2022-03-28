@@ -80,12 +80,12 @@ export class PlayerAnnouncements {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = this.discordMention(player) + " hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" con un acc de **" + this.formatAcc(newScore.accuracy) + "**"
+        let message = this.discordMention(player) + " hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()
         
         if(leaderboard.ranked) {
-            message += " y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
+            message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
         } else {
-            message += " y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"
+            message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"  // acc and pp is not available in unranked maps
         }
 
 
@@ -120,16 +120,15 @@ export class PlayerAnnouncements {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = this.discordMention(player) + " hizo un top score en " + this.getCountry(<SSCountries>player.country) + "  en el mapa " + leaderboard.readableMapDesc() +
-        " con un acc de **" + this.formatAcc(newScore.accuracy) + "**"
+        let message = this.discordMention(player) + " hizo un top score en " + this.getCountry(<SSCountries>player.country) + "  en el mapa " + leaderboard.readableMapDesc()
 
         if(leaderboard.ranked) {
-            message += ` y obteniendo **${roundNumber(newScore.pp, 1)}pp**`
+            message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
+        } else {
+            message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"  // acc and pp is not available in unranked maps
         }
-        message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
 
         await this.outputChannel.send(message)
-
     }
 
     /**

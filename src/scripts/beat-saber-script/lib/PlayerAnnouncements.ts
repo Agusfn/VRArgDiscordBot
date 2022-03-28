@@ -83,10 +83,11 @@ export class PlayerAnnouncements {
         let message = this.discordMention(player) + " hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" con un acc de **" + this.formatAcc(newScore.accuracy) + "**"
         
         if(leaderboard.ranked) {
-            message += ` y obteniendo **${roundNumber(newScore.pp, 1)}pp**`
+            message += " y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
+        } else {
+            message += " y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"
         }
 
-        message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
 
         await this.outputChannel.send(message)
     }

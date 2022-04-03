@@ -65,6 +65,14 @@ export default () => {
                         [Op.ne]: null
                     }
                 }
+            },
+            /** Query scope to find SS Player with a given discord user id. */
+            withDiscordUserId(discordUserId: string) {
+                return {
+                    where: {
+                        discordUserId: discordUserId
+                    }
+                }
             }
 
         }

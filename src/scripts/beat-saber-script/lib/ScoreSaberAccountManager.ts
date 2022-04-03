@@ -25,7 +25,7 @@ export class ScoreSaberAccountManager {
     public async linkScoreSaberAccountToUser(discordUserId: string, scoreSaberId: string, isSelfUser = true): Promise<SSPlayer> {
 
         // Check if the Discord user has already any ScoreSaber account linked to them
-        const currentAccount = await SSPlayer.findOne({ where: { discordUserId: discordUserId } })
+        const currentAccount = await SSPlayer.scope({ method: ["withDiscordUserId", discordUserId] }).findOne()
 
         if(currentAccount) {
             if(isSelfUser) {
@@ -111,6 +111,7 @@ export class ScoreSaberAccountManager {
         }
 
         ssPlayer.discordUserId = null
+        ssPlayer.milestoneAnnouncements = false
         await ssPlayer.save()
 
         return ssPlayer

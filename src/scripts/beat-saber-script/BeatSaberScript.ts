@@ -33,7 +33,7 @@ export class BeatSaberScript extends Script {
         HistoricScoreFetcher.startFetcher()
 
 
-        this.addCustomCron("*/5 * * * *", async () => {
+        this.addCustomCron("*/20 * * * *", async () => {
             console.log("cron running each 20 min...")
             await PeriodicScoreFetcher.startPeriodicFetch()
         })

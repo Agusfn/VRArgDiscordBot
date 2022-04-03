@@ -2,14 +2,7 @@ import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, Pe
 import { CommandManager, Script, Discord } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
-import { PlayerScore, SSPlayer } from "./model/index"
-//import UserProfileLinking from "./lib/UserProfileLinking"
-//import UserScoreFetcher from "./lib/UserScoreFetcher"
-//import PlayerStatusChecker from "./lib/PlayerStatusChecker"
-import {TextChannel} from "discord.js"
-import logger from "@utils/logger"
-import { isScoreSignificantlyImproved, ScoreSaberAPI } from "./utils/index"
-import { Sequelize } from "sequelize"
+import { SSPlayer } from "./model"
 
 
 export class BeatSaberScript extends Script {
@@ -144,95 +137,27 @@ export class BeatSaberScript extends Script {
 
 
 
+        CommandManager.newCommand("menciones_hitos", null, async (message: Message, args) => {
 
-        // Initialize score fetcher
-        /*this.scoreFetcher = new UserScoreFetcher()
-        this.playerStatusChecker = new PlayerStatusChecker()
-      
+            const ssPlayer = await SSPlayer.scope({ method: ["withDiscordUserId", message.author.id] }).findOne()
 
-        this.addCommand("anuncios_scores", null, async (message: Message, args) => {
-
-            const user = await User.findByPk(message.author.id)
-
-            if(!user) {
-                message.channel.send(`Tu cuenta de scoresaber no está vinculada con tu cuenta de discord. Vinculala con /linkear <id scoresaber>.`)
+            if(!ssPlayer) {
+                message.reply(`Tu cuenta de scoresaber no está vinculada con tu cuenta de discord. Vinculala con /linkear <id scoresaber>.`)
                 return
             }
 
-            user.announcementsEnabled = !user.announcementsEnabled
-            await user.save()
+            ssPlayer.milestoneAnnouncements = !ssPlayer.milestoneAnnouncements
+            await ssPlayer.save()
 
-            if(user.announcementsEnabled) {
-                message.channel.send(`Se reanudó la mención de tu perfil en los anuncios de scores.`)
+            if(ssPlayer.milestoneAnnouncements) {
+                message.reply("Se han activado las menciones de hitos de otros jugadores que involucren a tu usuario.")
             } else {
-                message.channel.send(`Ya no se mencionará tu perfil de scoresaber en los anuncios de scores.`)
-            }  
-        })
-
-
-        this.addCommand("deslinkear", null, async (message: Message, args) => {
-
-            const user = await User.findByPk(message.author.id)
-
-            if(!user) {
-                message.channel.send(`No tenés una cuenta de scoresaber vinculada con tu cuenta de discord`)
-                return
+                message.reply("Se han desactivado las menciones de hitos de otros jugadores que involucren a tu usuario.")
             }
+            
 
-            await UserScore.destroy({ where: {discordUserId: message.author.id} })
-            await User.destroy({ where: {discordUserId: message.author.id} })
-
-            message.channel.send(`Se desvinculó el perfil de scoresaber ${user.playerName} de tu cuenta de discord.`)
-        })
-
-
-
-        this.addCommand("playerinfo", null, async (message: Message, args) => {
-
-            const user = await User.findByPk(message.author.id)
-
-            if(!user) {
-                message.channel.send(`No tenés una cuenta de scoresaber vinculada con tu cuenta de discord`)
-                return
-            }
-
-            message.channel.send(`Scoresaber: ${user.playerName}\nPP: ${user.currentPP}\nCountry rank: ${user.countryRank}\nWorld rank: ${user.globalRank}\nLast profile update: ${user.lastStatusCheck().format("DD/MM/Y H:mm:ss")}`)
-        })*/
-
-
-        /**
-         * Register cron each 30 mins to update player statuses (total score, rank, pp).
-         */
-        //this.addCustomCron("*/30 * * * *", async () => {
-            /*try {
-                if(this.playerStatusChecker.isFetcherRunning()) { // already running (shouldn't happen, since it should take way less than 30 min)
-                    return
-                }
-                this.scoreFetcher.pause() // pause score fetcher (if it's even running) so we can use scoresaber API for this higher priority task
-                await this.playerStatusChecker.checkAllPlayersStatus()
-                this.scoreFetcher.resume() // resume score fetcher
-            } catch(error) {
-                this.playerStatusChecker.setFetchRunning(false)
-                logger.error(error) 
-            }
-        })*/
+        }, "Activar/desactivar las menciones en los anuncios de hitos de otros jugadores que involucran a tu usuario.", "BeatSaber")
         
-
-        /**
-         * Register cron each 10 mins to save the historic scores for all users.
-         * It's very frecuent since the fetching may be interrupted for too many requests to scoresaber API.
-         */
-        //this.addCustomCron("*/10 * * * *", async () => {
-            /*try {
-                if(this.scoreFetcher.isFetchRunning()) {
-                    return
-                }
-                await this.scoreFetcher.continueHistoricFetching()
-            } catch(error) {
-                this.scoreFetcher.setFetchRunning(false)
-                logger.error(error)
-            }
-        })*/
 
     }
     

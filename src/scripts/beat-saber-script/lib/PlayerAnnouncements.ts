@@ -22,7 +22,7 @@ export class PlayerAnnouncements {
      * @param country Country code used in ScoreSaber API
      */
     public static async sendForPlayerTop1Country(player: SSPlayer, country: SSCountries) {
-        this.outputChannel.send("@anuncios-players <@-"+player.discordUserId+"> alcanzó el Top #1 en " + this.getCountry(country) + "!") // to-do: add discord tagging user
+        this.outputChannel.send(`@anuncios-players **${player.name}** alcanzó el Top #1 en " + ${this.getCountry(country)}!`) // to-do: add discord tagging user
     }
 
 
@@ -38,7 +38,7 @@ export class PlayerAnnouncements {
      * @param playersSurpassed 
      */
     public static async playerSurpassedPlayersInRank(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
-        await this.outputChannel.send(`${this.discordMentionFromInfo(player)} acaba de sobrepasar a ${this.enumerateDiscordUsers(playersSurpassed)}, quedando con rank global de #${player.rank}!`)            
+        await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar a ${this.enumerateDiscordUsers(playersSurpassed)}, quedando con rank global de #${player.rank}!`)            
     }
 
 
@@ -48,7 +48,11 @@ export class PlayerAnnouncements {
      * @param playersSurpassed 
      */
     public static async playerSurpassedPlayersInAccuracy(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
-        await this.outputChannel.send(`${this.discordMentionFromInfo(player)} acaba de sobrepasar a ${this.enumerateDiscordUsers(playersSurpassed)} en accuracy, con un acc de ${roundNumber(player.avgAccuracy, 3)}%!`)
+        if(playersSurpassed.length > 1) {
+            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.enumerateDiscordUsers(playersSurpassed)} con un acc de **${this.formatAcc(player.avgAccuracy)}**!`)
+        } else if(playersSurpassed.length == 1) {
+            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.discordMentionFromInfo(playersSurpassed[0])} (${this.formatAcc(playersSurpassed[0].avgAccuracy)}) con un acc de **${this.formatAcc(player.avgAccuracy)}**!`)
+        }
     }
 
 
@@ -63,7 +67,7 @@ export class PlayerAnnouncements {
         const leaderboard = await Leaderboard.findByPk(score.leaderboardId)
 
         if(leaderboard.ranked) {
-            let message = this.discordMention(player) + " hizo el primer score del server en el mapa " + leaderboard.readableMapDesc() + ", con un acc de **" + 
+            let message = "**" + player.name + "** hizo el primer score del server en el mapa " + leaderboard.readableMapDesc() + ", con un acc de **" + 
             this.formatAcc(score.accuracy) + "** y obteniendo **"+roundNumber(score.pp, 1)+"pp**!" 
             await this.outputChannel.send(message)
         }
@@ -80,7 +84,7 @@ export class PlayerAnnouncements {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = this.discordMention(player) + " hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()
+        let message = "**" + player.name + "** hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()
         
         if(leaderboard.ranked) {
             message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
@@ -103,7 +107,7 @@ export class PlayerAnnouncements {
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
         if(leaderboard.ranked) {
-            let message = this.discordMention(player) + " mejoró su top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" (**" + 
+            let message = "**" + player.name + "** mejoró su top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" (**" + 
             this.formatAcc(oldScore.accuracy) + "** --> **" + this.formatAcc(newScore.accuracy) + "**) obteniendo **"+ roundNumber(newScore.pp, 1) + "pp**!"
             await this.outputChannel.send(message)
         }
@@ -120,7 +124,7 @@ export class PlayerAnnouncements {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = this.discordMention(player) + " hizo un top score en " + this.getCountry(<SSCountries>player.country) + "  en el mapa " + leaderboard.readableMapDesc()
+        let message = "**" + player.name + "** hizo un top score en " + this.getCountry(<SSCountries>player.country) + "  en el mapa " + leaderboard.readableMapDesc()
 
         if(leaderboard.ranked) {
             message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
@@ -142,8 +146,8 @@ export class PlayerAnnouncements {
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
         if(leaderboard.ranked) {
-            let message = this.discordMention(player) + " mejoró significativamente su score en el mapa ranked " + leaderboard.readableMapDesc() + ", pasando de un acc de **" +
-            this.formatAcc(oldScore.accuracy) + "** a **" + this.formatAcc(newScore.accuracy) + "**, y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**!"
+            let message = "**" + player.name + "** mejoró significativamente su score en el mapa ranked " + leaderboard.readableMapDesc() + "(**" + 
+            this.formatAcc(oldScore.accuracy) + "** --> **" + this.formatAcc(newScore.accuracy) + "**) obteniendo **" + roundNumber(newScore.pp, 1) + "pp**!"
             await this.outputChannel.send(message)
         }
 
@@ -184,11 +188,11 @@ export class PlayerAnnouncements {
      * @returns 
      */
     private static discordMentionFromInfo(playerInfo: PlayerPerformanceInfo) {
-        // if(playerInfo.milestoneAnnouncements) { // mention it on Discord
-        //     return "<@" + playerInfo.discordUserId + ">"
-        // } else {
+        if(playerInfo.milestoneAnnouncements) { // mention it on Discord
+            return "<@" + playerInfo.discordUserId + ">"
+        } else {
             return "**" + playerInfo.playerName + "**" // bold
-        // }
+        }
     }
 
     /**
@@ -196,11 +200,11 @@ export class PlayerAnnouncements {
      * @param player 
      */
     private static discordMention(player: SSPlayerI) {
-        // if(player.milestoneAnnouncements) {
-        //    return "<@" + player.discordUserId + ">"
-        // } else {
+        if(player.milestoneAnnouncements) {
+            return "<@" + player.discordUserId + ">"
+        } else {
             return "**" + player.name + "**"
-        // }
+        }
     }
 
 

@@ -5,7 +5,7 @@ import { TestScript, ServerHelper, BeatSaberScript } from "@scripts/index"
 
 
 // Register scripts
-ScriptLoader.registerScript(TestScript)
+//ScriptLoader.registerScript(TestScript)
 ScriptLoader.registerScript(ServerHelper)
 //ScriptLoader.registerScript(MemeScript)
 ScriptLoader.registerScript(BeatSaberScript)

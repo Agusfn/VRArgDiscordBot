@@ -193,8 +193,8 @@ export class CommandManager {
      */
     private static getCommandList(commandType: CommandType): string {
 
-        const publicCommands = this.commands.filter(command => command.type == commandType)
-        const groupedCommands = this.groupCommandsByGroupName(publicCommands)
+        const commands = this.commands.filter(command => command.type == commandType)
+        const groupedCommands = this.groupCommandsByGroupName(commands)
 
         // Make list of commands grouped by command group name
         let text = ""
@@ -226,9 +226,9 @@ export class CommandManager {
      * @param commands 
      * @returns 
      */
-    private static groupCommandsByGroupName(commands: BotCommand[]): {[id: string]: BotCommand[]} {
+    private static groupCommandsByGroupName(commands: BotCommand[]): {[grpName: string]: BotCommand[]} {
 
-        const commandsByGroupName: {[id: string]: BotCommand[]} = {}
+        const commandsByGroupName: {[grpName: string]: BotCommand[]} = {}
 
         for(const command of commands) {
             const groupName = command.groupName ? command.groupName : COMMAND_GRAL_GROUP_NAME
@@ -238,6 +238,14 @@ export class CommandManager {
                 commandsByGroupName[groupName] = [command]
             }
         }
+
+        // Move "otros" group to bottom
+        if(Object.keys(commandsByGroupName).includes("Otros")) {
+            const cmds = commandsByGroupName["Otros"]
+            delete commandsByGroupName["Otros"]
+            commandsByGroupName["Otros"] = cmds
+        }
+
 
         return commandsByGroupName
     }

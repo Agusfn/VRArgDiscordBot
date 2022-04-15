@@ -23,7 +23,7 @@ export const registerAdminCommands = () => {
 
         message.reply(text)
 
-    }, "Listar los administradores del bot (ChePibe) actuales.")
+    }, "Listar los administradores del bot ("+process.env.BOT_NAME+") actuales.")
 
 
 

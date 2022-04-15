@@ -81,6 +81,29 @@ export class ServerHelper extends Script {
 
 
 
+        CommandManager.newAdminCommand("rol_a_todos", "<id rol>", async (userMessage: Message, args) => {
+            
+            const role = Discord.getGuild().roles.cache.find(role => role.id == args[0])
+
+            if(!role) {
+                userMessage.reply("No se encontró el rol con el ID indicado.")
+                return
+            }
+
+            const members = await Discord.getGuild().members.fetch()
+
+            for(const [id, member] of members) {
+                if(member.user.bot) continue
+                await member.roles.add(role)
+            }
+
+            userMessage.reply("Hecho! Dado el rol " + role.name + " a todos los usuarios (excepto bots).")
+
+        }, "Dar un rol a todos los usuarios.")
+
+
+
+
     }
     
 }

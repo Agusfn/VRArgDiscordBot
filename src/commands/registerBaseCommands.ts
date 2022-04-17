@@ -8,7 +8,7 @@ export default () => {
     registerAdminCommands()
 
     CommandManager.newCommand("about", null, async (message: Message, args) => {
-        message.reply(process.env.BOT_NAME + " Bot v"+process.env.VERSION + ". Developed by <@455891068580528153> (^_^)")
+        message.reply(process.env.BOT_NAME + " Bot v `"+process.env.VERSION + "` . Developed by **Agusfn**.")
     }, "Acerca del bot.", "Otros")
 
 }

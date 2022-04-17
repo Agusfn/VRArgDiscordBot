@@ -26,5 +26,13 @@ export interface BotCommand {
 }
 
 
-
+export interface UserI {
+    discordUserId: string
+    /** This is the discord username (which cannot be changed) */
+    username: string
+    joinDate: Date
+    isPresent: boolean
+    leaveDate: Date
+    isAdmin: boolean
+}
 

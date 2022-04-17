@@ -3,6 +3,8 @@ import { CommandManager, Script, Discord } from "@lib/index"
 import { Message } from "discord.js"
 import initModels from "./db/initModels"
 import { SSPlayer } from "./model"
+import { User } from "@models/index"
+import { getScoreSaberIdFromIdOrURL } from "./utils/scoreSaberUrl"
 
 
 export class BeatSaberScript extends Script {
@@ -45,11 +47,63 @@ export class BeatSaberScript extends Script {
         })
 
 
-        CommandManager.newCommand("linkear_ss", "<scoresaber id>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("lista_users_ss", null, async (message: Message, args) => {
+
+            const players = await SSPlayer.findAll({ include: User, order: [["name", "ASC"]] })
+
+            let userListTxt = "**__Lista de usuarios con ScoreSaber vinculado:__**\n"
+            for(const player of players) {
+                userListTxt += `**User:** ${player.User.username}. **SS:** ${player.name}. **URL:** <${player.scoreSaberURL()}>\n`
+            }
+            message.reply(userListTxt)
+
+        }, "Mostrar una lista de usuarios del server con su cuenta de ScoreSaber vinculada.", "BeatSaber")
+
+
+
+        CommandManager.newAdminCommand("ss_de_user", "<discord user id>", async (message: Message, args) => {
+
+            const user = await User.findByPk(args[0])
+            if(!user) {
+                message.reply("No se encontró un usuario de Discord en el server con ese id!")
+                return
+            }
+
+            const player = await SSPlayer.findOne({ where: { discordUserId: args[0] } })
+            if(!player) {
+                message.reply("El usuario seleccionado no tiene su cuenta de ScoreSaber vinculada!")
+                return
+            }
+
+            message.reply(`Cuenta de ScoreSaber de __${user.username}__: <${player.scoreSaberURL()}> (**${player.name}**)`)
+
+        }, "Mostrar la cuenta de ScoreSaber vinculada a un User de Discord.", "BeatSaber")
+
+
+        CommandManager.newAdminCommand("user_de_ss", "<scoresaber id>", async (message: Message, args) => {
+
+            const player = await SSPlayer.findOne({ include: User, where: { id: args[0] } })
+
+            if(!player) {
+                message.reply("No se encontró el jugador de ScoreSaber registrado en el server con el id ingresado!")
+                return
+            }
+            if(!player.User) {
+                message.reply("La cuenta de ScoreSaber está registrada pero no se encontró el usuario de Discord (revisar, raro).")
+                return
+            }
+
+            message.reply(`Usuario en Discord vinculado a la cuenta ScoreSaber _${player.name}_: **${player.User.username}** (discord id ${player.User.discordUserId})`)
+
+        }, "Mostrar la cuenta de Discord vinculada a una cuenta de ScoreSaber.", "BeatSaber")
+
+
+        CommandManager.newCommand("linkear_ss", "<scoresaber id or url>", async (message: Message, args) => {
             // Validar param
-            const scoreSaberId = args[0]
-            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
-                message.reply("Ingresa un id numérico valido de entre 5 y 20 dígitos.")
+            const scoreSaberId = getScoreSaberIdFromIdOrURL(args[0])
+
+            if(!scoreSaberId) {
+                message.reply("Ingresa un ID de scoresaber o una URL de jugador de ScoreSaber válido.")
                 return
             }
 
@@ -64,17 +118,18 @@ export class BeatSaberScript extends Script {
         }, "Vincular una cuenta de ScoreSaber a tu cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id or url>", async (message: Message, args) => {
             // Validar params
             const discordUserId = args[0]
-            const scoreSaberId = args[1]
 
             if(!discordUserId || !/^\d{5,20}$/.test(discordUserId)) {
                 message.reply("Ingresa un id de Discord numérico valido de entre 5 y 20 dígitos.")
                 return
             }
-            if(!scoreSaberId || !/^\d{5,20}$/.test(scoreSaberId)) {
-                message.reply("Ingresa un id de ScoreSaber numérico valido de entre 5 y 20 dígitos.")
+
+            const scoreSaberId = getScoreSaberIdFromIdOrURL(args[1])
+            if(!scoreSaberId) {
+                message.reply("Ingresa un ID de scoresaber o una URL de jugador de ScoreSaber válido.")
                 return
             }
 
@@ -158,6 +213,10 @@ export class BeatSaberScript extends Script {
 
         }, "Activar/desactivar las menciones en los anuncios de hitos de otros jugadores que involucran a tu usuario.", "BeatSaber")
         
+
+
+
+
 
     }
     

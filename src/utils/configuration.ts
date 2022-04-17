@@ -2,9 +2,6 @@
 
 export const COMMAND_PREFIX = "/"
 
-/** Logging discord channel id. We temporarily use test-chepibe channel for logging (same as score announcements) */
-export const LOGGING_DISCORD_CHANNEL_ID = "856383011443572766"
-
 /**
  * Days between each database file backup. 
  */

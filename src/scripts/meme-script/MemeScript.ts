@@ -1,8 +1,7 @@
-import Script from "../Script"
+import { Script } from "@lib/index"
 import { Message } from "discord.js"
 import * as path from 'path'
 import BotVoiceActions from "@lib/BotVoiceActions"
-import ScoreSaberApi from "@lib/ScoreSaberApi"
 
 const MEME_IMGS = [
     
@@ -13,14 +12,10 @@ export class MemeScript extends Script {
 
     protected scriptName = "Meme Script"
 
-    protected onDiscordReady() {
-        
-    }
-
     protected onUserMessage: undefined
-    protected initDbModels: undefined
+    public initDbModels: undefined
 
-    public onInitialized() {
+    public async onInitialized() {
 
         /*const api = new ScoreSaberApi()
         api.getPlayer("76561198021081220").then(info => {
@@ -33,7 +28,7 @@ export class MemeScript extends Script {
         }, 
         "Comando para saludar")*/
 
-        this.addCommand("audios", null, async (message: Message) => {
+        /*this.addCommand("audios", null, async (message: Message) => {
             message.channel.send("/c18, /maiamee, /sacalamano, /sparagmos")
             message.channel.send("/subarashi, /vamoajuga, /algunotrochino, /comidasantos")
             message.channel.send("/cruentasserpientes, /earlgray, /entoncesno, /feu")
@@ -140,7 +135,7 @@ export class MemeScript extends Script {
 
         this.addCommand("tepasominen", null, async (message: Message) => {
             BotVoiceActions.playSoundInChannel(message.member.voice.channel, "tepasominen.mp3", 0.7)
-        })
+        })*/
 
         // register crons
 

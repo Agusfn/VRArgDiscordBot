@@ -1,3 +1,4 @@
+import { UserI } from "@ts/interfaces"
 
 export interface PlayerScoreI {
     /** Internal id to identify score. Does not reflect any id in ScoreSaber API. Differs from ssId because there may be multiple scores of a player in a given map. */
@@ -79,6 +80,9 @@ export interface SSPlayerI {
 
     createdAt: Date
     updatedAt: Date
+
+    /** For eager loading from sequelize */
+    User?: UserI
 }
 
 

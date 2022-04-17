@@ -52,6 +52,11 @@ export class SSPlayer extends Model {
         })
     }
 
+
+    public scoreSaberURL() {
+        return "https://scoresaber.com/u/"+this.id
+    }
+
 }
 
 

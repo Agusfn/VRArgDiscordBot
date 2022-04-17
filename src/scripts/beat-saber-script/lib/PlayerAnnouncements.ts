@@ -22,7 +22,7 @@ export class PlayerAnnouncements {
      * @param country Country code used in ScoreSaber API
      */
     public static async sendForPlayerTop1Country(player: SSPlayer, country: SSCountries) {
-        this.outputChannel.send(`@anuncios-players **${player.name}** alcanzó el Top #1 en " + ${this.getCountry(country)}!`) // to-do: add discord tagging user
+        await this.outputChannel.send(`@anuncios-players **${player.name}** alcanzó el Top #1 en " + ${this.getCountry(country)}!`) // to-do: add discord tagging user
     }
 
 

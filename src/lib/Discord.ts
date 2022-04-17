@@ -64,7 +64,7 @@ export class Discord {
 
 
     /**
-     * Get our guild. May only be called after clientReady() was called.
+     * Get our Guild (Discord server) object. May only be called after clientReady() was called.
      * @returns 
      */
     public static getGuild() {

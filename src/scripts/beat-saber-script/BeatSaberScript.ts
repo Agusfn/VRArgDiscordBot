@@ -98,7 +98,7 @@ export class BeatSaberScript extends Script {
         }, "Mostrar la cuenta de Discord vinculada a una cuenta de ScoreSaber.", "BeatSaber")
 
 
-        CommandManager.newCommand("linkear_ss", "<scoresaber id or url>", async (message: Message, args) => {
+        CommandManager.newCommand("linkear", "<scoresaber id or url>", async (message: Message, args) => {
             // Validar param
             const scoreSaberId = getScoreSaberIdFromIdOrURL(args[0])
 
@@ -118,7 +118,7 @@ export class BeatSaberScript extends Script {
         }, "Vincular una cuenta de ScoreSaber a tu cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id or url>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("linkear_admin", "<discord user id> <scoresaber id or url>", async (message: Message, args) => {
             // Validar params
             const discordUserId = args[0]
 
@@ -150,7 +150,7 @@ export class BeatSaberScript extends Script {
         }, "Vincular una cuenta de ScoreSaber a una cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newCommand("deslinkear_ss", null, async (message: Message, args) => {
+        CommandManager.newCommand("deslinkear", null, async (message: Message, args) => {
 
             const accountManager = new ScoreSaberAccountManager()
             const ssPlayer = await accountManager.unlinkScoreSaberAccountFromUser(message.author.id)
@@ -164,7 +164,7 @@ export class BeatSaberScript extends Script {
         }, "Desvincular la cuenta de ScoreSaber de tu cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newAdminCommand("deslinkear_ss_admin", "<discord user id>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("deslinkear_admin", "<discord user id>", async (message: Message, args) => {
             
             // Validar params
             const discordUserId = args[0]

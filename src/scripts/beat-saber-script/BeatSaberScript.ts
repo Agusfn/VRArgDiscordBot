@@ -1,10 +1,11 @@
 import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerTriggerEvents } from "./lib/index"
 import { CommandManager, Script, Discord } from "@lib/index"
-import { Message } from "discord.js"
+import { Message, TextChannel } from "discord.js"
 import initModels from "./db/initModels"
-import { SSPlayer } from "./model"
+import { PlayerScore, SSPlayer } from "./model"
 import { User } from "@models/index"
 import { getScoreSaberIdFromIdOrURL } from "./utils/scoreSaberUrl"
+import { formatAcc } from "./utils/index"
 
 
 export class BeatSaberScript extends Script {
@@ -98,7 +99,7 @@ export class BeatSaberScript extends Script {
         }, "Mostrar la cuenta de Discord vinculada a una cuenta de ScoreSaber.", "BeatSaber")
 
 
-        CommandManager.newCommand("linkear", "<scoresaber id or url>", async (message: Message, args) => {
+        CommandManager.newCommand("linkear", "<scoresaber id o url>", async (message: Message, args) => {
             // Validar param
             const scoreSaberId = getScoreSaberIdFromIdOrURL(args[0])
 
@@ -214,6 +215,29 @@ export class BeatSaberScript extends Script {
         }, "Activar/desactivar las menciones en los anuncios de hitos de otros jugadores que involucran a tu usuario.", "BeatSaber")
         
 
+
+        CommandManager.newCommand("acc", null, async (message: Message, args) => {
+
+            // get scoresaber player id
+            const ssPlayer = await SSPlayer.scope({ method: ["withDiscordUserId", message.author.id] }).findOne()
+
+            if(!ssPlayer) {
+                message.reply(`Tu cuenta de scoresaber no está vinculada con tu cuenta de discord. Vinculala con /linkear <id scoresaber>.`)
+                return
+            }
+
+            const scores = await PlayerScore.scope({ method: ["leastAccuracy", ssPlayer.id, 30] }).findAll()
+            
+            let list = ""
+            for(const score of scores) {
+                if(!score.Leaderboard) continue
+                console.log(score.toJSON())
+                list += "**" + formatAcc(score.accuracy) + "** () " + score.pp  + " en " + score.Leaderboard.readableMapDesc() + "\n"
+            }
+
+            await Discord.sendLongMessageToChannel(<TextChannel>message.channel, list)
+
+        }, "Ver tu top 30 scores de maps ranked con menos accuracy.", "BeatSaber")
 
 
 

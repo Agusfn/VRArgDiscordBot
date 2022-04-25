@@ -1,5 +1,6 @@
 import DiscordJS, { Guild, TextChannel, Intents, Message } from "discord.js"
 import logger from "@utils/logger"
+import { separateMultiLineString } from "@utils/index"
 
 /**
  * hard limit by discord API
@@ -128,6 +129,20 @@ export class Discord {
         return messages
 
     }
+
+
+
+    public static async sendLongMessageToChannel(channel: TextChannel, messageContent: string) {
+        
+        const messagesContents = separateMultiLineString(messageContent, 1900) // message content limit is 2000
+
+        for(const messageContent of messagesContents) {
+            await channel.send(messageContent)
+        }
+    }
+
+
+
 
 
 

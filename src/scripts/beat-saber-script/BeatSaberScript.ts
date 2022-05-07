@@ -6,6 +6,10 @@ import { PlayerScore, SSPlayer } from "./model"
 import { User } from "@models/index"
 import { getScoreSaberIdFromIdOrURL } from "./utils/scoreSaberUrl"
 import { formatAcc } from "./utils/index"
+import { roundNumber } from "@utils/math"
+
+
+const AMOUNT_OF_SCORES = 20
 
 
 export class BeatSaberScript extends Script {
@@ -216,7 +220,8 @@ export class BeatSaberScript extends Script {
         
 
 
-        CommandManager.newCommand("acc", null, async (message: Message, args) => {
+        CommandManager.newCommand("menor_acc", null, async (message: Message, args) => {
+
 
             // get scoresaber player id
             const ssPlayer = await SSPlayer.scope({ method: ["withDiscordUserId", message.author.id] }).findOne()
@@ -226,18 +231,18 @@ export class BeatSaberScript extends Script {
                 return
             }
 
-            const scores = await PlayerScore.scope({ method: ["leastAccuracy", ssPlayer.id, 30] }).findAll()
+            const scores = await PlayerScore.scope({ method: ["leastAccuracy", ssPlayer.id, AMOUNT_OF_SCORES] }).findAll()
             
-            let list = ""
+            let list = "**__Top "+AMOUNT_OF_SCORES+" scores con menos accuracy de "+ssPlayer.name+":__**\n"
             for(const score of scores) {
                 if(!score.Leaderboard) continue
                 console.log(score.toJSON())
-                list += "**" + formatAcc(score.accuracy) + "** () " + score.pp  + " en " + score.Leaderboard.readableMapDesc() + "\n"
+                list += "**" + formatAcc(score.accuracy) + "** ("+roundNumber(score.pp, 1)+"pp) en " + score.Leaderboard.readableMapDesc() + "\n"
             }
 
             await Discord.sendLongMessageToChannel(<TextChannel>message.channel, list)
 
-        }, "Ver tu top 30 scores de maps ranked con menos accuracy.", "BeatSaber")
+        }, "Ver tu top "+AMOUNT_OF_SCORES+" scores de maps ranked con menos accuracy.", "BeatSaber")
 
 
 

@@ -1,10 +1,15 @@
 import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerTriggerEvents } from "./lib/index"
 import { CommandManager, Script, Discord } from "@lib/index"
-import { Message } from "discord.js"
+import { Message, TextChannel } from "discord.js"
 import initModels from "./db/initModels"
-import { SSPlayer } from "./model"
+import { PlayerScore, SSPlayer } from "./model"
 import { User } from "@models/index"
 import { getScoreSaberIdFromIdOrURL } from "./utils/scoreSaberUrl"
+import { formatAcc } from "./utils/index"
+import { roundNumber } from "@utils/math"
+
+
+const AMOUNT_OF_SCORES = 20
 
 
 export class BeatSaberScript extends Script {
@@ -98,7 +103,7 @@ export class BeatSaberScript extends Script {
         }, "Mostrar la cuenta de Discord vinculada a una cuenta de ScoreSaber.", "BeatSaber")
 
 
-        CommandManager.newCommand("linkear_ss", "<scoresaber id or url>", async (message: Message, args) => {
+        CommandManager.newCommand("linkear", "<scoresaber id o url>", async (message: Message, args) => {
             // Validar param
             const scoreSaberId = getScoreSaberIdFromIdOrURL(args[0])
 
@@ -118,7 +123,7 @@ export class BeatSaberScript extends Script {
         }, "Vincular una cuenta de ScoreSaber a tu cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newAdminCommand("linkear_ss_admin", "<discord user id> <scoresaber id or url>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("linkear_admin", "<discord user id> <scoresaber id or url>", async (message: Message, args) => {
             // Validar params
             const discordUserId = args[0]
 
@@ -150,7 +155,7 @@ export class BeatSaberScript extends Script {
         }, "Vincular una cuenta de ScoreSaber a una cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newCommand("deslinkear_ss", null, async (message: Message, args) => {
+        CommandManager.newCommand("deslinkear", null, async (message: Message, args) => {
 
             const accountManager = new ScoreSaberAccountManager()
             const ssPlayer = await accountManager.unlinkScoreSaberAccountFromUser(message.author.id)
@@ -164,7 +169,7 @@ export class BeatSaberScript extends Script {
         }, "Desvincular la cuenta de ScoreSaber de tu cuenta de Discord.", "BeatSaber")
 
 
-        CommandManager.newAdminCommand("deslinkear_ss_admin", "<discord user id>", async (message: Message, args) => {
+        CommandManager.newAdminCommand("deslinkear_admin", "<discord user id>", async (message: Message, args) => {
             
             // Validar params
             const discordUserId = args[0]
@@ -214,6 +219,30 @@ export class BeatSaberScript extends Script {
         }, "Activar/desactivar las menciones en los anuncios de hitos de otros jugadores que involucran a tu usuario.", "BeatSaber")
         
 
+
+        CommandManager.newCommand("menor_acc", null, async (message: Message, args) => {
+
+
+            // get scoresaber player id
+            const ssPlayer = await SSPlayer.scope({ method: ["withDiscordUserId", message.author.id] }).findOne()
+
+            if(!ssPlayer) {
+                message.reply(`Tu cuenta de scoresaber no está vinculada con tu cuenta de discord. Vinculala con /linkear <id scoresaber>.`)
+                return
+            }
+
+            const scores = await PlayerScore.scope({ method: ["leastAccuracy", ssPlayer.id, AMOUNT_OF_SCORES] }).findAll()
+            
+            let list = "**__Top "+AMOUNT_OF_SCORES+" scores con menos accuracy de "+ssPlayer.name+":__**\n"
+            for(const score of scores) {
+                if(!score.Leaderboard) continue
+                console.log(score.toJSON())
+                list += "**" + formatAcc(score.accuracy) + "** ("+roundNumber(score.pp, 1)+"pp) en " + score.Leaderboard.readableMapDesc() + "\n"
+            }
+
+            await Discord.sendLongMessageToChannel(<TextChannel>message.channel, list)
+
+        }, "Ver tu top "+AMOUNT_OF_SCORES+" scores de maps ranked con menos accuracy.", "BeatSaber")
 
 
 

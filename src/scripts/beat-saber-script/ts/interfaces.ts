@@ -1,4 +1,5 @@
 import { UserI } from "@ts/interfaces"
+import { Leaderboard } from "../model"
 
 export interface PlayerScoreI {
     /** Internal id to identify score. Does not reflect any id in ScoreSaber API. Differs from ssId because there may be multiple scores of a player in a given map. */
@@ -38,6 +39,7 @@ export interface PlayerScoreI {
 
     /** For eager loading from sequelize */
     SSPlayer?: SSPlayerI
+    Leaderboard?: Leaderboard
 }
 
 

@@ -13,11 +13,13 @@ import { UserManager } from "./UserManager"
  * according to the type of command, permissions, and channel of restriction of each, if any.
  * This command may not be registered with CommandManager, it's handled directly by it.
  */
-const helpCommands = ["ayuda", "help"]
+const helpCommandsVariants = ["ayuda", "help"]
 
 const maxCommandLength = 30
 
 const COMMAND_GRAL_GROUP_NAME = "general"
+
+const MIN_INTERVAL_MS_BETWEEN_COMMANDS = 500 
 
 
 /**
@@ -32,6 +34,13 @@ export class CommandManager {
      * This list is not involved in the handler and execution of commands; handler is registered in bot-commander when registering the command.
      */
     private static commands: BotCommand[] = []
+
+
+    /**
+     * List with most recent date of command excecuted for each user (for throttling commands)
+     */
+    private static lastUserCommands: { [discordUserId: string]: number } = {}
+
 
 
     /**
@@ -120,11 +129,20 @@ export class CommandManager {
      */
     public static onUserSubmitCommand(message: Message) {
         
-        const userCommand = this.fetchCmdNameFromMsg(message.content)
-        const command = this.commands.find(command => command.name == userCommand)
+        // Command throttle
+        const lastCommandExcecuted = this.lastUserCommands[message.author.id], now = Date.now()
+        if(lastCommandExcecuted && now - lastCommandExcecuted < MIN_INTERVAL_MS_BETWEEN_COMMANDS) {
+            message.reply("Espera un momento antes de enviar otro comando.")
+            return
+        } else {
+            this.lastUserCommands[message.author.id] = now
+        }
+
+        const userInputCommand = this.fetchCmdNameFromMsg(message.content)
+        const command = this.commands.find(command => command.name == userInputCommand)
 
         // Ignore if command is not registered in command list or in reserved help command list
-        if(command == null && !helpCommands.includes(userCommand)) {
+        if(command == null && !helpCommandsVariants.includes(userInputCommand)) {
             return
         }
 
@@ -132,7 +150,7 @@ export class CommandManager {
         const isInAdminChannel = (UserManager.isAdmin(message.author.id) && message.channel.id == process.env.DISCORD_CHANNEL_ID_ADMIN)
 
         // Override for "help" command
-        if(helpCommands.includes(userCommand)) {
+        if(helpCommandsVariants.includes(userInputCommand)) {
             if(isInAdminChannel) {
                 message.reply(this.getCommandList(CommandType.ADMIN))
             } else {
@@ -173,7 +191,7 @@ export class CommandManager {
      */
     private static isValidCmdName(cmdName: string) {
         const regex = new RegExp("^[a-zA-Z0-9_]{1," + maxCommandLength + "}$", "g")
-        return regex.test(cmdName) && !helpCommands.includes(cmdName)
+        return regex.test(cmdName) && !helpCommandsVariants.includes(cmdName)
     }
 
 

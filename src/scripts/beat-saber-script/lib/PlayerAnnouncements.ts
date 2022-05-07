@@ -1,5 +1,5 @@
 import { SSPlayer, PlayerScore, Leaderboard } from "../model/index"
-import { ScoreSaberAPI } from "../utils/index"
+import { formatAcc, ScoreSaberAPI } from "../utils/index"
 import { Discord } from "@lib/Discord"
 import { TextChannel } from "discord.js"
 import { SSCountries } from "../config"
@@ -49,9 +49,9 @@ export class PlayerAnnouncements {
      */
     public static async playerSurpassedPlayersInAccuracy(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
         if(playersSurpassed.length > 1) {
-            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.enumerateDiscordUsers(playersSurpassed)} con un acc de **${this.formatAcc(player.avgAccuracy)}**!`)
+            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.enumerateDiscordUsers(playersSurpassed)} con un acc de **${formatAcc(player.avgAccuracy)}**!`)
         } else if(playersSurpassed.length == 1) {
-            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.discordMentionFromInfo(playersSurpassed[0])} (${this.formatAcc(playersSurpassed[0].avgAccuracy)}) con un acc de **${this.formatAcc(player.avgAccuracy)}**!`)
+            await this.outputChannel.send(`**${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a ${this.discordMentionFromInfo(playersSurpassed[0])} (${formatAcc(playersSurpassed[0].avgAccuracy)}) con un acc de **${formatAcc(player.avgAccuracy)}**!`)
         }
     }
 
@@ -68,7 +68,7 @@ export class PlayerAnnouncements {
 
         if(leaderboard.ranked) {
             let message = "**" + player.name + "** hizo el primer score del server en el mapa " + leaderboard.readableMapDesc() + ", con un acc de **" + 
-            this.formatAcc(score.accuracy) + "** y obteniendo **"+roundNumber(score.pp, 1)+"pp**!" 
+            formatAcc(score.accuracy) + "** y obteniendo **"+roundNumber(score.pp, 1)+"pp**!" 
             await this.outputChannel.send(message)
         }
     }
@@ -87,7 +87,7 @@ export class PlayerAnnouncements {
         let message = "**" + player.name + "** hizo un top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()
         
         if(leaderboard.ranked) {
-            message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
+            message += " con un acc de **" + formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + formatAcc(snipedScore.accuracy) + ")!"
         } else {
             message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"  // acc and pp is not available in unranked maps
         }
@@ -108,7 +108,7 @@ export class PlayerAnnouncements {
 
         if(leaderboard.ranked) {
             let message = "**" + player.name + "** mejoró su top score del server :first_place:  en el mapa "+leaderboard.readableMapDesc()+" (**" + 
-            this.formatAcc(oldScore.accuracy) + "** --> **" + this.formatAcc(newScore.accuracy) + "**) obteniendo **"+ roundNumber(newScore.pp, 1) + "pp**!"
+            formatAcc(oldScore.accuracy) + "** --> **" + formatAcc(newScore.accuracy) + "**) obteniendo **"+ roundNumber(newScore.pp, 1) + "pp**!"
             await this.outputChannel.send(message)
         }
     }
@@ -127,7 +127,7 @@ export class PlayerAnnouncements {
         let message = "**" + player.name + "** hizo un top score en " + this.getCountry(<SSCountries>player.country) + "  en el mapa " + leaderboard.readableMapDesc()
 
         if(leaderboard.ranked) {
-            message += " con un acc de **" + this.formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + this.formatAcc(snipedScore.accuracy) + ")!"
+            message += " con un acc de **" + formatAcc(newScore.accuracy) + "** y obteniendo **" + roundNumber(newScore.pp, 1) + "pp**, snipeando a " + this.discordMention(snipedScore.SSPlayer) + " (" + formatAcc(snipedScore.accuracy) + ")!"
         } else {
             message += ", snipeando a " + this.discordMention(snipedScore.SSPlayer) + "!"  // acc and pp is not available in unranked maps
         }
@@ -147,7 +147,7 @@ export class PlayerAnnouncements {
 
         if(leaderboard.ranked) {
             let message = "**" + player.name + "** mejoró significativamente su score en el mapa ranked " + leaderboard.readableMapDesc() + "(**" + 
-            this.formatAcc(oldScore.accuracy) + "** --> **" + this.formatAcc(newScore.accuracy) + "**) obteniendo **" + roundNumber(newScore.pp, 1) + "pp**!"
+            formatAcc(oldScore.accuracy) + "** --> **" + formatAcc(newScore.accuracy) + "**) obteniendo **" + roundNumber(newScore.pp, 1) + "pp**!"
             await this.outputChannel.send(message)
         }
 
@@ -209,9 +209,7 @@ export class PlayerAnnouncements {
 
 
 
-    private static formatAcc(acc: number) {
-        return roundNumber(acc, 2) + "%"
-    }
+
 
     private static getCountry(country: SSCountries) {
         let countryName = "(pais)"

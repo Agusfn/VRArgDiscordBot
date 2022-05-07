@@ -79,7 +79,28 @@ export default () => {
             //         group: ["ssId"]
             //     }
             // }
-
+            /** Query scope to retrieve the N ranked scores with LEAST accuracy for a given player. */
+            leastAccuracy(ssPlayerId: string, limit: number) {
+                return {
+                    include: Leaderboard,
+                    /*attributes: {
+                        include: [
+                            [Sequelize.fn("max", Sequelize.col("accuracy")), "maxAccuracy"]
+                        ],
+                    },*/
+                    where: {
+                        playerId: ssPlayerId,
+                        [Op.not]: {
+                            pp: 0 // if pp != 0 => it's ranked
+                        }
+                    },
+                    group: ["leaderboardId"],
+                    order: [
+                        [Sequelize.fn('max', Sequelize.col('accuracy')), 'ASC'],
+                    ],
+                    limit: limit
+                }
+            }
         }
     })
 

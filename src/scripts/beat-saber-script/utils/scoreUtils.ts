@@ -1,3 +1,5 @@
+import { roundNumber } from "@utils/index"
+
 const linear = require('everpolate').linear
 
 // x = new score percentage obtained. y = necessary percentual improvement for said score
@@ -17,4 +19,9 @@ export const isScoreSignificantlyImproved = (previousAccuracy: number, newAccura
     const necessaryImprovement = linear(newAccuracy, X_AccObtained, Y_NeededImprovement) // linear interpolation
 
     return improvement >= necessaryImprovement
+}
+
+
+export const formatAcc = (acc: number) => {
+    return roundNumber(acc, 2) + "%"
 }

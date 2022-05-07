@@ -7,7 +7,7 @@ import { separateMultiLineString } from "@utils/strings"
 /**
  * The maximum amount of messages allowed to exist in a channel for indexes to be generated (to avoid accidentally generating indexes in conversation channels)
  */
-const MAX_MSGS_INDEXES = 200
+const MAX_MSGS_INDEXES = 500
 
 
 

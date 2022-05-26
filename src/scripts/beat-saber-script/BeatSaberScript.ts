@@ -41,13 +41,11 @@ export class BeatSaberScript extends Script {
 
 
         this.addCustomCron("*/20 * * * *", async () => {
-            console.log("cron running each 20 min...")
             await PeriodicScoreFetcher.startPeriodicFetch()
         })
 
          await PlayerProfileUpdater.startProfileUpdater()
          this.addCustomCron("*/25 * * * *", async () => {
-             console.log("cron running each 25 min...")
              await PlayerProfileUpdater.startProfileUpdater()
         })
 
@@ -60,7 +58,8 @@ export class BeatSaberScript extends Script {
             for(const player of players) {
                 userListTxt += `**User:** ${player.User.username}. **SS:** ${player.name}. **URL:** <${player.scoreSaberURL()}>\n`
             }
-            message.reply(userListTxt)
+
+            await Discord.sendLongMessageToChannel(<TextChannel>message.channel, userListTxt)
 
         }, "Mostrar una lista de usuarios del server con su cuenta de ScoreSaber vinculada.", "BeatSaber")
 

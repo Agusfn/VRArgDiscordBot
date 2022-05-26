@@ -60,7 +60,9 @@ export class PlayerTriggerEvents {
      */
     public static onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayerI) {
 
-        logger.info("event handler called for player " + player.name + " updating profile")
+        if(process.env.DEBUG == "true") {
+            logger.info("event handler called for player " + player.name + " updating profile")
+        }
 
         if(player.rank != oldPlayer.rank) {
             this.onPlayerUpdateGlobalRank(player, oldPlayer.rank, player.rank)
@@ -177,7 +179,7 @@ export class PlayerTriggerEvents {
 
         try {
 
-            console.log("Event handler called for player " + player.name + " submitting new score page of " + scores.length + " scores")
+            //console.log("Event handler called for player " + player.name + " submitting new score page of " + scores.length + " scores")
 
             for(const newScore of scores) {
     

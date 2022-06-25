@@ -1,5 +1,6 @@
 import { Leaderboard, PlayerScore } from "../model/index"
 import logger from "@utils/logger"
+import { LeaderboardI } from "../ts"
 
 
 /**
@@ -40,7 +41,10 @@ export class ScoreSaberDataCache {
      * Array that contains all of the currently existing Leaderboards in the database. 
      * It's useful for checking the existence of leaderboards without having to make DB queries.
      */
-    private static allLeaderboardIds: number[]
+    private static existingLeaderboards: {
+        leaderboardId: number,
+        ranked: boolean
+    }[]
 
 
     /**
@@ -57,12 +61,17 @@ export class ScoreSaberDataCache {
             this.initialized = true
 
             // Fetch all leaderboard ids from DB into the array.
-            this.allLeaderboardIds = (await Leaderboard.findAll({
-                attributes: ["id"]
-            })).map(leaderboard => leaderboard.id)
+            const leaderboards = (await Leaderboard.findAll({
+                attributes: ["id", "ranked"]
+            }))
+
+            this.existingLeaderboards = leaderboards.map(leaderboard => ({ 
+                leaderboardId: leaderboard.id, 
+                ranked: leaderboard.ranked 
+            }))
 
             if(process.env.DEBUG == "true") {
-                logger.info(`Initialized ScoreSaberDataCache. Loaded ${this.allLeaderboardIds.length} leaderboard ids.`)
+                logger.info(`Initialized ScoreSaberDataCache. Loaded ${this.existingLeaderboards.length} leaderboard ids.`)
             }
         }
     }
@@ -74,31 +83,60 @@ export class ScoreSaberDataCache {
      * @returns 
      */
     public static leaderboardExists(leaderboardId: number) {
-        if(!this.allLeaderboardIds == null) {
+        if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
         }
-        return this.allLeaderboardIds.includes(leaderboardId)
+        return this.existingLeaderboards.find(item => item.leaderboardId == leaderboardId) ? true : false
     }
 
+
+    /**
+     * Check if an existing leaderboard has a given rank status (useful for comparing when a leaderboard becomes ranked).
+     * @param leaderboardId 
+     * @param ranked 
+     */
+    public static leaderboardHasRankStatus(leaderboardId: number, ranked: boolean) {
+        if(!this.existingLeaderboards == null) {
+            throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
+        }
+        return this.existingLeaderboards.find(item => item.leaderboardId == leaderboardId && item.ranked == ranked) ? true : false
+    }
+
+
+    /**
+     * Update the ranked status of the cache of an existing leaderboard
+     * @param leaderboardId 
+     * @param ranked 
+     */
+    public static updateLeaderboardRankStatus(leaderboardId: number, ranked: boolean) {
+        if(!this.existingLeaderboards == null) {
+            throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
+        }
+        const item = this.existingLeaderboards.find(item => item.leaderboardId == leaderboardId)
+        if(item) {
+            item.ranked = ranked
+        }
+    }
 
     /**
      * Add a Leaderboard id to ids cache
      * @param leaderboardIds 
      */
-    public static addLeaderboardIds(leaderboardIds: number | number[]) {
-        if(!this.allLeaderboardIds == null) {
+    public static addLeaderboards(leaderboards: LeaderboardI | LeaderboardI[]) {
+        if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized!")
         }
-        if(Array.isArray(leaderboardIds)) {
-            this.allLeaderboardIds = [...this.allLeaderboardIds, ...leaderboardIds]
+        if(Array.isArray(leaderboards)) {
+            const items = leaderboards.map(item => ({ leaderboardId: item.id, ranked: item.ranked }))
+            this.existingLeaderboards = [...this.existingLeaderboards, ...items]
         } else {
-            this.allLeaderboardIds.push(leaderboardIds)
+            this.existingLeaderboards.push({ leaderboardId: leaderboards.id, ranked: leaderboards.ranked })
         }
     }
 
 
     /**
-     * Fetch player scores (if not already in cache)
+     * Fetch all player existing score ids with their submission date in a cache (if not already done)
      * @param ssPlayerId 
      * @param accesor 
      */

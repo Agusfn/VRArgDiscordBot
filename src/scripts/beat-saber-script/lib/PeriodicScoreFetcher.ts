@@ -41,7 +41,7 @@ export class PeriodicScoreFetcher {
                 }
     
                 // Fetch whole player score list in cache because they will be needed by PlayerScoreSaver for storing player scores
-                await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.PERIODIC_FETCHER)
+                await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.PERIODIC_FETCHER) // to-do: store this cache in an instanced object, and pass it to the module that will require it
     
                 let pageToFetch = 1 // start from first (most recent) page
                 

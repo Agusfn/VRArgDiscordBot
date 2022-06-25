@@ -115,6 +115,8 @@ export interface LeaderboardI {
     qualifiedDate?: Date
     /** Whether this map is ranked or not */
     ranked: boolean
+    /** Whether this map was qualified */
+    qualified: boolean
     /** The amount of stars of this map. It's the number that best describes its difficulty. */
     stars: number
     /** Image URL of the cover of the song/map */

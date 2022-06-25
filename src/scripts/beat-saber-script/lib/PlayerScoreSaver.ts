@@ -22,29 +22,34 @@ export class PlayerScoreSaver {
 
         // We will bulk save the PlayerScores and Leaderboards unlike with periodic fetching, since historic fetching saves scores and maps in a larger scale
         const leaderboardsToSave: LeaderboardI[] = []
+        const leaderboardsToUpdate: LeaderboardI[] = []
         const scoresToSave: PlayerScoreI[] = []
         
         for(const score of scoreCollection.playerScores) {
 
             // Save new Leaderboards (song map info) associated with the score
-            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id) && !leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
-                const newLeaderboard: LeaderboardI = this.makeLeaderboardFromApiLeaderBoard(score.leaderboard)
-                leaderboardsToSave.push(newLeaderboard)
+            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
+                if(!leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
+                    leaderboardsToSave.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
+                }
+            } else {
+                if(!ScoreSaberDataCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
+                    leaderboardsToUpdate.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
+                }
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
             if(!ScoreSaberDataCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() ) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
-                const newScore: PlayerScoreI = this.makePlayerScoreFromApiScore(score, player.id)
-                scoresToSave.push(newScore)
+                scoresToSave.push(this.playerScoreFromAPIScore(score, player.id))
             }
         }
 
-        // Save Leaderboards and PlayerScores in DB
+        // Save Leaderboards in DB and cache
         await Leaderboard.bulkCreate(leaderboardsToSave)
-        await PlayerScore.bulkCreate(scoresToSave)
+        ScoreSaberDataCache.addLeaderboards(leaderboardsToSave)
 
-        // Add Leaderboard and Score ids to cache
-        ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
+        // Add PlayerScores to DB and cache
+        await PlayerScore.bulkCreate(scoresToSave)
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
         ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
@@ -65,9 +70,10 @@ export class PlayerScoreSaver {
     public static async saveNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
         let newScoreListEndReached = false
-
+        
         const leaderboardsToSave: LeaderboardI[] = []
         const scoresToSave: PlayerScoreI[] = []
+        const leaderboardsToUpdate: LeaderboardI[] = []
 
         for(const score of scoreCollection.playerScores) {
 
@@ -79,54 +85,40 @@ export class PlayerScoreSaver {
 
             // Set new score to be saved in DB
             if(!scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) { // there should never be repeated scores from api collection, but we check just in case
-                scoresToSave.push(this.makePlayerScoreFromApiScore(score, player.id))
+                scoresToSave.push(this.playerScoreFromAPIScore(score, player.id))
             }
 
             // Set new Leaderboards (song map info) associated with the score to save in db (if it doesn't exist in DB)
-            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id) && !leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
-                leaderboardsToSave.push(this.makeLeaderboardFromApiLeaderBoard(score.leaderboard))
+            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
+                if(!leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
+                    leaderboardsToSave.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
+                }
+            } else {
+                if(!ScoreSaberDataCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
+                    leaderboardsToUpdate.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
+                }
             }
 
         }
         
-        // Save Leaderboards and PlayerScores in DB
+        // Save Leaderboards in DB and cache
         await Leaderboard.bulkCreate(leaderboardsToSave)
-        await PlayerScore.bulkCreate(scoresToSave)  
+        ScoreSaberDataCache.addLeaderboards(leaderboardsToSave)
 
-        // Add Leaderboard and Score ids to cache
-        ScoreSaberDataCache.addLeaderboardIds(leaderboardsToSave.map(leaderboard => leaderboard.id))
+        // Update Leaderboards in DB and cache
+        await this.updateLeaderboards(leaderboardsToUpdate)
+
+        // Add PlayerScores to DB and cache
+        await PlayerScore.bulkCreate(scoresToSave)  
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
         ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
-        if(process.env.DEBUG == "true") {
+
+
+        if(process.env.DEBUG == "true") { // to-do: maybe use something like logger.debug to avoid this check on every log
             logger.info("Periodic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
             logger.info("Periodic fetcher: Bulk saved " + scoresToSave.length + " new scores")
         }
-
-        // *** TEST SCORES ****
-        /*if(player.id == "76561198252658652") {
-            const testScore: PlayerScoreI = {
-                id: 111111111,
-                playerId: "76561198252658652",
-                leaderboardId: 100024,
-                rank: 123,
-                baseScore: 123,
-                modifiedScore: 1300000,
-                pp: 480,
-                accuracy: 85.5,
-                weight: 1,
-                modifiers: "",
-                multiplier: 1,
-                badCuts: 0,
-                missedNotes: 0,
-                maxCombo: 1231,
-                fullCombo: true,
-                timeSet: new Date()
-            }
-            scoresToSave.push(testScore)
-        }*/
-
-        // ****************
 
         // (async) Call event trigger of player submitting new score page
         if(scoresToSave.length > 0) {
@@ -141,11 +133,37 @@ export class PlayerScoreSaver {
 
 
     /**
+     * Update the data of an existing Leaderboard, with update data from another Leaderboard. 
+     * We'll update the ranked data only since that's the most likely thing that may change in it.
+     * @param leaderboardsToUpdate 
+     */
+    private static async updateLeaderboards(leaderboardsToUpdate: LeaderboardI[]) {
+
+        for(const leaderboard of leaderboardsToUpdate) {
+
+            await Leaderboard.update({
+                maxScore: leaderboard.maxScore,
+                rankedDate: leaderboard.rankedDate ? new Date(leaderboard.rankedDate) : null,
+                qualifiedDate: leaderboard.qualifiedDate ? new Date(leaderboard.qualifiedDate) : null,
+                ranked: leaderboard.ranked,
+                qualified: leaderboard.qualified,
+                stars: leaderboard.stars,
+            }, { where: { id: leaderboard.id } })
+
+            ScoreSaberDataCache.updateLeaderboardRankStatus(leaderboard.id, leaderboard.ranked)
+
+            logger.info("Updated data of existing leaderboard: " + leaderboard.songName)
+        }
+
+    }
+
+
+    /**
      * Make a plain object for a Leaderboard from the Leaderboard data from the API.
      * @param score 
      * @returns 
      */
-    private static makeLeaderboardFromApiLeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
+    private static leaderboardFromAPILeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
         return {
             id: leaderboard.id, // PK is ScoreSaber Leaderboard id
             songHash: leaderboard.songHash,
@@ -160,6 +178,7 @@ export class PlayerScoreSaver {
             rankedDate: leaderboard.rankedDate ? new Date(leaderboard.rankedDate) : null,
             qualifiedDate: leaderboard.qualifiedDate ? new Date(leaderboard.qualifiedDate) : null,
             ranked: leaderboard.ranked,
+            qualified: leaderboard.qualified,
             stars: leaderboard.stars,
             coverImage: leaderboard.coverImage
         }
@@ -171,7 +190,7 @@ export class PlayerScoreSaver {
      * @param ssPlayerId 
      * @returns 
      */
-    private static makePlayerScoreFromApiScore(apiScore: PlayerScoreAPI, ssPlayerId: string): PlayerScoreI {
+    private static playerScoreFromAPIScore(apiScore: PlayerScoreAPI, ssPlayerId: string): PlayerScoreI {
         const score = apiScore.score
 
         let accuracy = null

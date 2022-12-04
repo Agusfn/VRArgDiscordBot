@@ -24,9 +24,11 @@
     "ffmpeg-static": "^4.3.0",
     "moment": "^2.29.1",
     "node-cron": "^3.0.0",
+    "reflect-metadata": "^0.1.13",
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",
+    "typedi": "^0.10.0",
     "winston": "^3.3.3",
     "winston-transport": "^4.4.0"
   },

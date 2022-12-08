@@ -1,6 +1,12 @@
 
 # Compile and run (development)
 
+## Compile in watch mode
+
+>tsc -w
+
+## Compile once + run app
+
 >npm start
 
 # Deploy

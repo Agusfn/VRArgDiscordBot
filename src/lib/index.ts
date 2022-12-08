@@ -1,5 +1,5 @@
 export * from "./CommandManager"
 export * from "./Discord"
-export * from "./Script"
+export * from "./ScriptOld"
 export * from "./ScriptLoader"
 export * from "./UserManager"

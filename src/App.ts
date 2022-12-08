@@ -1,0 +1,123 @@
+import { ScriptClass } from "@ts/interfaces";
+import logger from "@utils/logger"
+import SequelizeDBManager from "@lib/SequelizeDBManager"
+import { Discord, UserManager, CommandManager } from "@lib/index"
+import * as dotenv from "dotenv"
+import DiscordTransport from "@utils/DiscordLogTransport"
+import { GuildMember, Message, TextChannel } from "discord.js"
+import registerBaseCommands from "./commands/registerBaseCommands"
+import initGlobalModels from "@models/initModels"
+import bot = require("bot-commander")
+import { ScriptLoader } from "./lib/ScriptLoader"
+import { COMMAND_PREFIX } from "@utils/configuration"
+import { CommandMetadata } from "@ts/interfaces"
+import { Service } from "typedi";
+
+
+@Service()
+export default class App {
+
+    // to-do: add dependency injection
+    constructor() {
+
+    }
+
+    registerScript(scriptClass: ScriptClass) {
+        ScriptLoader.registerScript(scriptClass);
+    }
+
+
+    public initialize() {
+
+        /**
+         * Initialize dotenv
+         */
+        dotenv.config({path:__dirname+'/./../.env'})
+
+
+        /**
+         * Initialize discord instance and log in (async)
+         */
+        Discord.initialize(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID)
+    
+    
+        /**
+         * Register global discord ready listener
+         */
+        Discord.getInstance().on("ready", async () => {
+            try {
+                // Add discord logging channel to logger
+                const logChannel = await Discord.getInstance().channels.fetch(process.env.DISCORD_CHANNEL_ID_LOGGING)
+                logger.add(new DiscordTransport(<TextChannel>logChannel))
+    
+                logger.info("Discord Client Logged In successfully!")
+    
+                // Initialize sequelize database connection
+                await SequelizeDBManager.initialize()
+    
+                // Initialize global (application-wide) models
+                await initGlobalModels()
+    
+                // Load some important Discord objects into our Discord helper class
+                await Discord.loadGuild()
+    
+                // Initialize user manager and load unregistered users
+                await UserManager.initialize()
+    
+                // Register all base commands (these can be called only after Discord client initializes)
+                registerBaseCommands()
+    
+                // Initialize the user defined scripts
+                await ScriptLoader.initializeScripts()
+    
+            } catch(error: any) {
+                logger.error("Error initializing bot.", error)
+                logger.error(error.stack)
+                this.close();
+            }
+        })
+    
+    
+        Discord.getInstance().on('guildMemberAdd', member => {
+            UserManager.onMemberJoined(member)
+        });
+    
+    
+        Discord.getInstance().on('guildMemberRemove', member => {
+            UserManager.onMemberLeft(<GuildMember>member)
+        });
+    
+    
+        /**
+         * Configure a global discord message listener, so any message starting with "/" is parsed by bot commander (commands must be added on each script)
+         */
+        Discord.getInstance().on("messageCreate", (message: Message) => {
+            if(!message.author.bot && message.content.startsWith(COMMAND_PREFIX)) { // is likely a command, inspect further in handler method.
+                CommandManager.onUserSubmitCommand(message)
+            }
+        })
+    
+    
+        /**
+         * Configure globally the bot-commander command parser.
+         */
+        bot.prefix(COMMAND_PREFIX) // "/" prefix for commands
+        .setSend((meta: CommandMetadata, textMessage: string) => { // set up communication medium from bot-commander to the user (discord channel message)
+            meta.message.channel.send(textMessage)
+        })
+    
+    }
+
+    /**
+     * Gracefully close all running services (if any).
+     */
+    public close() {
+        logger.info("Closing gracefully...")
+        
+        logger.end()
+        SequelizeDBManager.getInstance()?.close()
+        Discord.getInstance()?.destroy()
+    }
+    
+
+}

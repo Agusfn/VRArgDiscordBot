@@ -4,7 +4,7 @@ import { Container, Service } from 'typedi';
 export class TestService1 {
 
     public hello() {
-        console.log("Hello world 2!");
+        return 4;
     }
 
 }
@@ -17,7 +17,7 @@ export class TestService2 {
     }
 
     public hello() {
-        this.testService.hello();
+        return this.testService.hello();
     }
 
 }

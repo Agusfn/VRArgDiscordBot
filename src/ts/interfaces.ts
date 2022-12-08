@@ -26,6 +26,9 @@ export interface BotCommand {
 }
 
 
+export type ScriptClass = new (...args: any) => Script // some weird type to represent a "newable". (constructor function that constructs a Script)
+
+
 export interface UserI {
     discordUserId: string
     /** This is the discord username (which cannot be changed) */
@@ -36,3 +39,22 @@ export interface UserI {
     isAdmin: boolean
 }
 
+
+export interface CommandDefinition {
+    isAdmin?: boolean,
+    /** dsfsd */
+    cmd: string,
+    args?: string,
+    action: string,
+    description?: string,
+    groupName?: string,
+    restrictedChannelId?: string
+}
+
+export interface Script {
+    name: string,
+    commands?: CommandDefinition[],
+    onUserMesssage?: (args: any) => any,
+    initDbModels?: () => void,
+    onInitialized(): void
+}

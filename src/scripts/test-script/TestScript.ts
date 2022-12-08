@@ -1,35 +1,40 @@
-import { Script } from "@lib/index"
+//import { Script } from "@lib/ScriptNew"
 import { Message } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
 import { Container, Service } from 'typedi';
 import { TestService2 } from "./services/TestService"
+import { CommandDefinition, Script } from "@ts/interfaces";
 
-export class TestScript extends Script {
 
-    protected scriptName = "Test Script"
+@Service()
+export class TestScript implements Script {
+
+    public name = "Test Script New"
+
+    public commands: CommandDefinition[] = [
+        { cmd: "test", args: "<cantidad>", action: "hello", description: "Descripcion del comando." }
+    ];
 
     protected onUserMessage: undefined
     public initDbModels: undefined
 
-    public async onInitialized() {
-
-        const serv2 = Container.get(TestService2);
-        serv2.hello();
-
-        CommandManager.newCommand("testcommand", "<param1> <param2>", async (message: Message, args) => {
-            
-            message.reply({content: "hola"})
-
-        }, "Descripcion del comando.", null, "913629201377165332")
-
-        CommandManager.newCommand("testcommand2", null, async (message: Message, args) => {
-
-            message.reply({content: "hola"})
-
-        }, "Descripcion del comando.", null, "asdasd")
-
-
-
+    constructor(private testServ: TestService2) {
+        
     }
+
+    // Lifecicle methods
+    public async onInitialized() {
+        
+    }
+
+
+    public async hello(message: Message, args: any[]) {
+        message.reply({content: this.testServ.hello().toString() });
+    }
+
+    public a() {
+        return this.testServ.hello();
+    }
+
     
 }

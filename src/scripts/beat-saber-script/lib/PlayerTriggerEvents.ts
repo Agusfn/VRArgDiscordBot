@@ -133,6 +133,8 @@ export class PlayerTriggerEvents {
 
         for(const player of newPlayerPerformances) {
 
+            if(attributeName == "rank" && player.rank == 0) continue; // ignore announcement if player became or is inactive (rank 0)
+            
             // Get old performance for this player
             const playerOldPerformance = oldPerformances.find(playerPerf => playerPerf.playerId == player.playerId) // this must exist so we don't event need to check
             if(higherMetric(player[attributeName], playerOldPerformance[attributeName])) { // player improved (lowered) their global ranking (or given metric)

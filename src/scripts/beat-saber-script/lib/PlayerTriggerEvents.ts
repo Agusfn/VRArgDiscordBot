@@ -253,7 +253,7 @@ export class PlayerTriggerEvents {
 
     private static onPlayerUpdateCountryRank(player: SSPlayer, oldRank: number, newRank: number) {
         if(newRank == 1) {
-            PlayerAnnouncements.sendForPlayerTop1Country(player, <SSCountries>player.country)
+            PlayerAnnouncements.sendForPlayerTop1Country(player, player.country)
         }
     }
 

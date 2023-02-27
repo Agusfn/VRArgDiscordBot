@@ -5,6 +5,7 @@ import logger from "@utils/logger"
 import { PlayerScoreSaver } from "./PlayerScoreSaver"
 import { ScoreSaberDataCache, FetcherModule } from "./ScoreSaberDataCache"
 import { logException } from "@utils/other"
+import { UserManager } from "@lib/UserManager"
 
 
 
@@ -35,7 +36,9 @@ export class PeriodicScoreFetcher {
             const api = new ScoreSaberAPI()
     
             for(const player of playersToFetch) {
-    
+                
+                if(!UserManager.isUserPresent(player.discordUserId)) continue; // skip players not on server
+
                 if(process.env.DEBUG == "true") {
                     logger.info(`Periodic fetcher: Fetching scores for ScoreSaber player ${player.name}`)
                 }

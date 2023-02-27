@@ -201,7 +201,7 @@ export class PlayerAnnouncements {
      * @param player 
      */
     private static discordMention(player: SSPlayerI) {
-        if(UserManager.isUserIdActive(player.discordUserId) && player.milestoneAnnouncements) {
+        if(UserManager.isUserPresent(player.discordUserId) && player.milestoneAnnouncements) {
             return "<@" + player.discordUserId + ">"
         } else {
             return "**" + player.name + "**"

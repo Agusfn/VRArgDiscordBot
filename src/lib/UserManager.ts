@@ -15,24 +15,24 @@ export class UserManager {
      */
     private static adminUserIds: string[] = []
 
-    /** Discord ids of all currently active users (present in the server) serving as a cache. */
-    private static activeUserIds: string[] = [];
+    /** Cache with discordUserIds of all present users (members of the server). */
+    private static presentUserIds: string[] = [];
 
     /**
-     * 
+     * Check if a user is present on the server (by its discordUserId)
      * @param discordUserId The id of the user (discord user id).
      * @returns 
      */
-    public static isUserIdActive(discordUserId: string): boolean {
-        return this.activeUserIds.find(id => id == discordUserId) ? true : false;
+    public static isUserPresent(discordUserId: string): boolean {
+        return this.presentUserIds.find(id => id == discordUserId) ? true : false;
     }
     
-    public static addUserIdToActiveUsers(userId: string) {
-        this.activeUserIds.push(userId);
+    public static addUserIdToPresentUsers(userId: string) {
+        this.presentUserIds.push(userId);
     }
 
-    public static removeUserIdFromActiveUsers(userId: string) {
-        this.activeUserIds = this.activeUserIds.filter(id => id != userId);
+    public static removeUserIdFromPresentUsers(userId: string) {
+        this.presentUserIds = this.presentUserIds.filter(id => id != userId);
     }
 
     /**
@@ -50,7 +50,7 @@ export class UserManager {
         for(const [key, member] of currentMembers) {
 
             if(member.user.bot) continue;
-            this.addUserIdToActiveUsers(member.user.id); // add to user id cache
+            this.addUserIdToPresentUsers(member.user.id); // add to user id cache
 
             const user = allUsers.find(user => user.discordUserId == member.user.id)
             if(user) {
@@ -88,7 +88,7 @@ export class UserManager {
         if(usersLeft > 0) {
             logger.info("Marked 'absent' " + usersLeft + ' users that were not found in the server.')
         }
-        logger.info("Cache of active user ids loaded. Count: " + this.activeUserIds.length);
+        logger.info("Cache of active user ids loaded. Count: " + this.presentUserIds.length);
     }
 
 
@@ -120,7 +120,7 @@ export class UserManager {
     public static async onMemberJoined(discordMember: DiscordJS.GuildMember) {
 
         if(discordMember.user.bot) return
-        this.addUserIdToActiveUsers(discordMember.user.id);
+        this.addUserIdToPresentUsers(discordMember.user.id);
 
         const user = await User.findByPk(discordMember.user.id)
         if(user) {
@@ -151,7 +151,7 @@ export class UserManager {
     public static async onMemberLeft(discordMember: DiscordJS.GuildMember) {
         
         if(discordMember.user.bot) return
-        this.removeUserIdFromActiveUsers(discordMember.user.id);
+        this.removeUserIdFromPresentUsers(discordMember.user.id);
 
         await User.update(
             { isPresent: false, leaveDate: new Date() }, 

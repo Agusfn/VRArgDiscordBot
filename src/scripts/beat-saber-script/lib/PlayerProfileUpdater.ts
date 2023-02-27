@@ -4,6 +4,7 @@ import { ScoreSaberAPI } from "../utils/index"
 import { PlayerTriggerEvents } from "./PlayerTriggerEvents"
 import { PlayerPerformanceInfo, SSPlayerI } from "../ts"
 import { logException } from "@utils/other"
+import { UserManager } from "@lib/UserManager"
 
 
 /**
@@ -40,6 +41,8 @@ export class PlayerProfileUpdater {
     
             for(const player of playersToFetch) {
     
+                if(!UserManager.isUserPresent(player.discordUserId)) continue; // ignore players whose users are not present in the server
+
                 if(process.env.DEBUG == "true") {
                     logger.info(`Profile Updater: Updating ScoreSaber profile for ScoreSaber player ${player.name}`)
                 }

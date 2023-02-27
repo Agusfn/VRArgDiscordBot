@@ -15,6 +15,25 @@ export class UserManager {
      */
     private static adminUserIds: string[] = []
 
+    /** Discord ids of all currently active users (present in the server) serving as a cache. */
+    private static activeUserIds: string[] = [];
+
+    /**
+     * 
+     * @param discordUserId The id of the user (discord user id).
+     * @returns 
+     */
+    public static isUserIdActive(discordUserId: string): boolean {
+        return this.activeUserIds.find(id => id == discordUserId) ? true : false;
+    }
+    
+    public static addUserIdToActiveUsers(userId: string) {
+        this.activeUserIds.push(userId);
+    }
+
+    public static removeUserIdFromActiveUsers(userId: string) {
+        this.activeUserIds = this.activeUserIds.filter(id => id != userId);
+    }
 
     /**
      * Synchronize all the users in the server with their User entity within this bot.
@@ -30,7 +49,8 @@ export class UserManager {
         // Create Users for non existing members and mark "present" previously left members.
         for(const [key, member] of currentMembers) {
 
-            if(member.user.bot) continue
+            if(member.user.bot) continue;
+            this.addUserIdToActiveUsers(member.user.id); // add to user id cache
 
             const user = allUsers.find(user => user.discordUserId == member.user.id)
             if(user) {
@@ -68,6 +88,7 @@ export class UserManager {
         if(usersLeft > 0) {
             logger.info("Marked 'absent' " + usersLeft + ' users that were not found in the server.')
         }
+        logger.info("Cache of active user ids loaded. Count: " + this.activeUserIds.length);
     }
 
 
@@ -99,6 +120,7 @@ export class UserManager {
     public static async onMemberJoined(discordMember: DiscordJS.GuildMember) {
 
         if(discordMember.user.bot) return
+        this.addUserIdToActiveUsers(discordMember.user.id);
 
         const user = await User.findByPk(discordMember.user.id)
         if(user) {
@@ -129,6 +151,7 @@ export class UserManager {
     public static async onMemberLeft(discordMember: DiscordJS.GuildMember) {
         
         if(discordMember.user.bot) return
+        this.removeUserIdFromActiveUsers(discordMember.user.id);
 
         await User.update(
             { isPresent: false, leaveDate: new Date() }, 

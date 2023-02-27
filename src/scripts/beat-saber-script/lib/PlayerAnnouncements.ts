@@ -5,6 +5,7 @@ import { TextChannel } from "discord.js"
 import { SSCountries } from "../config"
 import { PlayerPerformanceInfo, PlayerScoreI, SSPlayerI } from "../ts"
 import { roundNumber } from "@utils/math"
+import { UserManager } from "@lib/UserManager"
 
 export class PlayerAnnouncements {
 
@@ -200,7 +201,7 @@ export class PlayerAnnouncements {
      * @param player 
      */
     private static discordMention(player: SSPlayerI) {
-        if(player.milestoneAnnouncements) {
+        if(UserManager.isUserIdActive(player.discordUserId) && player.milestoneAnnouncements) {
             return "<@" + player.discordUserId + ">"
         } else {
             return "**" + player.name + "**"

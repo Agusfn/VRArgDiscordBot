@@ -19,7 +19,7 @@ export class UserManager {
     private static presentUserIds: string[] = [];
 
     /**
-     * Check if a user is present on the server (by its discordUserId)
+     * Check if a user is present on the server (by its discordUserId) by checking in local cached array.
      * @param discordUserId The id of the user (discord user id).
      * @returns 
      */

@@ -80,7 +80,7 @@ export class PlayerAnnouncements {
         if(!leaderboard.ranked) return; // ignore if unranked map
 
         const message = `:stars:  **${player.name}** hizo el primer score del server en el mapa ${leaderboard.readableMapDesc()}, con un acc de ` + 
-            `**${formatAcc(score.accuracy)}** (#${score.rank} :earth_americas:) y obteniendo **${roundNumber(score.pp, 1)}pp**!`;
+            `**${formatAcc(score.accuracy)}** (#${score.rank}) y obteniendo **${roundNumber(score.pp, 1)}pp**!`;
 
         await this.outputChannel.send(message)
         
@@ -93,18 +93,12 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param snipedScore PlayerScore object with SSPlayer eager loaded.
      */
-    public static async playerMadeTopScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
+    public static async playerMadeTopServerScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
-        let message = `:first_place:  **${player.name}** hizo un top score del server en el mapa ${leaderboard.readableMapDesc()}`;
-        
-        if(leaderboard.ranked) {
-            message += ` con un acc de **${formatAcc(newScore.accuracy)}** (#${newScore.rank} :earth_americas:) y obteniendo **${roundNumber(newScore.pp, 1)}pp**, ` + 
-                `snipeando a ${this.discordMention(snipedScore.SSPlayer)} (${formatAcc(snipedScore.accuracy)})!"`;
-        } else {
-            message += ` (unranked) (#${newScore.rank} :earth_americas:), snipeando a ${this.discordMention(snipedScore.SSPlayer)} (#${snipedScore.rank} :earth_americas:)!`;  // acc and pp is not available in unranked maps
-        }
+        let message = `:first_place:  **${player.name}** hizo un top score del server `;
+        message += this.getSnipedScoreDetailsMessage(leaderboard, newScore, snipedScore);
 
         await this.outputChannel.send(message)
     }
@@ -116,21 +110,45 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param snipedScore PlayerScore object with SSPlayer eager loaded.
      */
-    public static async playerMadeCountryTopScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
+    public static async playerMadeTopCountryScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
         const countryCode = player.country.toLocaleLowerCase();
 
-        let message = `:flag_${countryCode}:  **${player.name}** hizo un top score en ${this.getCountryNameMsg(player.country)}  en el mapa ${leaderboard.readableMapDesc()}`;
-
-        if(leaderboard.ranked) {
-            message += ` con un acc de **${formatAcc(newScore.accuracy)}** (#${newScore.rank} :earth_americas:) y obteniendo **${roundNumber(newScore.pp, 1)}pp**,` +
-                ` snipeando a ${this.discordMention(snipedScore.SSPlayer)} (${formatAcc(snipedScore.accuracy)})!`;
-        } else {
-            message += ` (unranked) (#${newScore.rank} :earth_americas:), snipeando a ${this.discordMention(snipedScore.SSPlayer)} (#${snipedScore.rank} :earth_americas:)!`;  // acc and pp is not available in unranked maps
-        }
+        let message = `:flag_${countryCode}:  **${player.name}** hizo un top score en ${this.getCountryNameMsg(player.country)}  `;
+        message += this.getSnipedScoreDetailsMessage(leaderboard, newScore, snipedScore);
 
         await this.outputChannel.send(message)
+    }
+
+
+    /**
+     * Get the portion of the message to be sent to the sniped score announcement.
+     * @param leaderboard 
+     * @param newScore 
+     * @param snipedScore 
+     * @returns 
+     */
+    private static getSnipedScoreDetailsMessage(leaderboard: Leaderboard, newScore: PlayerScoreI, snipedScore: PlayerScore): string {
+        let message = "";
+
+        message += `en el mapa ${leaderboard.readableMapDesc()}`;
+        if(newScore.accuracy != null) { // all ranked maps have acc, and newest unranked also. Old unranked don't.
+            message += ` con un acc de **${formatAcc(newScore.accuracy)}**`;
+        }
+        if(newScore.rank) { // global rank of the score. all newest maps should have them
+            message += ` (#${newScore.rank})`;
+        }
+        if(leaderboard.ranked) {
+            message += ` y obteniendo **${roundNumber(newScore.pp, 1)}pp**`;
+        }
+        message += `, snipeando a ${this.discordMention(snipedScore.SSPlayer)}`;
+        if(snipedScore.accuracy) {
+            message += ` (${formatAcc(snipedScore.accuracy)})`;
+        }
+        message += "!";
+
+        return message;
     }
 
 
@@ -146,8 +164,8 @@ export class PlayerAnnouncements {
 
         if(!leaderboard.ranked) return; // ignore if unranked map
             
-        const message = `:first_place:  **${player.name}** mejoró su top score del server en el mapa ${leaderboard.readableMapDesc()}` + 
-            ` (**${formatAcc(oldScore.accuracy)}** --> **${formatAcc(newScore.accuracy)}**) (#${newScore.rank} :earth_americas:) obteniendo **${roundNumber(newScore.pp, 1)}pp**!"`;
+        const message = `:first_place:  **${player.name}** mejoró su top score del server en el mapa ${leaderboard.readableMapDesc()}: ` + 
+            `**${formatAcc(oldScore.accuracy)}** --> **${formatAcc(newScore.accuracy)}** (#${newScore.rank}) obteniendo **${roundNumber(newScore.pp, 1)}pp**!`;
         
         await this.outputChannel.send(message)
     }
@@ -164,8 +182,8 @@ export class PlayerAnnouncements {
 
         if(!leaderboard.ranked) return; // ignore if unranked map
 
-        const message = `:chart_with_upwards_trend:  **${player.name}** mejoró significativamente su score en el mapa ranked ${leaderboard.readableMapDesc()}` + 
-            ` (**${formatAcc(oldScore.accuracy)}** --> **${formatAcc(newScore.accuracy)}**) (#${newScore.rank} :earth_americas:) obteniendo **${roundNumber(newScore.pp, 1)}pp**!`;
+        const message = `:chart_with_upwards_trend:  **${player.name}** mejoró significativamente su score en el mapa ranked ${leaderboard.readableMapDesc()}: ` + 
+            `**${formatAcc(oldScore.accuracy)}** --> **${formatAcc(newScore.accuracy)}** (#${newScore.rank}) obteniendo **${roundNumber(newScore.pp, 1)}pp**!`;
 
         await this.outputChannel.send(message)
     }

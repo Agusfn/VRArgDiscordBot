@@ -6,6 +6,7 @@ import { logException } from "@utils/other"
 import { Sequelize } from "sequelize"
 import { isScoreSignificantlyImproved } from "../utils/index"
 import { SSCountries } from "../config"
+import { UserManager } from "@lib/UserManager"
 
 export class PlayerTriggerEvents {
 
@@ -187,25 +188,29 @@ export class PlayerTriggerEvents {
     
                 // Get all of the submitted scores between all players (including self) in the server for this map (Leaderboard), ignoring current score submission (which is already stored in db)
                 const totalScores = await PlayerScore.scope({method: ["topScoresForEachPlayer", newScore.leaderboardId, newScore.ssId, newScore.timeSet]}).findAll()
+                const topServerScore = this.getTopScoreFromPresentPlayer(totalScores);
+
+                if(topServerScore) {
     
-                if(totalScores.length > 0) {
-    
-                    const topScore = totalScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev)
-    
-                    if(newScore.modifiedScore > topScore.modifiedScore) {
-                        if(topScore.playerId != player.id) {
-                            await PlayerAnnouncements.playerMadeTopScore(player, newScore, topScore) // player sniped another player's top score
-                        } else {
-                            await PlayerAnnouncements.playerImprovedTopScore(player, newScore, topScore) // topScore is players own score
+                    if(newScore.modifiedScore > topServerScore.modifiedScore) {
+                        if(topServerScore.playerId != player.id) { // player sniped another player's top score
+                            await PlayerAnnouncements.playerMadeTopServerScore(player, newScore, topServerScore)
+                        } else { // player improved own top score
+                            await PlayerAnnouncements.playerImprovedTopScore(player, newScore, topServerScore)
                         }
-                    } else {
+                    } else { // player didn't improve the top server score
+
+                        // Get the top score for this map (Leaderboard) for the player's country
                         const scoresFromCountry = totalScores.filter(score => score.SSPlayer.country == player.country) 
-                        const topScoreOfCountry = scoresFromCountry.length > 0 ? scoresFromCountry.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
+                        const topScoreOfCountry = this.getTopScoreFromPresentPlayer(scoresFromCountry);
     
-                        if(player.country == SSCountries.ARGENTINA && // argentina is temporarily the only who has top country announcement
-                            topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore && topScoreOfCountry.playerId != player.id) { 
-                            await PlayerAnnouncements.playerMadeCountryTopScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
+                        if(topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore && topScoreOfCountry.playerId != player.id &&
+                            player.country == SSCountries.ARGENTINA) // argentina is temporarily the only who has top country announcement (because all top players are registered in the bot)) { 
+                        {
+                            await PlayerAnnouncements.playerMadeTopCountryScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
                         } else {
+
+                            // Get the best score for this map for this player (if it exists)
                             const playerPreviousScores = totalScores.filter(score => score.playerId == player.id)
                             const previousPlayerTopScore = playerPreviousScores.length > 0 ? playerPreviousScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
                             
@@ -227,6 +232,28 @@ export class PlayerTriggerEvents {
             logException(error)
         }
 
+    }
+
+    /**
+     * From a list of PlayerScores of a specific leaderboard with eager loaded SSPlayers, 
+     * obtain the highest score of a player present in the server.
+     * @param scores array with scores
+     */
+    private static getTopScoreFromPresentPlayer(scores: PlayerScore[]): PlayerScore {
+        if(Array.isArray(scores) && scores.length > 0) {
+            let maxScore: PlayerScore = null;
+
+            for(const score of scores) {
+                if(!UserManager.isUserPresent(score.SSPlayer?.discordUserId)) continue; // ignore players not present on the server
+                if(!maxScore || score.modifiedScore > maxScore.modifiedScore) {
+                    maxScore = score;
+                }
+            }
+
+            return maxScore;
+        } else {
+            return null;
+        }
     }
 
 

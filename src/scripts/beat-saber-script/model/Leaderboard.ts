@@ -30,6 +30,8 @@ export class Leaderboard extends Model {
 
         if(this.ranked && this.stars) {
             text += " (" + this.stars + "★)"
+        } else {
+            text += " (unranked)"
         }
 
         return text

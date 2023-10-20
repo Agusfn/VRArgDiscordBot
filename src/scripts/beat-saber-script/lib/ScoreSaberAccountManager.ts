@@ -1,12 +1,16 @@
 import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI, Player } from "../utils/index"
-import { HistoricScoreFetcher } from "./HistoricScoreFetcher"
+import { HistoricScoreFetcher } from "../services/routines/FetchHistoricScoresRoutine"
 
 /**
  * Class that handles the creation, update, enabling, and disabling of ScoreSaber accounts.
  */
 export class ScoreSaberAccountManager {
 
+
+    constructor(private historicScoreFetcher: HistoricScoreFetcher) {
+
+    }
 
     private errorMessage: string
 
@@ -83,7 +87,7 @@ export class ScoreSaberAccountManager {
         }
 
         // Start fetching this new player's scores
-        await HistoricScoreFetcher.addPlayerToQueueAndStartFetcher(ssPlayer.id)
+        await this.historicScoreFetcher.addPlayerToQueueAndStartFetcher(ssPlayer.id)
 
         return ssPlayer 
     }

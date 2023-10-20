@@ -1,10 +1,9 @@
-import { Op } from "sequelize"
 import logger from "@utils/logger"
-import { SSPlayer, PlayerScore } from "../model/index"
-import { ScoreSaberAPI } from "../utils/index"
-import { PlayerScoreSaver } from "./PlayerScoreSaver"
-import { ScoreSaberDataCache, FetcherModule } from "./ScoreSaberDataCache"
-import { SCORES_FETCHED_PER_PAGE } from "../config"
+import { SSPlayer } from "../../model/index"
+import { ScoreSaberAPI } from "../../utils/index"
+import { PlayerScoreSaverService } from "../PlayerScoreSaver"
+import { ScoreSaberDataCache } from "../ScoreSaberDataCache"
+import { SCORES_FETCHED_PER_PAGE } from "../../config"
 
 
 
@@ -14,14 +13,23 @@ import { SCORES_FETCHED_PER_PAGE } from "../config"
  */
 export class HistoricScoreFetcher {
     
-    private static fetchRunning: boolean = false
-    private static playerFetchQueue: SSPlayer[] = []
+    private fetchRunning: boolean = false
+    private playerFetchQueue: SSPlayer[] = []
+
+    // services
+    private ssCache: ScoreSaberDataCache;
+    private playerScoreSaver: PlayerScoreSaverService;
+
+    constructor(ssCache: ScoreSaberDataCache) {
+        this.ssCache = ssCache;
+        this.playerScoreSaver = new PlayerScoreSaverService(ssCache);
+    }
 
 
     /**
      * Start historic score fetcher by adding all pending fetch users to fetch queue and processing it.
      */
-     public static async startFetcher() {
+     public async startFetcher() {
 
         if(this.fetchRunning) return // don't start if already running
         this.fetchRunning = true
@@ -44,7 +52,7 @@ export class HistoricScoreFetcher {
      * Add a player to the fetch queue and start the fetcher (if not already running)
      * @param ssPlayerId 
      */
-    public static async addPlayerToQueueAndStartFetcher(ssPlayerId: string) {
+    public async addPlayerToQueueAndStartFetcher(ssPlayerId: string) {
         
         const ssPlayer = await SSPlayer.findByPk(ssPlayerId)
         if(!ssPlayer) {
@@ -73,7 +81,7 @@ export class HistoricScoreFetcher {
     /**
      * Fetch the historic scores for each SSPlayer of the fetch queue.
      */
-    private static async processFetchQueue() {
+    private async processFetchQueue() {
 
         if(process.env.DEBUG == "true") {
             logger.info("Historic fetcher: Starting fetch queue with " + this.playerFetchQueue.length + " players in it.")
@@ -109,13 +117,13 @@ export class HistoricScoreFetcher {
      * Fetch all historic scores for a given ScoreSaberPlayer (SSPlayer)
      * @param player 
      */
-    private static async fetchHistoricScoresForSSPlayer(player: SSPlayer) {
+    private async fetchHistoricScoresForSSPlayer(player: SSPlayer) {
 
         if(process.env.DEBUG == "true") {
             logger.info(`Historic fetcher: Starting fetch for ScoreSaber player ${player.name}`)
         }
 
-        await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.HISTORIC_FETCHER) // fetch player score ids from cache if not already fetched
+        await this.ssCache.fetchPlayerScores(player.id, "historic_fetcher") // fetch player score ids from cache if not already fetched
 
         let endPageReached = false
         let nextFetchPage = player.lastHistoryFetchPage + 1 // most recent page is 1
@@ -133,7 +141,7 @@ export class HistoricScoreFetcher {
                     logger.info(`Historic fetcher: Fetched page ${nextFetchPage} of player ${player.name}. Got ${scorePageCollection.playerScores.length} scores.`)
                 }
 
-                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
+                await this.playerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
 
                 player.lastHistoryFetchPage = nextFetchPage
                 await player.save()
@@ -149,7 +157,7 @@ export class HistoricScoreFetcher {
 
         }
 
-        ScoreSaberDataCache.finishUsingPlayerScores(player.id, FetcherModule.HISTORIC_FETCHER) // erase score cache for player (if not other module is using it)
+        this.ssCache.finishUsingPlayerScores(player.id, "historic_fetcher") // erase score cache for player (if not other module is using it)
 
     }
     

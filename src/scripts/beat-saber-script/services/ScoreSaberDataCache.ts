@@ -6,10 +6,8 @@ import { LeaderboardI } from "../ts"
 /**
  * Modules that can fetch data from this cache class
  */
-export enum FetcherModule {
-    HISTORIC_FETCHER = "historic_fetcher",
-    PERIODIC_FETCHER = "periodic_fetcher"
-}
+export type FetchAccessorName = "historic_fetcher" | "periodic_fetcher";
+
 
 /** Many submissions may correspond to a same score. This identifies the submission. */
 interface ScoreSubmission {
@@ -23,7 +21,7 @@ interface ScoreSubmission {
  */
 interface PlayerScoresCacheItem {
     scoreSubmissions: ScoreSubmission[]
-    accessedBy: FetcherModule[]
+    accessedBy: FetchAccessorName[]
 }
 
 
@@ -35,13 +33,11 @@ interface PlayerScoresCacheItem {
 export class ScoreSaberDataCache {
 
 
-    private static initialized = false
-
     /**
      * Array that contains all of the currently existing Leaderboards in the database. 
      * It's useful for checking the existence of leaderboards without having to make DB queries.
      */
-    private static existingLeaderboards: {
+    private existingLeaderboards: {
         leaderboardId: number,
         ranked: boolean
     }[]
@@ -50,30 +46,28 @@ export class ScoreSaberDataCache {
     /**
      * Cache of score ids for players by its player id.
      */
-    private static playerScores: {[ssPlayerId: string]: PlayerScoresCacheItem} = {}
+    private playerScores: {[ssPlayerId: string]: PlayerScoresCacheItem} = {}
 
 
     /**
      * Initialize this class by loading all of the existing leaderboards ids into the array (to later check if a leaderboard exists or must be saved)
      */
-    public static async initialize() {
-        if(!this.initialized) {
-            this.initialized = true
+    public async initialize() {
 
-            // Fetch all leaderboard ids from DB into the array.
-            const leaderboards = (await Leaderboard.findAll({
-                attributes: ["id", "ranked"]
-            }))
+        // Fetch all leaderboard ids from DB into the array.
+        const leaderboards = (await Leaderboard.findAll({
+            attributes: ["id", "ranked"]
+        }))
 
-            this.existingLeaderboards = leaderboards.map(leaderboard => ({ 
-                leaderboardId: leaderboard.id, 
-                ranked: leaderboard.ranked 
-            }))
+        this.existingLeaderboards = leaderboards.map(leaderboard => ({ 
+            leaderboardId: leaderboard.id, 
+            ranked: leaderboard.ranked 
+        }))
 
-            if(process.env.DEBUG == "true") {
-                logger.info(`Initialized ScoreSaberDataCache. Loaded ${this.existingLeaderboards.length} leaderboard ids.`)
-            }
+        if(process.env.DEBUG == "true") {
+            logger.info(`Initialized ScoreSaberDataCache. Loaded ${this.existingLeaderboards.length} leaderboard ids.`)
         }
+
     }
 
 
@@ -82,7 +76,7 @@ export class ScoreSaberDataCache {
      * @param leaderboardId 
      * @returns 
      */
-    public static leaderboardExists(leaderboardId: number) {
+    public leaderboardExists(leaderboardId: number) {
         if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
         }
@@ -95,7 +89,7 @@ export class ScoreSaberDataCache {
      * @param leaderboardId 
      * @param ranked 
      */
-    public static leaderboardHasRankStatus(leaderboardId: number, ranked: boolean) {
+    public leaderboardHasRankStatus(leaderboardId: number, ranked: boolean) {
         if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
         }
@@ -108,7 +102,7 @@ export class ScoreSaberDataCache {
      * @param leaderboardId 
      * @param ranked 
      */
-    public static updateLeaderboardRankStatus(leaderboardId: number, ranked: boolean) {
+    public updateLeaderboardRankStatus(leaderboardId: number, ranked: boolean) {
         if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized and leaderboard ids were not loaded!")
         }
@@ -122,7 +116,7 @@ export class ScoreSaberDataCache {
      * Add a Leaderboard id to ids cache
      * @param leaderboardIds 
      */
-    public static addLeaderboards(leaderboards: LeaderboardI | LeaderboardI[]) {
+    public addLeaderboards(leaderboards: LeaderboardI | LeaderboardI[]) {
         if(!this.existingLeaderboards == null) {
             throw new Error("ScoreSaberDataCache was not initialized!")
         }
@@ -140,14 +134,14 @@ export class ScoreSaberDataCache {
      * @param ssPlayerId 
      * @param accesor 
      */
-    public static async fetchPlayerScores(ssPlayerId: string, fetcherModule: FetcherModule) {
+    public async fetchPlayerScores(ssPlayerId: string, accessorName: FetchAccessorName) {
 
         const scores = this.playerScores[ssPlayerId]
         if(scores != null) {
-            if(scores.accessedBy.includes(fetcherModule)) {
-                logger.warn("Scores have already been loaded for SS Player id " + ssPlayerId + " by module " + fetcherModule + ". Fetching was called two times by same module without finishing its use in the middle.")
+            if(scores.accessedBy.includes(accessorName)) {
+                logger.warn("Scores have already been loaded for SS Player id " + ssPlayerId + " by module " + accessorName + ". Fetching was called two times by same module without finishing its use in the middle.")
             } else {
-                scores.accessedBy.push(fetcherModule)
+                scores.accessedBy.push(accessorName)
             }
         } else {
             // fetch player scores and create entry for this player
@@ -164,7 +158,7 @@ export class ScoreSaberDataCache {
 
             this.playerScores[ssPlayerId] = {
                 scoreSubmissions: scoreIdsAndDates,
-                accessedBy: [fetcherModule]
+                accessedBy: [accessorName]
             }
 
             console.log("Fetched scoreId cache for player " + ssPlayerId)
@@ -180,7 +174,7 @@ export class ScoreSaberDataCache {
      * @param timeSetUnix The time in which the score was set (there may be multiple set)
      * @returns 
      */
-    public static playerHasScoreSubmission(ssPlayerId: string, ssScoreId: number, timeSetUnix: number) {
+    public playerHasScoreSubmission(ssPlayerId: string, ssScoreId: number, timeSetUnix: number) {
         const scores = this.playerScores[ssPlayerId]
         if(!scores) {
             throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
@@ -196,7 +190,7 @@ export class ScoreSaberDataCache {
      * @param scoreIds 
      * @returns 
      */
-     public static pushScoresForPlayer(ssPlayerId: string, scoreSubmissions: ScoreSubmission[]) {
+     public pushScoresForPlayer(ssPlayerId: string, scoreSubmissions: ScoreSubmission[]) {
         const scores = this.playerScores[ssPlayerId]
         if(!scores) {
             throw new Error("Scores havent't been loaded for SSPlayer id " + ssPlayerId)
@@ -212,7 +206,7 @@ export class ScoreSaberDataCache {
      * @param ssPlayerId 
      * @param fetcherModule 
      */
-    public static finishUsingPlayerScores(ssPlayerId: string, fetcherModule: FetcherModule) {
+    public finishUsingPlayerScores(ssPlayerId: string, accessorName: FetchAccessorName) {
 
         const scores = this.playerScores[ssPlayerId]
 
@@ -221,10 +215,10 @@ export class ScoreSaberDataCache {
             return
         }
 
-        if(scores.accessedBy.includes(fetcherModule)) {
-            scores.accessedBy = scores.accessedBy.filter(item => item != fetcherModule) // remove fetcher module who accessed this data, from list
+        if(scores.accessedBy.includes(accessorName)) {
+            scores.accessedBy = scores.accessedBy.filter(item => item != accessorName) // remove fetcher module who accessed this data, from list
         } else {
-            logger.warn("Fetcher module " + fetcherModule + " hasn't accessed player id " + ssPlayerId + " scores, but now it's finishing its use.")
+            logger.warn("Fetcher module " + accessorName + " hasn't accessed player id " + ssPlayerId + " scores, but now it's finishing its use.")
         }
 
         // Delete user score ids cache if no longer being used by any module

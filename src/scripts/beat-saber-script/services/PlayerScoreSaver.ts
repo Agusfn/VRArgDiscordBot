@@ -4,13 +4,16 @@ import { LeaderboardI, PlayerScoreI } from "../ts"
 import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
 import logger from "@utils/logger"
 import { roundNumber } from "@utils/index"
-import { PlayerTriggerEvents } from "./PlayerTriggerEvents"
+import { PlayerTriggerEvents } from "../lib/PlayerTriggerEvents"
 
 /**
- * Class that handles the saving of player scores and the related leaderboards (song maps) into the database.
+ * Class that handles the creation in database of new player scores and their related learboard (creation if doesn't exist, or update if modified)
  */
-export class PlayerScoreSaver {
+export class PlayerScoreSaverService {
     
+    constructor(private ssCache: ScoreSaberDataCache) {
+
+    }
 
     /**
      * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored. Used in historic fetcher.
@@ -18,7 +21,7 @@ export class PlayerScoreSaver {
      * @param allPlayerScoreIds Array that contains all the user current stored score ids. Is used to avoid storing repeated scores.
      * @param scoreCollection Collection of scores from ScoreSaber API for a given page
      */
-    public static async saveHistoricScorePageForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
+    public async saveHistoricScorePageForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
         // We will bulk save the PlayerScores and Leaderboards unlike with periodic fetching, since historic fetching saves scores and maps in a larger scale
         const leaderboardsToSave: LeaderboardI[] = []
@@ -28,30 +31,30 @@ export class PlayerScoreSaver {
         for(const score of scoreCollection.playerScores) {
 
             // Save new Leaderboards (song map info) associated with the score
-            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
+            if(!this.ssCache.leaderboardExists(score.leaderboard.id)) {
                 if(!leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
                     leaderboardsToSave.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
                 }
             } else {
-                if(!ScoreSaberDataCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
+                if(!this.ssCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
                     leaderboardsToUpdate.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
                 }
             }
 
             // Save player score, given it's not already present in DB (ids held in allPlayerScoreIds)
-            if(!ScoreSaberDataCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() ) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
+            if(!this.ssCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() ) && !scoresToSave.find(scoreItem => scoreItem.id == score.score.id)) {
                 scoresToSave.push(this.playerScoreFromAPIScore(score, player.id))
             }
         }
 
         // Save Leaderboards in DB and cache
         await Leaderboard.bulkCreate(leaderboardsToSave)
-        ScoreSaberDataCache.addLeaderboards(leaderboardsToSave)
+        this.ssCache.addLeaderboards(leaderboardsToSave)
 
         // Add PlayerScores to DB and cache
         await PlayerScore.bulkCreate(scoresToSave)
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
-        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
+        this.ssCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
         if(process.env.DEBUG == "true") {
             logger.info("Historic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
@@ -67,7 +70,7 @@ export class PlayerScoreSaver {
      * @param player 
      * @param score 
      */
-    public static async saveNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
+    public async saveNewScoresForPlayer(player: SSPlayer, scoreCollection: PlayerScoreCollection) {
 
         let newScoreListEndReached = false
         
@@ -78,7 +81,7 @@ export class PlayerScoreSaver {
         for(const score of scoreCollection.playerScores) {
 
             // we'll break upon the first repeated score of the player, or the first score older than the registration Date (score page lists are ordered chronologically from API)
-            if((new Date(score.score.timeSet)) < player.createdAt || ScoreSaberDataCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() )) { 
+            if((new Date(score.score.timeSet)) < player.createdAt || this.ssCache.playerHasScoreSubmission(player.id, score.score.id, (new Date(score.score.timeSet)).getTime() )) { 
                 newScoreListEndReached = true
                 break
             }
@@ -89,12 +92,12 @@ export class PlayerScoreSaver {
             }
 
             // Set new Leaderboards (song map info) associated with the score to save in db (if it doesn't exist in DB)
-            if(!ScoreSaberDataCache.leaderboardExists(score.leaderboard.id)) {
+            if(!this.ssCache.leaderboardExists(score.leaderboard.id)) {
                 if(!leaderboardsToSave.find(leaderboard => leaderboard.id == score.leaderboard.id)) {
                     leaderboardsToSave.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
                 }
             } else {
-                if(!ScoreSaberDataCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
+                if(!this.ssCache.leaderboardHasRankStatus(score.leaderboard.id, score.leaderboard.ranked)) {
                     leaderboardsToUpdate.push(this.leaderboardFromAPILeaderBoard(score.leaderboard))
                 }
             }
@@ -103,7 +106,7 @@ export class PlayerScoreSaver {
         
         // Save Leaderboards in DB and cache
         await Leaderboard.bulkCreate(leaderboardsToSave)
-        ScoreSaberDataCache.addLeaderboards(leaderboardsToSave)
+        this.ssCache.addLeaderboards(leaderboardsToSave)
 
         // Update Leaderboards in DB and cache
         await this.updateLeaderboards(leaderboardsToUpdate)
@@ -111,7 +114,7 @@ export class PlayerScoreSaver {
         // Add PlayerScores to DB and cache
         await PlayerScore.bulkCreate(scoresToSave)  
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
-        ScoreSaberDataCache.pushScoresForPlayer(player.id, scoreSubmissions)
+        this.ssCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
 
 
@@ -137,7 +140,7 @@ export class PlayerScoreSaver {
      * We'll update the ranked data only since that's the most likely thing that may change in it.
      * @param leaderboardsToUpdate 
      */
-    private static async updateLeaderboards(leaderboardsToUpdate: LeaderboardI[]) {
+    private async updateLeaderboards(leaderboardsToUpdate: LeaderboardI[]) {
 
         for(const leaderboard of leaderboardsToUpdate) {
 
@@ -150,7 +153,7 @@ export class PlayerScoreSaver {
                 stars: leaderboard.stars,
             }, { where: { id: leaderboard.id } })
 
-            ScoreSaberDataCache.updateLeaderboardRankStatus(leaderboard.id, leaderboard.ranked)
+            this.ssCache.updateLeaderboardRankStatus(leaderboard.id, leaderboard.ranked)
 
             logger.info("Updated data of existing leaderboard: " + leaderboard.songName)
         }
@@ -163,7 +166,7 @@ export class PlayerScoreSaver {
      * @param score 
      * @returns 
      */
-    private static leaderboardFromAPILeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
+    private leaderboardFromAPILeaderBoard(leaderboard: LeaderboardInfo): LeaderboardI {
         return {
             id: leaderboard.id, // PK is ScoreSaber Leaderboard id
             songHash: leaderboard.songHash,
@@ -190,7 +193,7 @@ export class PlayerScoreSaver {
      * @param ssPlayerId 
      * @returns 
      */
-    private static playerScoreFromAPIScore(apiScore: PlayerScoreAPI, ssPlayerId: string): PlayerScoreI {
+    private playerScoreFromAPIScore(apiScore: PlayerScoreAPI, ssPlayerId: string): PlayerScoreI {
         const score = apiScore.score
 
         let accuracy = null

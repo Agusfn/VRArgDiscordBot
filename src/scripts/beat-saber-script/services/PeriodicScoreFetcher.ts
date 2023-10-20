@@ -2,8 +2,8 @@ import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI } from "../utils/index"
 import { SCORES_FETCHED_PER_PAGE } from "../config"
 import logger from "@utils/logger"
-import { PlayerScoreSaver } from "./PlayerScoreSaver"
-import { ScoreSaberDataCache, FetcherModule } from "./ScoreSaberDataCache"
+import { PlayerScoreSaverService } from "./PlayerScoreSaver"
+import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
 import { logException } from "@utils/other"
 import { UserManager } from "@lib/UserManager"
 
@@ -14,14 +14,23 @@ export class PeriodicScoreFetcher {
     /**
      * Whether the fetcher is runnning
      */
-    private static fetchRunning: boolean = false
+    private fetchRunning: boolean = false
+
+    // services
+    private ssCache: ScoreSaberDataCache;
+    private playerScoreSaver: PlayerScoreSaverService;
+
+    constructor(ssCache: ScoreSaberDataCache) {
+        this.ssCache = ssCache;
+        this.playerScoreSaver = new PlayerScoreSaverService(ssCache);
+    }
 
 
     /**
      * Start ScoreSaber periodic Score fetching for all SS Players with their Discord user linked.
      * @returns 
      */
-    public static async startPeriodicFetch() {
+    public async startPeriodicFetch() {
 
         try {
 
@@ -44,7 +53,7 @@ export class PeriodicScoreFetcher {
                 }
     
                 // Fetch whole player score list in cache because they will be needed by PlayerScoreSaver for storing player scores
-                await ScoreSaberDataCache.fetchPlayerScores(player.id, FetcherModule.PERIODIC_FETCHER) // to-do: store this cache in an instanced object, and pass it to the module that will require it
+                await this.ssCache.fetchPlayerScores(player.id, "periodic_fetcher")
     
                 let pageToFetch = 1 // start from first (most recent) page
                 
@@ -60,7 +69,7 @@ export class PeriodicScoreFetcher {
                         }
     
                         // Save scores and leaderboards for this player
-                        const { newScoreListEndReached } = await PlayerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
+                        const { newScoreListEndReached } = await this.playerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
     
                         if(newScoreListEndReached) {
                             keepFetching = false
@@ -73,7 +82,7 @@ export class PeriodicScoreFetcher {
                 }
     
                 // Clean player score cache
-                ScoreSaberDataCache.finishUsingPlayerScores(player.id, FetcherModule.PERIODIC_FETCHER)
+                this.ssCache.finishUsingPlayerScores(player.id, "periodic_fetcher")
             }
     
             this.fetchRunning = false

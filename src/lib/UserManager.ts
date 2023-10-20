@@ -189,7 +189,6 @@ export class UserManager {
         await user.save()
         this.adminUserIds = this.adminUserIds.filter(id => id != user.discordUserId)
 
-        console.log(this.adminUserIds)
     }
 
 

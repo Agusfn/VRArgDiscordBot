@@ -246,7 +246,6 @@ export class BeatSaberScript extends Script {
             let list = "**__Top "+AMOUNT_OF_SCORES+" scores con menos accuracy de "+ssPlayer.name+":__**\n"
             for(const score of scores) {
                 if(!score.Leaderboard) continue
-                console.log(score.toJSON())
                 list += "**" + formatAcc(score.accuracy) + "** ("+roundNumber(score.pp, 1)+"pp) en " + score.Leaderboard.readableMapDesc() + "\n"
             }
 

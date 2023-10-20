@@ -163,7 +163,6 @@ export class PlayerEventsHandler {
                 }
 
                 if(playersSurpassed.length > 0) {
-                    console.log("players surpassed by " + player.playerId + ": ", playersSurpassed)
                     if(attributeName == "rank") {
                         await this.announcementEmmiter.playerSurpassedPlayersInRank(player, playersSurpassed)
                     } else if(attributeName == "avgAccuracy") {

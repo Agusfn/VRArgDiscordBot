@@ -95,7 +95,7 @@ export class HistoricScoreFetcher {
                 // if max retries
                     // set waitingForRetry true
                     // set timer in X seconds to re-run
-                console.log(error)
+                logger.error(error)
                 break
             }
         }

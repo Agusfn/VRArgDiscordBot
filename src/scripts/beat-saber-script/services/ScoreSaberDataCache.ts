@@ -158,7 +158,6 @@ export class ScoreSaberDataCache {
                 accessedBy: [accessorName]
             }
 
-            console.log("Fetched scoreId cache for player " + ssPlayerId)
         }
 
     }
@@ -221,7 +220,6 @@ export class ScoreSaberDataCache {
         // Delete user score ids cache if no longer being used by any module
         if(scores.accessedBy.length == 0) {
             this.playerScores[ssPlayerId] = null
-            console.log("Cleaning scoreId cache for player " + ssPlayerId)
         }
     }
 

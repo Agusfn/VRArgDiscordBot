@@ -50,7 +50,6 @@ export class ServerHelper extends Script {
 
                 let matches
                 while(matches = titlesRegex.exec(plainMsg)) {
-                    //console.log("match", matches)
                     const title = matches[2]
                     if(matches[1] == "#") { // title
                         indexMarkdownText += `• [${title}](${message.url})\n` // new line with hyperlink for title

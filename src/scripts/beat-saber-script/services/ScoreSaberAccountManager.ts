@@ -1,6 +1,6 @@
 import { SSPlayer } from "../model/index"
 import { ScoreSaberAPI, Player } from "../utils/index"
-import { HistoricScoreFetcher } from "../services/routines/FetchHistoricScoresRoutine"
+import { HistoricScoreFetcher } from "./HistoricScoreFetcher"
 
 /**
  * Class that handles the creation, update, enabling, and disabling of ScoreSaber accounts.

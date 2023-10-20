@@ -1,10 +1,5 @@
-import { CronFrequency } from "@ts/enums"
-import * as cron from "node-cron"
-import logger from "@utils/logger"
-import { logException } from "@utils/index"
 
 export abstract class Script {
-
 
     /**
      * The name of our script.
@@ -26,42 +21,7 @@ export abstract class Script {
      */
     public abstract initDbModels?(): void
 
-
-    /**
-     * Add a new cron task
-     * @param frequency 
-     * @param task 
-     */
-    protected addCron(frequency: CronFrequency, task: () => void) {
-        let cronExpression
-
-        if(frequency == CronFrequency.MINUTELY) 
-            cronExpression = "0 * * * * *"
-        else if(frequency == CronFrequency.HOURLY) 
-            cronExpression = "0 0 * * * *"
-        else // daily
-            cronExpression = "0 0 0 * *"
-
-        cron.schedule(cronExpression, task)
-    }
-
-    /**
-     * Add a new cron task
-     * @param frequency 
-     * @param task 
-     */
-     protected addCustomCron(cronExpression: string, task: () => void) {
-        cron.schedule(cronExpression, async () => {
-            try {
-                await task()
-            } catch(error: any) {
-                logger.error("Error running custom cron from Script " + this.scriptName)
-                logException(error)
-            }
-        })
-    }
-
-
+    
     public  getName() {
         return this.scriptName
     }

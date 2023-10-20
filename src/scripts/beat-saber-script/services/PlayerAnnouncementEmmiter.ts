@@ -1,19 +1,19 @@
 import { SSPlayer, PlayerScore, Leaderboard } from "../model/index"
 import { formatAcc } from "../utils/index"
-import { Discord } from "@lib/Discord"
 import { TextChannel } from "discord.js"
 import { PlayerPerformanceInfo, PlayerScoreI, SSPlayerI } from "../ts"
 import { roundNumber } from "@utils/math"
 import { UserManager } from "@lib/UserManager"
 import { countryNames } from "../utils/countries";
 
-export class PlayerAnnouncements {
+/**
+ * Emitter for the text announcements of player achievements on the announcement discord channel.
+ */
+export class PlayerAnnouncementEmmiter {
 
-    private static outputChannel: TextChannel
-
-    public static async initialize() {
-        console.log("initializing PlayerAnnouncements")
-        this.outputChannel = await Discord.getTextChannel(process.env.CHANNEL_ID_BEATSABER_MILESTONES)
+    
+    constructor(private outputChannel: TextChannel) {
+        
     }
 
 
@@ -22,7 +22,7 @@ export class PlayerAnnouncements {
      * @param player 
      * @param country Country code used in ScoreSaber API
      */
-    public static async sendForPlayerTop1Country(player: SSPlayer, country: string) {
+    public async sendForPlayerTop1Country(player: SSPlayer, country: string) {
 
         const message = `:fireworks: :first_place:  **${player.name}** alcanzó el Top #1 en ${this.getCountryNameMsg(country)}!`;
 
@@ -35,7 +35,7 @@ export class PlayerAnnouncements {
      * @param player 
      * @param playersSurpassed 
      */
-    public static async playerSurpassedPlayersInRank(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
+    public async playerSurpassedPlayersInRank(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
 
         const message = `:checkered_flag:  **${player.playerName}** acaba de sobrepasar a ${this.enumerateDiscordUsers(playersSurpassed)},`
             + ` quedando con rank global de #${player.rank}!`;
@@ -49,7 +49,7 @@ export class PlayerAnnouncements {
      * @param player 
      * @param playersSurpassed 
      */
-    public static async playerSurpassedPlayersInAccuracy(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
+    public async playerSurpassedPlayersInAccuracy(player: PlayerPerformanceInfo, playersSurpassed: PlayerPerformanceInfo[]) {
 
         let message = `:dart:  **${player.playerName}** acaba de sobrepasar en accuracy ranked promedio a `;
 
@@ -73,7 +73,7 @@ export class PlayerAnnouncements {
      * @param score Plain js object or NewScore model.
      * @param leaderboardId 
      */
-    public static async playerHasFirstScoredRankedMap(player: SSPlayer, score: PlayerScoreI) {
+    public async playerHasFirstScoredRankedMap(player: SSPlayer, score: PlayerScoreI) {
 
         const leaderboard = await Leaderboard.findByPk(score.leaderboardId);
 
@@ -93,7 +93,7 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param snipedScore PlayerScore object with SSPlayer eager loaded.
      */
-    public static async playerMadeTopServerScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
+    public async playerMadeTopServerScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
@@ -110,7 +110,7 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param snipedScore PlayerScore object with SSPlayer eager loaded.
      */
-    public static async playerMadeTopCountryScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
+    public async playerMadeTopCountryScore(player: SSPlayer, newScore: PlayerScoreI, snipedScore: PlayerScore) {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
         const countryCode = player.country.toLocaleLowerCase();
@@ -129,7 +129,7 @@ export class PlayerAnnouncements {
      * @param snipedScore 
      * @returns 
      */
-    private static getSnipedScoreDetailsMessage(leaderboard: Leaderboard, newScore: PlayerScoreI, snipedScore: PlayerScore): string {
+    private getSnipedScoreDetailsMessage(leaderboard: Leaderboard, newScore: PlayerScoreI, snipedScore: PlayerScore): string {
         let message = "";
 
         message += `en el mapa ${leaderboard.readableMapDesc()}`;
@@ -158,7 +158,7 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param snipedScore PlayerScore object with SSPlayer eager loaded.
      */
-     public static async playerImprovedTopScore(player: SSPlayer, newScore: PlayerScoreI, oldScore: PlayerScore) {
+     public async playerImprovedTopScore(player: SSPlayer, newScore: PlayerScoreI, oldScore: PlayerScore) {
 
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
@@ -176,7 +176,7 @@ export class PlayerAnnouncements {
      * @param newScore Plain js object or NewScore model.
      * @param oldScore 
      */
-    public static async playerSignificantlyImprovedOwnScore(player: SSPlayer, newScore: PlayerScoreI, oldScore: PlayerScore) {
+    public async playerSignificantlyImprovedOwnScore(player: SSPlayer, newScore: PlayerScoreI, oldScore: PlayerScore) {
     
         const leaderboard = await Leaderboard.findByPk(newScore.leaderboardId)
 
@@ -194,7 +194,7 @@ export class PlayerAnnouncements {
      * Given a list of PlayerPerformanceInfo, get a text human readable list of Discord users (with or without tagging them according to their settings)
      * @param discordUserIds 
      */
-    private static enumerateDiscordUsers(playersInfo: PlayerPerformanceInfo[]): string {
+    private enumerateDiscordUsers(playersInfo: PlayerPerformanceInfo[]): string {
 
         let users = ""
 
@@ -222,7 +222,7 @@ export class PlayerAnnouncements {
      * @param playerInfo 
      * @returns 
      */
-    private static discordMentionFromInfo(playerInfo: PlayerPerformanceInfo) {
+    private discordMentionFromInfo(playerInfo: PlayerPerformanceInfo) {
         if(UserManager.isUserPresent(playerInfo.discordUserId) && playerInfo.milestoneAnnouncements) { // mention it on Discord
             return "<@" + playerInfo.discordUserId + ">"
         } else {
@@ -234,7 +234,7 @@ export class PlayerAnnouncements {
      * Given a SSPlayer model or plain js object, get the readable name of the player or its mention, according to their announcement settings.
      * @param player 
      */
-    private static discordMention(player: SSPlayerI) {
+    private discordMention(player: SSPlayerI) {
         if(UserManager.isUserPresent(player.discordUserId) && player.milestoneAnnouncements) {
             return "<@" + player.discordUserId + ">"
         } else {
@@ -248,7 +248,7 @@ export class PlayerAnnouncements {
      * @param countryCode The 2 char country code ISO coming from ScoreSaber Player country.
      * @returns 
      */
-    private static getCountryNameMsg(countryCode: string) {
+    private getCountryNameMsg(countryCode: string) {
 
         // Get country name
         let countryName: string = countryNames[countryCode];

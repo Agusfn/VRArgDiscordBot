@@ -4,13 +4,14 @@ import { LeaderboardI, PlayerScoreI } from "../ts"
 import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
 import logger from "@utils/logger"
 import { roundNumber } from "@utils/index"
-import { PlayerTriggerEvents } from "../lib/PlayerTriggerEvents"
+import { PlayerEventsHandler } from "./PlayerEventsHandler"
 
 /**
  * Class that handles the creation in database of new player scores and their related learboard (creation if doesn't exist, or update if modified)
  */
-export class PlayerScoreSaverService {
+export class PlayerScoreSaver {
     
+
     constructor(private ssCache: ScoreSaberDataCache) {
 
     }
@@ -56,12 +57,8 @@ export class PlayerScoreSaverService {
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
         this.ssCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
-        if(process.env.DEBUG == "true") {
-            logger.info("Historic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
-            logger.info("Historic fetcher: Bulk saved " + scoresToSave.length + " new scores")
-        }
-
-
+        logger.debug("Historic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+        logger.debug("Historic fetcher: Bulk saved " + scoresToSave.length + " new scores")
     }
 
 
@@ -116,16 +113,12 @@ export class PlayerScoreSaverService {
         const scoreSubmissions = scoresToSave.map(score => ({ ssScoreId: score.ssId, timeSetUnix: score.timeSet.getTime() }))
         this.ssCache.pushScoresForPlayer(player.id, scoreSubmissions)
 
-
-
-        if(process.env.DEBUG == "true") { // to-do: maybe use something like logger.debug to avoid this check on every log
-            logger.info("Periodic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
-            logger.info("Periodic fetcher: Bulk saved " + scoresToSave.length + " new scores")
-        }
+        logger.debug("Periodic fetcher: Bulk saved " + leaderboardsToSave.length + " new leaderboards (maps)")
+        logger.debug("Periodic fetcher: Bulk saved " + scoresToSave.length + " new scores")
 
         // (async) Call event trigger of player submitting new score page
         if(scoresToSave.length > 0) {
-            PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
+            PlayerEventsHandler.onPlayerSubmitNewScorePage(player, scoresToSave)
         }
 
         return {

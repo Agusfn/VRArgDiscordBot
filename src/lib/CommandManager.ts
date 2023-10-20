@@ -114,11 +114,7 @@ export class CommandManager {
             }
         })
 
-
-        /*if(process.env.DEBUG == "true") {
-            logger.info("Registered command /" + commandName + "!")
-        }*/
-
+        // logger.debug("Registered command /" + commandName + "!")
     }
 
 

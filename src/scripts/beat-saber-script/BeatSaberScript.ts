@@ -1,4 +1,4 @@
-import { ScoreSaberAccountManager, HistoricScoreFetcher, ScoreSaberDataCache, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerTriggerEvents } from "./lib/index"
+import { ScoreSaberDataCache, HistoricScoreFetcher, PeriodicScoreFetcherCron, PlayerProfileUpdaterCron, ScoreSaberAccountManager, PlayerEventsHandler } from "./services"
 import { CommandManager, Script, Discord } from "@lib/index"
 import { Message, TextChannel } from "discord.js"
 import initModels from "./db/initModels"
@@ -29,34 +29,38 @@ export class BeatSaberScript extends Script {
      */
     public initDbModels = initModels
 
+    
+    // Services
+    private scoreSaberCache: ScoreSaberDataCache;
+    private historicScoreFetcher: HistoricScoreFetcher;
+    private ssAccountManager: ScoreSaberAccountManager;
+
+    constructor() {
+        super()
+
+        this.scoreSaberCache = new ScoreSaberDataCache();
+        this.historicScoreFetcher = new HistoricScoreFetcher(this.scoreSaberCache);
+        this.ssAccountManager = new ScoreSaberAccountManager(this.historicScoreFetcher);
+    }
 
 
     public async onInitialized() {
 
-        ///// INITIALIZE
-
         // Initialize important score fetching/saving classes
-        const ssCache = new ScoreSaberDataCache();
-        await ssCache.initialize()
+        await this.scoreSaberCache.initialize()
         
-        await PlayerTriggerEvents.initialize()
+        await PlayerEventsHandler.initialize()
 
         // Start historic fetcher for any pending fetch scores from scoresaber accounts
-        const historicFetcher = new HistoricScoreFetcher(ssCache);
-        historicFetcher.startFetcher()
+        this.historicScoreFetcher.startFetcher()
 
-        const ssAccountManager = new ScoreSaberAccountManager(historicFetcher);
 
         ///// CRONS
-        const scoreFetcher = new PeriodicScoreFetcher(ssCache);
-        this.addCustomCron("*/20 * * * *", async () => {
-            await scoreFetcher.startPeriodicFetch()
-        })
+        const scoreFetcherCron = new PeriodicScoreFetcherCron(this.scoreSaberCache, "*/20 * * * *");
+        scoreFetcherCron.start();
 
-        await PlayerProfileUpdater.startProfileUpdater()
-        this.addCustomCron("*/25 * * * *", async () => {
-             await PlayerProfileUpdater.startProfileUpdater()
-        })
+        const profileUpdaterCron = new PlayerProfileUpdaterCron("*/25 * * * *");
+        profileUpdaterCron.start();
 
 
         /////////////// COMMANDS ////////////////
@@ -122,12 +126,12 @@ export class BeatSaberScript extends Script {
                 return
             }
 
-            const ssPlayer = await ssAccountManager.linkScoreSaberAccountToUser(message.author.id, scoreSaberId)
+            const ssPlayer = await this.ssAccountManager.linkScoreSaberAccountToUser(message.author.id, scoreSaberId)
 
             if(ssPlayer) {
                 message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** se te vinculó correctamente!`)
             } else {
-                message.reply(ssAccountManager.getErrorMsg())
+                message.reply(this.ssAccountManager.getErrorMsg())
             }
         }, "Vincular una cuenta de ScoreSaber a tu cuenta de Discord.", "BeatSaber")
 
@@ -153,24 +157,24 @@ export class BeatSaberScript extends Script {
                 return
             }
 
-            const ssPlayer = await ssAccountManager.linkScoreSaberAccountToUser(discordUserId, scoreSaberId, false)
+            const ssPlayer = await this.ssAccountManager.linkScoreSaberAccountToUser(discordUserId, scoreSaberId, false)
 
             if(ssPlayer) {
                 message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** se vinculó correctamente al usuario de Discord ${discordUser.user.username}!`)
             } else {
-                message.reply(ssAccountManager.getErrorMsg())
+                message.reply(this.ssAccountManager.getErrorMsg())
             }
         }, "Vincular una cuenta de ScoreSaber a una cuenta de Discord.", "BeatSaber")
 
 
         CommandManager.newCommand("deslinkear", null, async (message: Message, args) => {
 
-            const ssPlayer = await ssAccountManager.unlinkScoreSaberAccountFromUser(message.author.id)
+            const ssPlayer = await this.ssAccountManager.unlinkScoreSaberAccountFromUser(message.author.id)
 
             if(ssPlayer) {
                 message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** (ID ${ssPlayer.id}) se te desvinculó correctamente!`)
             } else {
-                message.reply(ssAccountManager.getErrorMsg())
+                message.reply(this.ssAccountManager.getErrorMsg())
             }
 
         }, "Desvincular la cuenta de ScoreSaber de tu cuenta de Discord.", "BeatSaber")
@@ -191,12 +195,12 @@ export class BeatSaberScript extends Script {
                 return
             }
 
-            const ssPlayer = await ssAccountManager.unlinkScoreSaberAccountFromUser(discordUserId, false)
+            const ssPlayer = await this.ssAccountManager.unlinkScoreSaberAccountFromUser(discordUserId, false)
 
             if(ssPlayer) {
                 message.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** (ID ${ssPlayer.id}) se desvinculó correctamente del usario de Discord ${discordUser.user.username}!`)
             } else {
-                message.reply(ssAccountManager.getErrorMsg())
+                message.reply(this.ssAccountManager.getErrorMsg())
             }
 
         }, "Desvincular una cuenta de ScoreSaber de una cuenta de Discord.", "BeatSaber")

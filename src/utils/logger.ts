@@ -9,6 +9,7 @@ const plainFormat = printf(({ level, message, label, timestamp }) => {
  * Create and configure the logger instance. Discord logging will be done only after client has initialized and logged in.
  */
 export default winston.createLogger({
+    level: (process.env.DEBUG == "true") ? "debug" : "info", // only log debug if DEBUG env is true
     format: format.combine(
         errors({ stack: true }),
         timestamp(),

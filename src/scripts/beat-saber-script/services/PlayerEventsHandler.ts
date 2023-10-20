@@ -1,15 +1,18 @@
 import { SSPlayer, PlayerScore } from "../model/index"
 import { PlayerPerformanceInfo, PlayerScoreI, SSPlayerI } from "../ts"
 import logger from "@utils/logger"
-import { PlayerAnnouncements } from "./PlayerAnnouncements"
 import { logException } from "@utils/other"
 import { Sequelize } from "sequelize"
 import { isScoreSignificantlyImproved } from "../utils/index"
 import { SSCountries } from "../config"
 import { UserManager } from "@lib/UserManager"
+import { PlayerAnnouncementEmmiter } from "./PlayerAnnouncementEmmiter"
+import { Discord } from "@lib/Discord"
 
-export class PlayerTriggerEvents {
-
+/**
+ * Handler for player events occurrences
+ */
+export class PlayerEventsHandler {
 
 
     /**
@@ -33,12 +36,16 @@ export class PlayerTriggerEvents {
     private static playerCountries: {[playerId: string]: string} = {}
 
 
+    // services
+    private static announcementEmmiter: PlayerAnnouncementEmmiter;
+
 
     public static async initialize() {
 
         logger.info("Initializing PlayerTriggerEvents cache")
 
-        await PlayerAnnouncements.initialize()
+        const announceChannel = await Discord.getTextChannel(process.env.CHANNEL_ID_BEATSABER_MILESTONES)
+        this.announcementEmmiter = new PlayerAnnouncementEmmiter(announceChannel);
 
         const players = await SSPlayer.findAll()
 
@@ -61,9 +68,7 @@ export class PlayerTriggerEvents {
      */
     public static onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayerI) {
 
-        if(process.env.DEBUG == "true") {
-            logger.info("event handler called for player " + player.name + " updating profile")
-        }
+        logger.debug("event handler called for player " + player.name + " updating profile")
 
         if(player.rank != oldPlayer.rank) {
             this.onPlayerUpdateGlobalRank(player, oldPlayer.rank, player.rank)
@@ -160,9 +165,9 @@ export class PlayerTriggerEvents {
                 if(playersSurpassed.length > 0) {
                     console.log("players surpassed by " + player.playerId + ": ", playersSurpassed)
                     if(attributeName == "rank") {
-                        await PlayerAnnouncements.playerSurpassedPlayersInRank(player, playersSurpassed)
+                        await this.announcementEmmiter.playerSurpassedPlayersInRank(player, playersSurpassed)
                     } else if(attributeName == "avgAccuracy") {
-                        await PlayerAnnouncements.playerSurpassedPlayersInAccuracy(player, playersSurpassed)
+                        await this.announcementEmmiter.playerSurpassedPlayersInAccuracy(player, playersSurpassed)
                     }
                 }
 
@@ -194,9 +199,9 @@ export class PlayerTriggerEvents {
     
                     if(newScore.modifiedScore > topServerScore.modifiedScore) {
                         if(topServerScore.playerId != player.id) { // player sniped another player's top score
-                            await PlayerAnnouncements.playerMadeTopServerScore(player, newScore, topServerScore)
+                            await this.announcementEmmiter.playerMadeTopServerScore(player, newScore, topServerScore)
                         } else { // player improved own top score
-                            await PlayerAnnouncements.playerImprovedTopScore(player, newScore, topServerScore)
+                            await this.announcementEmmiter.playerImprovedTopScore(player, newScore, topServerScore)
                         }
                     } else { // player didn't improve the top server score
 
@@ -207,7 +212,7 @@ export class PlayerTriggerEvents {
                         if(topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore && topScoreOfCountry.playerId != player.id &&
                             player.country == SSCountries.ARGENTINA) // argentina is temporarily the only who has top country announcement (because all top players are registered in the bot)) { 
                         {
-                            await PlayerAnnouncements.playerMadeTopCountryScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
+                            await this.announcementEmmiter.playerMadeTopCountryScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
                         } else {
 
                             // Get the best score for this map for this player (if it exists)
@@ -215,13 +220,13 @@ export class PlayerTriggerEvents {
                             const previousPlayerTopScore = playerPreviousScores.length > 0 ? playerPreviousScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
                             
                             if(previousPlayerTopScore && isScoreSignificantlyImproved(previousPlayerTopScore.accuracy, newScore.accuracy)) {
-                                await PlayerAnnouncements.playerSignificantlyImprovedOwnScore(player, newScore, previousPlayerTopScore)
+                                await this.announcementEmmiter.playerSignificantlyImprovedOwnScore(player, newScore, previousPlayerTopScore)
                             }
                         }
                     }
     
                 } else { // no players submitted any score for this leaderboard
-                    await PlayerAnnouncements.playerHasFirstScoredRankedMap(player, newScore)
+                    await this.announcementEmmiter.playerHasFirstScoredRankedMap(player, newScore)
                 }
     
                 // future: if player improved score than any of their opponents (use existing query)
@@ -280,7 +285,7 @@ export class PlayerTriggerEvents {
 
     private static onPlayerUpdateCountryRank(player: SSPlayer, oldRank: number, newRank: number) {
         if(newRank == 1) {
-            PlayerAnnouncements.sendForPlayerTop1Country(player, player.country)
+            this.announcementEmmiter.sendForPlayerTop1Country(player, player.country)
         }
     }
 

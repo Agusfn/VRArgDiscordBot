@@ -22,9 +22,7 @@ export const logException = (error: any) => {
                 logger.error("Sequelize error: " + error.errors.map((error: any) => error.message).join(", "))
             }
 
-            if(process.env.DEBUG == "true") {
-                console.log(error) // show a bunch of data of sequelize error
-            }
+            console.debug(error) // show a bunch of data of sequelize error
         } else {
             logger.error(error)
 

@@ -128,17 +128,11 @@ export class UserManager {
             user.joinDate = new Date()
             await user.save()
 
-            if(process.env.DEBUG == "true") {
-                logger.info(`Marking user id ${discordMember.user.id} (${discordMember.user.username}) as present, since they re-joined.`)
-            }
-
+            logger.debug(`Marking user id ${discordMember.user.id} (${discordMember.user.username}) as present, since they re-joined.`)
         } else {
             await this.createUserFromDiscordMember(discordMember)
 
-            if(process.env.DEBUG == "true") {
-                logger.info(`Creating new User for user id ${discordMember.user.id} (${discordMember.user.username}) who just joined.`)
-            }
-
+            logger.debug(`Creating new User for user id ${discordMember.user.id} (${discordMember.user.username}) who just joined.`)
         }
 
     }
@@ -158,9 +152,7 @@ export class UserManager {
             { where: { discordUserId: discordMember.user.id }}
         )
 
-        if(process.env.DEBUG == "true") {
-            logger.info(`Marked user id ${discordMember.user.id} (${discordMember.user.username}) absent since they left.`)
-        }
+        logger.debug(`Marked user id ${discordMember.user.id} (${discordMember.user.username}) absent since they left.`)
     }
 
 

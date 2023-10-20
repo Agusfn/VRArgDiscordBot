@@ -64,10 +64,7 @@ export class ScoreSaberDataCache {
             ranked: leaderboard.ranked 
         }))
 
-        if(process.env.DEBUG == "true") {
-            logger.info(`Initialized ScoreSaberDataCache. Loaded ${this.existingLeaderboards.length} leaderboard ids.`)
-        }
-
+        logger.debug(`Initialized ScoreSaberDataCache. Loaded ${this.existingLeaderboards.length} leaderboard ids.`)
     }
 
 

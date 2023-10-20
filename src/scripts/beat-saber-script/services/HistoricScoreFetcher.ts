@@ -1,9 +1,9 @@
 import logger from "@utils/logger"
-import { SSPlayer } from "../../model/index"
-import { ScoreSaberAPI } from "../../utils/index"
-import { PlayerScoreSaverService } from "../PlayerScoreSaver"
-import { ScoreSaberDataCache } from "../ScoreSaberDataCache"
-import { SCORES_FETCHED_PER_PAGE } from "../../config"
+import { SSPlayer } from "../model/index"
+import { ScoreSaberAPI } from "../utils/index"
+import { PlayerScoreSaver } from "./PlayerScoreSaver"
+import { ScoreSaberDataCache } from "./ScoreSaberDataCache"
+import { SCORES_FETCHED_PER_PAGE } from "../config"
 
 
 
@@ -18,11 +18,11 @@ export class HistoricScoreFetcher {
 
     // services
     private ssCache: ScoreSaberDataCache;
-    private playerScoreSaver: PlayerScoreSaverService;
+    private playerScoreSaver: PlayerScoreSaver;
 
     constructor(ssCache: ScoreSaberDataCache) {
         this.ssCache = ssCache;
-        this.playerScoreSaver = new PlayerScoreSaverService(ssCache);
+        this.playerScoreSaver = new PlayerScoreSaver(ssCache);
     }
 
 
@@ -64,9 +64,7 @@ export class HistoricScoreFetcher {
             return
         }
 
-        if(process.env.DEBUG == "true") {
-            logger.info("Historic fetcher: Adding SS player " + ssPlayerId + " to fetch queue")
-        }
+        logger.debug("Historic fetcher: Adding SS player " + ssPlayerId + " to fetch queue")
 
         this.playerFetchQueue.push(ssPlayer)
 
@@ -83,9 +81,7 @@ export class HistoricScoreFetcher {
      */
     private async processFetchQueue() {
 
-        if(process.env.DEBUG == "true") {
-            logger.info("Historic fetcher: Starting fetch queue with " + this.playerFetchQueue.length + " players in it.")
-        }
+        logger.debug("Historic fetcher: Starting fetch queue with " + this.playerFetchQueue.length + " players in it.")
 
         while(this.playerFetchQueue.length > 0) {
             try {
@@ -93,9 +89,7 @@ export class HistoricScoreFetcher {
                 await this.fetchHistoricScoresForSSPlayer(ssPlayer)
                 this.playerFetchQueue.shift() // remove first elem
 
-                if(process.env.DEBUG == "true") {
-                    logger.info("Historic fetcher: Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
-                }
+                logger.debug("Historic fetcher: Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
                 
             } catch(error) {
                 // if max retries
@@ -106,10 +100,7 @@ export class HistoricScoreFetcher {
             }
         }
 
-        if(process.env.DEBUG == "true") {
-            logger.info("Historic fetcher: Finished historic SS score fetcher queue.")
-        }
-
+        logger.debug("Historic fetcher: Finished historic SS score fetcher queue.")
     }
 
 
@@ -119,9 +110,7 @@ export class HistoricScoreFetcher {
      */
     private async fetchHistoricScoresForSSPlayer(player: SSPlayer) {
 
-        if(process.env.DEBUG == "true") {
-            logger.info(`Historic fetcher: Starting fetch for ScoreSaber player ${player.name}`)
-        }
+        logger.debug(`Historic fetcher: Starting fetch for ScoreSaber player ${player.name}`)
 
         await this.ssCache.fetchPlayerScores(player.id, "historic_fetcher") // fetch player score ids from cache if not already fetched
 
@@ -137,9 +126,7 @@ export class HistoricScoreFetcher {
 
             if(scorePageCollection && scorePageCollection.playerScores.length > 0) {
 
-                if(process.env.DEBUG == "true") {
-                    logger.info(`Historic fetcher: Fetched page ${nextFetchPage} of player ${player.name}. Got ${scorePageCollection.playerScores.length} scores.`)
-                }
+                logger.debug(`Historic fetcher: Fetched page ${nextFetchPage} of player ${player.name}. Got ${scorePageCollection.playerScores.length} scores.`)
 
                 await this.playerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
 
@@ -147,9 +134,8 @@ export class HistoricScoreFetcher {
                 await player.save()
                 nextFetchPage += 1
             } else { // end page reached
-                if(process.env.DEBUG == "true") {
-                    logger.info(`Historic fetcher: Finished loading scores for ScoreSaber player ${player.name} (id ${player.id})`)
-                }
+                logger.debug(`Historic fetcher: Finished loading scores for ScoreSaber player ${player.name} (id ${player.id})`)
+
                 endPageReached = true
                 player.fetchedAllScoreHistory = true
                 await player.save()

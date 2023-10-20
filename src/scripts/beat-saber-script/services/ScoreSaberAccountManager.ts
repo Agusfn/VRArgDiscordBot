@@ -7,9 +7,11 @@ import { HistoricScoreFetcher } from "./HistoricScoreFetcher"
  */
 export class ScoreSaberAccountManager {
 
+    private historicScoreFetcher: HistoricScoreFetcher;
+    private ssApi = new ScoreSaberAPI();
 
-    constructor(private historicScoreFetcher: HistoricScoreFetcher) {
-
+    constructor(historicScoreFetcher: HistoricScoreFetcher) {
+        this.historicScoreFetcher = historicScoreFetcher;
     }
 
     private errorMessage: string
@@ -62,11 +64,10 @@ export class ScoreSaberAccountManager {
         } else { // SSPlayer is not registered, so let's fetch and register it
 
             // Fetch player from API
-            const api = new ScoreSaberAPI()
             let ssAPIPlayer: Player
 
             try {
-                ssAPIPlayer = await api.getPlayer(scoreSaberId)
+                ssAPIPlayer = await this.ssApi.getPlayer(scoreSaberId)
             } catch(error) {
                 this.errorMessage = "Ocurrió un error obteniendo la información del jugador."
                 return null

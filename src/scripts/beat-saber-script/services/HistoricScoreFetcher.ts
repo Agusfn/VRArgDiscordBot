@@ -19,6 +19,7 @@ export class HistoricScoreFetcher {
     // services
     private ssCache: ScoreSaberDataCache;
     private playerScoreSaver: PlayerScoreSaver;
+    private ssApi = new ScoreSaberAPI();
 
     constructor(ssCache: ScoreSaberDataCache) {
         this.ssCache = ssCache;
@@ -117,12 +118,11 @@ export class HistoricScoreFetcher {
         let endPageReached = false
         let nextFetchPage = player.lastHistoryFetchPage + 1 // most recent page is 1
         
-        const api = new ScoreSaberAPI()
 
         while(endPageReached != true) {
 
             // Fetch scores of following page
-            const scorePageCollection = await api.getScores(player.id, "recent", nextFetchPage, SCORES_FETCHED_PER_PAGE)
+            const scorePageCollection = await this.ssApi.getScores(player.id, "recent", nextFetchPage, SCORES_FETCHED_PER_PAGE)
 
             if(scorePageCollection && scorePageCollection.playerScores.length > 0) {
 

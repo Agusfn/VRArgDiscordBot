@@ -11,7 +11,7 @@ export class VersusScript extends Script {
 
     public async onInitialized() {
 
-        CommandManager.newCommand("versus", "<param1> <param2>", async (message: Message, args) => {
+        CommandManager.newCommand("versus", "<beatleader id> <beatleader id>", async (message: Message, args) => {
 
             const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
 
@@ -49,7 +49,7 @@ export class VersusScript extends Script {
                 ]
             });
 
-        }, "Descripcion del comando.",)
+        }, "Genera un versus entre dos usuarios",)
 
 
     }

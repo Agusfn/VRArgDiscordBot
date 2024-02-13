@@ -1,0 +1,3 @@
+[submodule "BsPoolMakerAPI"]
+	path = BsPoolMakerAPI
+	url = https://github.com/AndresVaccari/BsPoolMakerAPI

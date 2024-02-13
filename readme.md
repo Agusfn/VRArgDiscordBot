@@ -16,3 +16,13 @@
 
 ## Stop:
 >forever stop compiled/index.js
+
+
+# Install and start BsPoolMakerAPI
+
+Install:
+>pip install flask
+>pip install aiohttp
+
+Run:
+>python BsPoolMakerAPI/app.py

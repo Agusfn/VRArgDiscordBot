@@ -13,6 +13,11 @@ export class VersusScript extends Script {
 
         CommandManager.newCommand("versus", "<beatleader id> <beatleader id>", async (message: Message, args) => {
 
+            if (args.length !== 2) {
+                message.reply("Debes ingresar dos usuarios.")
+                return
+            }
+
             const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
 
             const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`

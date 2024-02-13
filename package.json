@@ -24,6 +24,7 @@
     "ffmpeg-static": "^4.3.0",
     "moment": "^2.29.1",
     "node-cron": "^3.0.0",
+    "node-html-to-image": "^4.0.0",
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",

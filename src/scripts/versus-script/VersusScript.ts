@@ -11,9 +11,9 @@ export class VersusScript extends Script {
 
     public async onInitialized() {
 
-        CommandManager.newCommand("versus", "<beatleader id> <beatleader id>", async (message: Message, args) => {
+        CommandManager.newCommand("versus", "<beatleader_id> <beatleader_id>", async (message: Message, args) => {
 
-            if (args.length !== 2) {
+            if (args.length !== 3) {
                 message.reply("Debes ingresar dos usuarios.")
                 return
             }

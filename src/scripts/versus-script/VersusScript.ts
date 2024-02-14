@@ -34,7 +34,11 @@ export class VersusScript extends Script {
             const intervalId = setInterval(updateLoadingMessage, 1000);
 
             // Hacer la llamada al servidor
-            const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
+            const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json()).catch(err => {
+                clearInterval(intervalId);
+                loadingMessage.delete();
+                message.reply("Hubo un error al intentar generar el versus.")
+            })
 
             const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`
             const imageUrl = `http://127.0.0.1:5000${response['1-rendered_pool']}`

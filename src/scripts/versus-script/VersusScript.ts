@@ -11,8 +11,29 @@ export class VersusScript extends Script {
 
     public async onInitialized() {
 
-        CommandManager.newCommand("versus", "<param1> <param2>", async (message: Message, args) => {
+        CommandManager.newCommand("versus", "<scoresaber id> <scoresaber id>", async (message: Message, args) => {
 
+            if (args.length !== 3) {
+                message.reply("Debes ingresar dos usuarios.")
+                return
+            }
+
+            const loadingMessage = await message.channel.send("Loading");
+
+            // Definir los puntos que se van a mover en el mensaje de carga
+            const loadingPoints = ['.', '..', '...'];
+            let index = 0;
+
+            // Función para actualizar el mensaje de carga con los puntos que se mueven
+            const updateLoadingMessage = () => {
+                loadingMessage.edit(`Loading${loadingPoints[index]}`);
+                index = (index + 1) % loadingPoints.length;
+            };
+
+            // Actualizar el mensaje de carga cada segundo
+            const intervalId = setInterval(updateLoadingMessage, 1000);
+
+            // Hacer la llamada al servidor
             const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
 
             const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`
@@ -34,6 +55,10 @@ export class VersusScript extends Script {
                 }
             })
 
+            // Limpiar el intervalo y detener el efecto de carga
+
+            clearInterval(intervalId);
+            loadingMessage.delete();
 
             // Enviar el archivo adjunto como respuesta
             await message.channel.send({
@@ -49,9 +74,14 @@ export class VersusScript extends Script {
                 ]
             });
 
-        }, "Descripcion del comando.",)
+        }, "Genera un versus entre dos usuarios", "Versus")
 
 
+        CommandManager.newCommand("coinflip", "", async (message: Message, args) => {
+            const caras = ["Cara", "Cruz"]
+            const random = Math.floor(Math.random() * caras.length)
+            message.reply(caras[random])
+        }, "Tira una moneda", "Versus")
     }
     
 }

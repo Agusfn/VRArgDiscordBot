@@ -223,12 +223,12 @@ export class CommandManager {
 
         for(const groupName of Object.keys(groupedCommands)) {
             if(groupName == COMMAND_GRAL_GROUP_NAME) {
-                text += "__Comandos generales:__\n"
+                text += "**__Comandos generales:__**\n"
                 for(const command of groupedCommands[groupName]) {
                     text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + (command.description ? ": " + command.description : " (sin descripción)") + "\n"
                 }
             } else {
-                text += "\n__" + groupName + "__\n"
+                text += "\n**__" + groupName + "__**\n"
                 for(const command of groupedCommands[groupName]) {
                     text += "**/" + command.name + "**" + (command.args ? " "+command.args : "") + (command.description ? ": " + command.description : " (sin descripción)") + "\n"
                 }

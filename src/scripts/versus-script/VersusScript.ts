@@ -11,7 +11,7 @@ export class VersusScript extends Script {
 
     public async onInitialized() {
 
-        CommandManager.newCommand("versus", "<beatleader_id> <beatleader_id>", async (message: Message, args) => {
+        CommandManager.newCommand("versus", "<scoresaber_id> <scoresaber_id>", async (message: Message, args) => {
 
             if (args.length !== 3) {
                 message.reply("Debes ingresar dos usuarios.")
@@ -54,9 +54,14 @@ export class VersusScript extends Script {
                 ]
             });
 
-        }, "Genera un versus entre dos usuarios",)
+        }, "Genera un versus entre dos usuarios", "Versus")
 
 
+        CommandManager.newCommand("coinflip", "", async (message: Message, args) => {
+            const caras = ["Cara", "Cruz"]
+            const random = Math.floor(Math.random() * caras.length)
+            message.reply(caras[random])
+        }, "Tira una moneda", "Versus")
     }
     
 }

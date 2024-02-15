@@ -33,46 +33,54 @@ export class VersusScript extends Script {
             // Actualizar el mensaje de carga cada segundo
             const intervalId = setInterval(updateLoadingMessage, 1000);
 
-            // Hacer la llamada al servidor
-            const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
-
-            const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`
-            const imageUrl = `http://127.0.0.1:5000${response['1-rendered_pool']}`
-
-            // Descargar el archivo .bplist
-            const bplistResponse = await fetch(bplistUrl).then(res => res.text())
-
-            const buffer = Buffer.from(bplistResponse, 'utf-8');
-
-            const nodeHtmlToImage = require('node-html-to-image')
-
-            const html = await fetch(imageUrl).then(res => res.text())
-
-            const image = await nodeHtmlToImage({
-                html: html,
-                puppeteerArgs: {
-                    args: ['--no-sandbox']
-                }
-            })
-
-            // Limpiar el intervalo y detener el efecto de carga
-
-            clearInterval(intervalId);
-            loadingMessage.delete();
-
-            // Enviar el archivo adjunto como respuesta
-            await message.channel.send({
-                files: [
-                    {
-                        attachment: buffer,
-                        name: `${response['3-filename']}.bplist`
-                    },
-                    {
-                        attachment: image,
-                        name: `${response['3-filename']}.png`
+            try {
+                
+                // Hacer la llamada al servidor
+                const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
+    
+                const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`
+                const imageUrl = `http://127.0.0.1:5000${response['1-rendered_pool']}`
+    
+                // Descargar el archivo .bplist
+                const bplistResponse = await fetch(bplistUrl).then(res => res.text())
+    
+                const buffer = Buffer.from(bplistResponse, 'utf-8');
+    
+                const nodeHtmlToImage = require('node-html-to-image')
+    
+                const html = await fetch(imageUrl).then(res => res.text())
+    
+                const image = await nodeHtmlToImage({
+                    html: html,
+                    puppeteerArgs: {
+                        args: ['--no-sandbox']
                     }
-                ]
-            });
+                })
+    
+                // Limpiar el intervalo y detener el efecto de carga
+    
+                clearInterval(intervalId);
+                loadingMessage.delete();
+    
+                // Enviar el archivo adjunto como respuesta
+                await message.channel.send({
+                    files: [
+                        {
+                            attachment: buffer,
+                            name: `${response['3-filename']}.bplist`
+                        },
+                        {
+                            attachment: image,
+                            name: `${response['3-filename']}.png`
+                        }
+                    ]
+                });
+            } catch (error) {
+                clearInterval(intervalId);
+                loadingMessage.delete();
+                message.reply("Hubo un error al intentar generar el versus.")
+            }
+
 
         }, "Genera un versus entre dos usuarios", "Versus")
 

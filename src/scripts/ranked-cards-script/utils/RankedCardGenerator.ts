@@ -4,7 +4,8 @@ const Canvas = require('canvas');
 const fs = require('fs');
 const stackBlur = require('stackblur-canvas');
 
-Canvas.registerFont('Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
+const resourcesPath = "src/scripts/ranked-cards-script/utils/resources/"
+Canvas.registerFont(resourcesPath+'Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
 
 const difficultyNames = ["","Easy","","Normal","","Hard","","Expert","","ExpertPlus"];
 const difficultyNamesShort = ["","E","","N","","H","","Ex","","Ex+"];
@@ -12,6 +13,8 @@ const difficultyColors = ["","#3cb371","","#59b0f4","","#ff6347","","#bf2a42",""
 const tagNames = ["speed", "challenge", "tech", "balanced", "dance-style", "accuracy", "fitness","none"];
 const tagNamesDisplay = ["Speed", "Challenge", "Tech", "Balanced", "Dance", "Accuracy", "Fitness","?"];
 const tagsColors = ["rgb(255, 51, 51)","#ff6347","rgb(235, 0, 255)","rgb(255, 199, 0)","#3cb371","rgb(51, 218, 255)","#ffbbbb","#888888"];
+
+
 
 export async function generateRandomCard(userName: string ) {
   let ran = Math.random();
@@ -246,6 +249,9 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
       filteredTags.push(tags[i]);
     }
   }
+  if(filteredTags.length == 0) {
+    filteredTags = ["none"];
+  }
   ctx.textAlign = 'left';
   ctx.font = `20px Arial`;
 
@@ -297,8 +303,8 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.fillText(score+"%", 190, 587);
 
   //agregar los badges si hay
-  const chromaBadge = await loadImage("./badge_chroma.png");
-  const curatorBadge = await loadImage("./badge_curated.png");
+  const chromaBadge = await loadImage(resourcesPath+"badge_chroma.png");
+  const curatorBadge = await loadImage(resourcesPath+"badge_curated.png");
 
   if(curated && chroma) {
     ctx.drawImage(curatorBadge, 8, 150, 50, 50);
@@ -365,7 +371,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.stroke();
 
   const buffer = canvas.toBuffer('image/png');
-  return buffer;
+  return [buffer, stars];
   //fs.writeFileSync('./card.png', buffer);
   //console.log("Carta dibujada");
 }

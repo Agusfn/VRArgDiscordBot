@@ -1,3 +1,4 @@
 export interface PlayerBirthdayI {
-  date: Date
+  discordUserId: string
+  birthday: Date
 }

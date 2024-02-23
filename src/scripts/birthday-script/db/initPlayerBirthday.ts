@@ -6,7 +6,7 @@ import { User } from "@models/index"
 export default () => {
 
     PlayerBirthday.init({
-        date: {
+        birthday: {
             type: Types.DATE,
             primaryKey: true
         },
@@ -21,6 +21,18 @@ export default () => {
     { 
         sequelize: SequelizeDBManager.getInstance(), 
         modelName: "PlayerBirthday",
-        tableName: "player_birthdays"
-    })
+        tableName: "player_birthdays",
+        scopes: { // query scopes
+            /** Query scope to find a player by their discord user id */
+            withDiscordUserId(discordUserId: string) {
+                return {
+                    where: {
+                        discordUserId: discordUserId
+                    }
+                }
+            }
+
+        }
+    },
+    )
 }

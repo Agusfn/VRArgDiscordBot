@@ -100,6 +100,14 @@ export const initializeApp = () => {
         closeApp()
     });
 
+    // Override logging method for any uncaught exceptions and unhandled rejections (so we log into the errors file also)
+    process.on('uncaughtException', error => {
+        logger.error("Uncaught Exception: " + (error.stack ? error.stack : error));
+    });
+    process.on('unhandledRejection', (error: any, promise) => {
+        logger.error("Unhandled Rejection: " + (error.stack ? error.stack : error));
+    });
+
 }
 
 

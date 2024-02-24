@@ -1,7 +1,6 @@
 import { Script } from "@lib/index"
 import { Message, MessageAttachment } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
-import fetch from "node-fetch";
 
 export class VersusScript extends Script {
 
@@ -37,7 +36,7 @@ export class VersusScript extends Script {
             try {
                 
                 // Hacer la llamada al servidor
-                const response: any = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
+                const response = await fetch(`http://127.0.0.1:5000?user1=${args[0]}&user2=${args[1]}`).then(res => res.json())
     
                 const bplistUrl = `http://127.0.0.1:5000${response['0-download']}`
                 const imageUrl = `http://127.0.0.1:5000${response['1-rendered_pool']}`

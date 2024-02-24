@@ -23,6 +23,12 @@ export default () => {
         modelName: "PlayerBirthday",
         tableName: "player_birthdays",
         scopes: { // query scopes
+            hasBirthdayToday: { // players who have their birthday today
+                where: {
+                    birthday: new Date()
+                }
+            },
+
             /** Query scope to find a player by their discord user id */
             withDiscordUserId(discordUserId: string) {
                 return {

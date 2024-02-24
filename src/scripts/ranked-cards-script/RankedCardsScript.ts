@@ -55,16 +55,64 @@ export class RankedCardsScript extends Script {
 
         }, "Muestra tu carta Top", "Ranked Cards")
 
-        CommandManager.newCommand("cartas", "[hash] [diff]", async (message: Message, args) => {
+        CommandManager.newCommand("cartas", "", async (message: Message, args) => {
+
+            let isHash = false;
+
+            if(args.length >=2 && args[0] != null) {
+                isHash = true;
+            }
+
+            if(!isHash) {
+                try {
+                    const ultimaCarta = await findLastCard(message.author.id);
+    
+                    const lastDate = ultimaCarta.get('date');
+                    const now = new Date();
+                    const timeSince = now.getTime() - lastDate.getTime();
+                    
+                    const hoursSince = timeSince / (1000 * 60 * 60);
+    
+                    // Verificar si la diferencia es menor a 24 horas
+                    if (hoursSince < 24) {
+                        // Convertir a horas, minutos y segundos para mostrar
+                        const horas = Math.floor(hoursSince);
+                        const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
+                        const segundos = Math.floor((timeSince / 1000) % 60);
+    
+                        // Tiempo restante para completar 24 horas
+                        const totalSegundosRestantes = (24 * 60 * 60) - (horas * 60 * 60 + minutos * 60 + segundos);
+                        const horasRestantes = Math.floor(totalSegundosRestantes / 3600);
+                        const minutosRestantes = Math.floor((totalSegundosRestantes % 3600) / 60);
+                        const segundosRestantes = totalSegundosRestantes % 60;
+    
+                        // Formatear el resultado como un string HH:mm:ss
+                        const tiempoRestante = `${horasRestantes} horas, ${minutosRestantes} minutos y ${segundosRestantes} segundos`;
+                        function delay(ms: number) {
+                            return new Promise(resolve => setTimeout(resolve, ms));
+                        }
+                        await message.channel.send("Tenés que esperar " + tiempoRestante + " antes de poder sacar cartas de nuevo");
+                        if(hoursSince < 1) {
+                            await delay(1023);
+                            await message.channel.send("Ni una hora ha pasado...");
+                        }
+                        return;
+                    }
+                }
+                catch(error) {
+                    logger.error(error);
+                }
+            }
+    
 
             const loading = await this.startLoading(message, "Generando");
 
             try {
-                
+
                 let imageBuffers = [];
                 
-                if(args.length >=2 && args[0] != null) {
-                    let generatedCard = await generateRandomCard(message.author.username);
+                if(isHash) {
+                    let generatedCard = await generateHashCard(args[0], args[1]);
                     imageBuffers.push(generatedCard[0]);
                 }
                 else {
@@ -96,12 +144,12 @@ export class RankedCardsScript extends Script {
             }
 
 
-        }, "Genera una carta ranked", "Ranked Cards")
+        }, "Genera 4 cartas ranked", "Ranked Cards")
     }
 }
 
 async function sendCard(message: Message, imageBuffer: any) {
-    await message.channel.send({ 
+    await message.reply({ 
         files: [{
                 attachment: imageBuffer,
                 name: "card.png" 
@@ -123,6 +171,20 @@ async function findTopCard(userId: string) {
       const card = await RankedCard.findOne({
         where: { owner: userId },
         order: [['value', 'DESC']],
+      });
+  
+      return card;
+
+    } catch (error) {
+      console.error('Error al buscar la carta:', error);
+    }
+}
+
+async function findLastCard(userId: string) {
+    try {
+      const card = await RankedCard.findOne({
+        where: { owner: userId },
+        order: [['date', 'DESC']],
       });
   
       return card;

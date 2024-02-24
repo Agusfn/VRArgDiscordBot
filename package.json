@@ -16,6 +16,7 @@
     "@types/sqlite3": "^3.1.7",
     "axios": "^0.21.1",
     "bot-commander": "^1.1.2",
+    "canvas": "^2.11.2",
     "discord.js": "^13.3.1",
     "dotenv": "^9.0.2",
     "everpolate": "^0.0.3",
@@ -25,6 +26,7 @@
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",
+    "stackblur-canvas": "^2.7.0",
     "winston": "^3.3.3",
     "winston-transport": "^4.4.0"
   },

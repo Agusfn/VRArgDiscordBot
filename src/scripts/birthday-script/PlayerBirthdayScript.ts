@@ -15,7 +15,7 @@ export class PlayerBirthdayScript extends Script {
 
     public async onInitialized() {
 
-        CommandManager.newCommand("cum", "<fecha cumpleaños>", async (message: Message, args) => {
+        CommandManager.newCommand("registrar_cum", "<fecha cumpleaños>", async (message: Message, args) => {
 
             let birthday = args[0]
             

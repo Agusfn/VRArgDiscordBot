@@ -55,6 +55,29 @@ export class RankedCardsScript extends Script {
 
         }, "Muestra tu carta Top", "Ranked Cards")
 
+        CommandManager.newCommand("topcartaglobal", null, async (message: Message, args) => {
+            const loading = await this.startLoading(message, "Cargando");
+            try {
+                
+                const carta = await findAllTopCard();
+                if(carta) {
+                    let imageBuffer = carta.get('image');
+                    sendCard(message, imageBuffer);
+                }
+                else {
+                    message.reply("No hay cartas");
+                }
+
+                this.stopLoading(loading);
+            } catch (error) {
+                logger.error(error);
+                this.stopLoading(loading);
+                message.reply("Hubo un error al intentar obtener la carta.")
+            }
+            
+
+        }, "Muestra la carta top global", "Ranked Cards")
+
         CommandManager.newCommand("cartas", "", async (message: Message, args) => {
 
             let isHash = false;
@@ -74,20 +97,24 @@ export class RankedCardsScript extends Script {
                     const hoursSince = timeSince / (1000 * 60 * 60);
     
                     // Verificar si la diferencia es menor a 24 horas
-                    if (hoursSince < 24) {
+                    if (hoursSince < 23) {
                         // Convertir a horas, minutos y segundos para mostrar
                         const horas = Math.floor(hoursSince);
                         const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
                         const segundos = Math.floor((timeSince / 1000) % 60);
     
                         // Tiempo restante para completar 24 horas
-                        const totalSegundosRestantes = (24 * 60 * 60) - (horas * 60 * 60 + minutos * 60 + segundos);
+                        const totalSegundosRestantes = (23 * 60 * 60) - (horas * 60 * 60 + minutos * 60 + segundos);
                         const horasRestantes = Math.floor(totalSegundosRestantes / 3600);
                         const minutosRestantes = Math.floor((totalSegundosRestantes % 3600) / 60);
                         const segundosRestantes = totalSegundosRestantes % 60;
     
-                        // Formatear el resultado como un string HH:mm:ss
-                        const tiempoRestante = `${horasRestantes} horas, ${minutosRestantes} minutos y ${segundosRestantes} segundos`;
+                        // Formatear el resultado como un string
+
+                        const tiempoRestante = (horasRestantes > 0 ? (horasRestantes + " hora" + (horasRestantes == 1 ? ", " : "s, ")) : "") + 
+                                                (minutosRestantes > 0 ? (minutosRestantes + " minuto" + (minutosRestantes == 1 ? " y " : "s y ")) : "") + 
+                                                segundosRestantes + " segundo" + (segundosRestantes == 1 ? "" : "s");
+                        
                         function delay(ms: number) {
                             return new Promise(resolve => setTimeout(resolve, ms));
                         }
@@ -171,6 +198,19 @@ async function findTopCard(userId: string) {
       const card = await RankedCard.findOne({
         where: { owner: userId },
         order: [['value', 'DESC']],
+      });
+  
+      return card;
+
+    } catch (error) {
+      console.error('Error al buscar la carta:', error);
+    }
+}
+
+async function findAllTopCard() {
+    try {
+      const card = await RankedCard.findOne({
+        order: [['value', 'DESC']]
       });
   
       return card;

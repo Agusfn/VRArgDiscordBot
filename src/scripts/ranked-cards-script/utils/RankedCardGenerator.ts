@@ -6,6 +6,7 @@ const stackBlur = require('stackblur-canvas');
 
 const resourcesPath = "src/scripts/ranked-cards-script/utils/resources/"
 Canvas.registerFont(resourcesPath+'Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
+Canvas.registerFont(resourcesPath+'NotoSansJP-Medium.ttf', {  family:'Noto Sans JP', weight: 'normal', style: 'normal'});
 
 const difficultyNames = ["","Easy","","Normal","","Hard","","Expert","","ExpertPlus"];
 const difficultyNamesShort = ["","E","","N","","H","","Ex","","Ex+"];
@@ -90,8 +91,21 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     }
   }
   rgbSum = [rgbSum[0]/2400, rgbSum[1]/2400, rgbSum[2]/2400];
-  let brn = 0.62;
-  let textColor = [rgbSum[0] + brn*(255-rgbSum[0]), rgbSum[1] + brn*(255-rgbSum[1]), rgbSum[2] + brn*(255-rgbSum[2])];
+  let brn = 0.7;
+  let toAvgColor = [255,255,255];
+  if(stars >= 13) {
+    toAvgColor = [255,230,200];
+  }
+  else if(stars >= 12) {
+    toAvgColor = [255,200,255];
+  }
+  else if(stars >= 11) {
+    toAvgColor = [200,230,255];
+  }
+  else if(stars >= 10) {
+    toAvgColor = [200,255,230];
+  }
+  let textColor = [rgbSum[0] + brn*(toAvgColor[0]-rgbSum[0]), rgbSum[1] + brn*(toAvgColor[1]-rgbSum[1]), rgbSum[2] + brn*(toAvgColor[2]-rgbSum[2])];
   textColor = [Math.floor(textColor[0]), Math.floor(textColor[1]), Math.floor(textColor[2])];
   let textColorStyle = 'rgba('+textColor[0]+', '+textColor[1]+', '+textColor[2]+', 1)';
 
@@ -102,10 +116,40 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //oscurecer fondo
   ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  if(stars >= 13) {
+    ctx.fillStyle = 'rgba(100, 80, 0, 0.48)';
+  }
+  else if(stars >= 12) {
+    ctx.fillStyle = 'rgba(40, 0, 40, 0.39)';
+  }
+  else if(stars >= 11) {
+    ctx.fillStyle = 'rgba(0, 25, 40, 0.37)';
+  }
+  else if(stars >= 10) {
+    ctx.fillStyle = 'rgba(0, 40, 20, 0.35)';
+  }
+  else if(stars >= 8) {
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.35)';
+  }
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   //dibujar franja de la izquierda
   ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+  if(stars >= 13) {
+    ctx.fillStyle = 'rgba(255, 255, 50, 0.36)';
+  }
+  else if(stars >= 12) {
+    ctx.fillStyle = 'rgba(255, 50, 255, 0.34)';
+  }
+  else if(stars >= 11) {
+    ctx.fillStyle = 'rgba(50, 255, 200, 0.32)';
+  }
+  else if(stars >= 10) {
+    ctx.fillStyle = 'rgba(50, 255, 100, 0.3)';
+  }
+  else if(stars >= 8) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  }
   ctx.fillRect(0, 0, cornerSize, canvas.height);
 
   //dibujar cuadro de abajo
@@ -157,6 +201,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.textBaseline = 'bottom';
   const capHeightRatio = 0.5;//for Teko
   const capWidthRatio = 0.05;//for Teko
+  const goldColor = 'rgba(255, 200, 40, 1)';
   ctx.fillText(title.toUpperCase(), 2 + 78 - fontSize*capWidthRatio, 65 + fontSize*capHeightRatio);
 
   ctx.font = `28px Teko`;
@@ -165,14 +210,14 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //dibujar las estrellas del mapa
   ctx.fillStyle = 'yellow';
-  ctx.font = `26px sans-serif`;
+  ctx.font = `21px Noto Sans JP`;
 
   let starsText = ""
   for(var i = 0; i < Math.floor(stars); i++) {
     starsText = starsText + "★";
   }
   textWidth = ctx.measureText(starsText).width;
-  ctx.fillText(starsText, 77, 131);
+  ctx.fillText(starsText, 77, 128);
   ctx.font = `28px Teko`;
   if(stars == 0) {
     if(qualified) {
@@ -213,23 +258,23 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.fillText(levelAuthorName.toUpperCase(), 78, 435);
 
   //dibujar map data
-  ctx.font = `bold 20px Arial`;
+  ctx.font = `bold 20px Noto Sans JP`;
   ctx.textAlign = 'center';
   nps = Math.floor(nps*100)/100;
   ctx.fillText("BPM", 228-95, 505);
   ctx.fillText("NJS", 228, 505);
   ctx.fillText("NPS", 228+95, 505);
-  ctx.font = `26px Arial`;
+  ctx.font = `26px Noto Sans JP`;
   ctx.fillText(bpm, 228-95, 535);
   ctx.fillText(njs, 228, 535);
   ctx.fillText(nps, 228+95, 535);
   ctx.textAlign = 'right';
-  ctx.font = `21px Arial`;
+  ctx.font = `21px Noto Sans JP`;
   ctx.fillText(upvotes + "/" + downvotes, 380, 587);
 
   //dibujar año
   if(rankedDate) {
-    ctx.font = `bold 22px Arial`;
+    ctx.font = `bold 22px Noto Sans JP`;
     if(rankedDate.startsWith("19")) {
       rankedDate = "2018";
     }
@@ -253,7 +298,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     filteredTags = ["none"];
   }
   ctx.textAlign = 'left';
-  ctx.font = `20px Arial`;
+  ctx.font = `20px Noto Sans JP`;
 
   let spaceAdder = 0;
 
@@ -279,7 +324,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     ctx.restore();
     
     ctx.fillStyle = 'white';
-    ctx.fillText(displayTagText, cornerSize + 18 + spaceAdder, 458+10);
+    ctx.fillText(displayTagText, cornerSize + 18 + spaceAdder, 460+10);
   }
   
 
@@ -293,14 +338,14 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //dibujar la score bar
   ctx.textAlign = 'right';
-  ctx.font = `21px Arial`;
+  ctx.font = `21px Noto Sans JP`;
   ctx.fillStyle = '#f39c12';
   ctx.fillRect(cornerSize + 10, 560, 192, 30);
   ctx.fillStyle = '#00bc8c';
   ctx.fillRect(cornerSize + 10, 560, 192*score, 30);
   ctx.fillStyle = 'white';
   score = Math.floor(score*1000)/10;
-  ctx.fillText(score+"%", 190, 587);
+  ctx.fillText(score+"%", 190, 590);
 
   //agregar los badges si hay
   const chromaBadge = await loadImage(resourcesPath+"badge_chroma.png");
@@ -369,6 +414,62 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.lineTo(1, cornerSizeSmall);
   ctx.closePath();
   ctx.stroke();
+
+  if(stars >= 8) {
+    //dibujar extra borde
+    ctx.restore();
+
+    if(stars >= 13) {
+      ctx.strokeStyle = 'rgba(255, 200, 40, 1)';
+    }
+    else if(stars >= 12) {
+      ctx.strokeStyle = 'rgba(255, 50, 255, 1)';
+    }
+    else if(stars >= 11) {
+      ctx.strokeStyle = 'rgba(50, 200, 255, 1)';
+    }
+    else if(stars >= 10) {
+      ctx.strokeStyle = 'rgba(50, 255, 100, 1)';
+    }
+    else {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    }
+
+    ctx.lineWidth = 1.5;
+    const separation = 2;
+    ctx.beginPath();
+    ctx.moveTo(cornerSizeSmall,1+separation);
+    ctx.lineTo(canvas.width-cornerSize,1+separation);
+    ctx.lineTo(canvas.width-1-separation, cornerSize);
+    ctx.lineTo(canvas.width-1-separation, canvas.height-cornerSizeSmall);
+    ctx.lineTo(canvas.width-cornerSizeSmall, canvas.height-1-separation);
+    ctx.lineTo(cornerSize, canvas.height-1-separation);
+    ctx.lineTo(1+separation, canvas.height-cornerSize);
+    ctx.lineTo(1+separation, cornerSizeSmall);
+    ctx.closePath();
+    ctx.stroke();
+    //   
+  }
+
+  if(500*Math.random() < 1.0) {
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "rgba(0, 0, 0, 0)";
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.beginPath();
+    ctx.moveTo(0,540);
+    ctx.lineTo(0,400);
+    ctx.lineTo(400,60);
+    ctx.lineTo(400,200);
+    ctx.closePath();
+    ctx.fill();
+  }
+  if(100*Math.random() < 1.0) {
+    ctx.fillStyle = textColorStyle;
+    ctx.font = `bold 32px Noto Sans JP`;
+    ctx.fillText("XD", 392, 180);
+  }
+  
 
   const buffer = canvas.toBuffer('image/png');
   return [buffer, stars];

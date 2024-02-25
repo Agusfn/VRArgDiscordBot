@@ -15,18 +15,13 @@ const tagNames = ["speed", "challenge", "tech", "balanced", "dance-style", "accu
 const tagNamesDisplay = ["Speed", "Challenge", "Tech", "Balanced", "Dance", "Accuracy", "Fitness","?"];
 const tagsColors = ["rgb(255, 51, 51)","#ff6347","rgb(235, 0, 255)","rgb(255, 199, 0)","#3cb371","rgb(51, 218, 255)","#ffbbbb","#888888"];
 
-
+let curvePoints: number[][] = [];
+generateCurve();
 
 export async function generateRandomCard(userName: string ) {
   let ran = Math.random();
-  let val;
-  if(ran < 0.75) {
-    val = 0.57735*Math.sqrt(ran);
-  }
-  else {
-    val = -1*Math.sqrt(1-ran)+1
-  }
-  Math.min(Math.max(val, 0), 1);
+  let val = getProbability(ran);
+  val = Math.min(Math.max(val, 0), 1);;
   val = 13*val; // TODO obtener el mapa con mas stars
   let scoresaberInfo = await getLeaderboard(val);
   return generateCard(scoresaberInfo, userName);
@@ -508,5 +503,41 @@ async function getAPIData(url: string) {
     }
   } catch (error) {
     console.error('Error al obtener los datos:', error);
+  }
+}
+
+function getProbability(value: number) {
+  for(var i = 0; i < curvePoints.length-1; i++) {
+    if(value >= curvePoints[i][0] && value < curvePoints[i+1][0]) {
+      let distance = curvePoints[i+1][0] - curvePoints[i][0];
+      let pos = value - curvePoints[i][0];
+      let per = pos/distance;
+      return curvePoints[i][1] + per*(curvePoints[i+1][1] - curvePoints[i][1]);
+    }
+  }
+}
+
+//https://www.desmos.com/calculator/fe6akdvtc0
+function ProbabilityCurve(t: number) {
+  let a1 = [0,0];
+  let a2 = [0.4,1];
+  let a3 = [0.8,0.2];
+  let a4 = [1,1];
+  let a5 = pcf(a1[0],a1[1],a2[0],a2[1],t);
+  let a6 = pcf(a2[0],a2[1],a3[0],a3[1],t);
+  let a7 = pcf(a3[0],a3[1],a4[0],a4[1],t);
+  let a8 = pcf(a5[0],a5[1],a6[0],a6[1],t);
+  let a9 = pcf(a6[0],a6[1],a7[0],a7[1],t);
+  let a10 = pcf(a8[0],a8[1],a9[0],a9[1],t);
+  return a10;
+}
+
+function pcf(a: number, b: number, c: number, d: number, t: number) {
+  return [(1-t)*a+c*t, (1-t)*b+d*t];
+}
+
+function generateCurve() {
+  for(var i = 0; i < 100; i++) {
+    curvePoints.push(ProbabilityCurve(0.01*i));
   }
 }

@@ -16,3 +16,5 @@ ScriptLoader.registerScript(PlayerBirthdayScript)
 // Initialize config, database, ORM, etc.
 initializeApp()
 
+
+SlashCommands

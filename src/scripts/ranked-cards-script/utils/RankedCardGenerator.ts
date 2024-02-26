@@ -1,3 +1,5 @@
+import { RankedCard } from "../model/RankedCard";
+
 const axios = require('axios');
 const { createCanvas, loadImage } = require('canvas');
 const Canvas = require('canvas');
@@ -61,6 +63,12 @@ function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
 
 
 //CANVAS STUFF
+
+export function drawCardFromData(data: RankedCard) {
+  return drawCard(data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
+    data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, data.tags, data.rankedDate, 
+    data.userName, data.qualified)
+}
 
 async function drawCard(songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
     curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tags: [string], rankedDate: string, 
@@ -467,7 +475,13 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   
 
   const buffer = canvas.toBuffer('image/png');
-  return [buffer, stars];
+  const cardData = {
+    owner: "", date: new Date(),
+    songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
+    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
+    userName, qualified
+  }
+  return [buffer, cardData];
   //fs.writeFileSync('./card.png', buffer);
   //console.log("Carta dibujada");
 }
@@ -518,10 +532,11 @@ function getProbability(value: number) {
 }
 
 //https://www.desmos.com/calculator/fe6akdvtc0
+//https://www.desmos.com/calculator/0flhmtokny
 function ProbabilityCurve(t: number) {
   let a1 = [0,0];
-  let a2 = [0.4,1];
-  let a3 = [0.8,0.2];
+  let a2 = [0.258,0.624];
+  let a3 = [0.885,0.163];
   let a4 = [1,1];
   let a5 = pcf(a1[0],a1[1],a2[0],a2[1],t);
   let a6 = pcf(a2[0],a2[1],a3[0],a3[1],t);

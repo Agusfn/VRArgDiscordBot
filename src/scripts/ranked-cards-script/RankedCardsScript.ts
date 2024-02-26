@@ -1,7 +1,7 @@
 import { Script } from "@lib/index"
 import { Message, MessageButton, MessageActionRow } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
-import { generateHashCard, generateRandomCard } from "./utils/RankedCardGenerator"
+import { generateHashCard, generateRandomCard, drawCardFromData } from "./utils/RankedCardGenerator"
 import logger from "@utils/logger"
 import { RankedCard } from "./model/RankedCard"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
@@ -38,8 +38,8 @@ export class RankedCardsScript extends Script {
                 
                 const carta = await findTopCard(message.author.id);
                 if(carta) {
-                    let imageBuffer = carta.get('image');
-                    sendCard(message, imageBuffer);
+                    let cartaGenerada = await drawCardFromData(carta);
+                    sendCard(message, cartaGenerada[0]);
                 }
                 else {
                     message.reply("Ché no tenés cartas");
@@ -61,8 +61,8 @@ export class RankedCardsScript extends Script {
                 
                 const carta = await findAllTopCard();
                 if(carta) {
-                    let imageBuffer = carta.get('image');
-                    sendCard(message, imageBuffer);
+                    let cartaGenerada = await drawCardFromData(carta);
+                    sendCard(message, cartaGenerada[0]);
                 }
                 else {
                     message.reply("No hay cartas");
@@ -97,7 +97,7 @@ export class RankedCardsScript extends Script {
                     const hoursSince = timeSince / (1000 * 60 * 60);
     
                     // Verificar si la diferencia es menor a 24 horas
-                    if (hoursSince < 23) {
+                    if (hoursSince < 0) {
                         // Convertir a horas, minutos y segundos para mostrar
                         const horas = Math.floor(hoursSince);
                         const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
@@ -147,12 +147,8 @@ export class RankedCardsScript extends Script {
                     for(var i = 0; i < 4; i++) {
                         generatedCard = await generateRandomCard(message.author.username);
                         imageBuffers.push(generatedCard[0]);
-                        const cardData = {
-                            owner: message.author.id,
-                            date: new Date(),
-                            value: generatedCard[1],
-                            image: generatedCard[0]
-                        };
+                        const cardData = generatedCard[1];
+                        cardData.owner = message.author.id;                        
                         saveCard(cardData);
                     }
                 }
@@ -183,7 +179,7 @@ async function sendCard(message: Message, imageBuffer: any) {
         }]});
 }
 
-async function saveCard(cardData: { owner: string; date: Date; value: number; image: Blob }) {
+async function saveCard(cardData: any) {
     try {
       const sequelize =  SequelizeDBManager.getInstance();
       await sequelize.sync();
@@ -197,7 +193,7 @@ async function findTopCard(userId: string) {
     try {
       const card = await RankedCard.findOne({
         where: { owner: userId },
-        order: [['value', 'DESC']],
+        order: [['stars', 'DESC']],
       });
   
       return card;
@@ -210,7 +206,7 @@ async function findTopCard(userId: string) {
 async function findAllTopCard() {
     try {
       const card = await RankedCard.findOne({
-        order: [['value', 'DESC']]
+        order: [['stars', 'DESC']]
       });
   
       return card;

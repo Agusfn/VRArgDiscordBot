@@ -1,5 +1,5 @@
 import { Script } from "@lib/index"
-import { Message, MessageButton, MessageActionRow } from "discord.js"
+import { Message } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
 import { generateHashCard, generateRandomCard } from "./utils/RankedCardGenerator"
 import logger from "@utils/logger"

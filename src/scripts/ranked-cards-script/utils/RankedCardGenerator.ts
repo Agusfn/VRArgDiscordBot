@@ -255,6 +255,90 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.drawImage(imagenCover, 75, 130, 265, 265);
   ctx.restore();
 
+  //rainbow shiny
+
+  if(500*Math.random() < 1.0) {
+
+    const rba = 0.2;
+    const rainbow = ['rgba(255, 0, 0, '+rba+')',
+                  'rgba(255, 125, 0, '+rba+')',
+                  'rgba(255, 255, 0, '+rba+')',
+                  'rgba(0, 255, 0, '+rba+')',
+                  'rgba(0, 255, 255, '+rba+')',
+                  'rgba(0, 0, 255, '+rba+')',
+                  'rgba(255, 0, 255, '+rba+')'];
+
+
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "rgba(0, 0, 0, 0)";
+
+
+    ctx.fillStyle = rainbow[0];
+    ctx.beginPath();
+    ctx.moveTo(0,143);
+    ctx.lineTo(0,0);
+    ctx.lineTo(143,0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[1];
+    ctx.beginPath();
+    ctx.moveTo(0,286);
+    ctx.lineTo(0,143);
+    ctx.lineTo(143,0);
+    ctx.lineTo(286,0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[2];
+    ctx.beginPath();
+    ctx.moveTo(0,429);
+    ctx.lineTo(0,286);
+    ctx.lineTo(286,0);
+    ctx.lineTo(400,0);
+    ctx.lineTo(400,29);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[3];
+    ctx.beginPath();
+    ctx.moveTo(0,571);
+    ctx.lineTo(0,429);
+    ctx.lineTo(400,29);
+    ctx.lineTo(400,171);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[4];
+    ctx.beginPath();
+    ctx.moveTo(0,600);
+    ctx.lineTo(0,571);
+    ctx.lineTo(400,171);
+    ctx.lineTo(400,314);
+    ctx.lineTo(114,600);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[5];
+    ctx.beginPath();
+    ctx.moveTo(114,600);
+    ctx.lineTo(400,314);
+    ctx.lineTo(400,457);
+    ctx.lineTo(257,600);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[6];
+    ctx.beginPath();
+    ctx.moveTo(257,600);
+    ctx.lineTo(400,600);
+    ctx.lineTo(400,457);
+    ctx.closePath();
+    ctx.fill();
+
+  }
+
   //dibujar mappers
   ctx.fillStyle = textColorStyle;
   ctx.font = `28px Teko`;
@@ -365,6 +449,13 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     ctx.drawImage(chromaBadge, 8, 150, 50, 50);
   }
 
+  //xd
+  if(100*Math.random() < 1.0) {
+    ctx.fillStyle = textColorStyle;
+    ctx.font = `bold 32px Teko`;
+    ctx.fillText("XD", 392, 180);
+  }
+
   //recortar esquinas
   ctx.save();
   ctx.globalCompositeOperation = 'destination-out';
@@ -451,28 +542,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     ctx.lineTo(1+separation, cornerSizeSmall);
     ctx.closePath();
     ctx.stroke();
-    //   
   }
-
-  if(500*Math.random() < 1.0) {
-    ctx.restore();
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = "rgba(0, 0, 0, 0)";
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.moveTo(0,540);
-    ctx.lineTo(0,400);
-    ctx.lineTo(400,60);
-    ctx.lineTo(400,200);
-    ctx.closePath();
-    ctx.fill();
-  }
-  if(100*Math.random() < 1.0) {
-    ctx.fillStyle = textColorStyle;
-    ctx.font = `bold 32px Noto Sans JP`;
-    ctx.fillText("XD", 392, 180);
-  }
-  
 
   const buffer = canvas.toBuffer('image/png');
   const cardData = {

@@ -1,13 +1,13 @@
 import { User } from "@models/index"
 import { RankedCard } from "../model/RankedCard"
+import { UserCard } from "../model/UserCard"
 
 export default () => {
 
-    User.hasOne(RankedCard, {
-        foreignKey: "discordUserId"
+    RankedCard.belongsTo(UserCard, {
+        foreignKey: "userCardId"
     })
-    RankedCard.belongsTo(User, {
-        foreignKey: "discordUserId"
+    UserCard.hasMany(RankedCard, {
+        foreignKey: "userCardId"
     })
-    
 }

@@ -6,7 +6,7 @@ const Canvas = require('canvas');
 const fs = require('fs');
 const stackBlur = require('stackblur-canvas');
 
-const resourcesPath = "src/scripts/ranked-cards-script/utils/resources/"
+const resourcesPath = "resources/ranked-cards-script/"
 Canvas.registerFont(resourcesPath+'Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
 Canvas.registerFont(resourcesPath+'NotoSansJP-Medium.ttf', {  family:'Noto Sans JP', weight: 'normal', style: 'normal'});
 

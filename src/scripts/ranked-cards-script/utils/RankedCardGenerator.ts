@@ -20,27 +20,27 @@ const tagsColors = ["rgb(255, 51, 51)","#ff6347","rgb(235, 0, 255)","rgb(255, 19
 let curvePoints: number[][] = [];
 generateCurve();
 
-export async function generateRandomCard(userName: string ) {
+export async function generateRandomCard(userName: string, shiny: boolean ) {
   let ran = Math.random();
   let val = getProbability(ran);
   val = Math.min(Math.max(val, 0), 1);;
   val = 13*val; // TODO obtener el mapa con mas stars
   let scoresaberInfo = await getLeaderboard(val);
-  return generateCard(scoresaberInfo, userName);
+  return generateCard(scoresaberInfo, userName, shiny);
 }
 
 export async function generateHashCard(hash: string, difficulty: number) {
   let scoresaberInfo = await getLeaderboardByHash(hash, difficulty);
-  return generateCard(scoresaberInfo, "admin");
+  return generateCard(scoresaberInfo, "admin", false);
 }
 
-async function generateCard(scoresaberInfo: any, userName: string) {
+async function generateCard(scoresaberInfo: any, userName: string, shiny: boolean) {
   let beatsaverInfo = await getBeatSaverInfo(scoresaberInfo.songHash);
   let mapData = getBeatsaverDifficultyData(beatsaverInfo, difficultyNames[scoresaberInfo.difficulty.difficulty]);
   return drawCard(scoresaberInfo.songName, scoresaberInfo.songSubName, scoresaberInfo.songAuthorName, scoresaberInfo.levelAuthorName, 
     scoresaberInfo.coverImage, scoresaberInfo.difficulty.difficulty, scoresaberInfo.stars, beatsaverInfo.curator?true:false, 
     mapData.chroma, beatsaverInfo.metadata.bpm, mapData.nps, mapData.njs, beatsaverInfo.stats.upvotes, beatsaverInfo.stats.downvotes, 
-    beatsaverInfo.stats.score, beatsaverInfo.tags, scoresaberInfo.rankedDate, userName, scoresaberInfo.qualified);
+    beatsaverInfo.stats.score, beatsaverInfo.tags, scoresaberInfo.rankedDate, userName, scoresaberInfo.qualified, shiny);
 }
 
 function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
@@ -67,12 +67,12 @@ function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
 export function drawCardFromData(data: RankedCard) {
   return drawCard(data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
     data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, data.tags, data.rankedDate, 
-    data.userName, data.qualified)
+    data.userName, data.qualified, data.shiny)
 }
 
 async function drawCard(songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
     curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tags: [string], rankedDate: string, 
-    userName: string, qualified: boolean) {
+    userName: string, qualified: boolean, shiny: boolean) {
   const canvas = createCanvas(400, 600);
   const ctx = canvas.getContext('2d');
 
@@ -257,7 +257,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //rainbow shiny
 
-  if(500*Math.random() < 1.0) {
+  if(shiny) {
 
     const rba = 0.2;
     const rainbow = ['rgba(255, 0, 0, '+rba+')',
@@ -450,11 +450,11 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   }
 
   //xd
-  if(100*Math.random() < 1.0) {
-    ctx.fillStyle = textColorStyle;
-    ctx.font = `bold 32px Teko`;
-    ctx.fillText("XD", 392, 180);
-  }
+  //if(100*Math.random() < 1.0) {
+  //  ctx.fillStyle = textColorStyle;
+  //  ctx.font = `bold 32px Teko`;
+  //  ctx.fillText("XD", 392, 180);
+  //}
 
   //recortar esquinas
   ctx.save();
@@ -545,11 +545,12 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   }
 
   const buffer = canvas.toBuffer('image/png');
+  score = score/100;
   const cardData = {
-    owner: "", date: new Date(),
+    userCardId: 0, date: new Date(),
     songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
     curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
-    userName, qualified
+    userName, qualified, shiny
   }
   return [buffer, cardData];
   //fs.writeFileSync('./card.png', buffer);

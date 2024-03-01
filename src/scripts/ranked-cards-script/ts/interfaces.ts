@@ -1,5 +1,6 @@
 export interface RankedCardI {
-  owner: string,
+  id: number,
+  userCardId: number,
   date: Date,
   songName: string, 
   songSubName: string, 
@@ -19,5 +20,13 @@ export interface RankedCardI {
   tags: [string], 
   rankedDate: string, 
   userName: string, 
-  qualified: boolean
+  qualified: boolean,
+  shiny: boolean
+}
+
+export interface UserCardI {
+  id: number,
+  discordUserId: string,
+  lastDraw: Date,
+  money: number
 }

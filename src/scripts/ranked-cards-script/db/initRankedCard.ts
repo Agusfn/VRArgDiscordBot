@@ -1,22 +1,24 @@
 import { DataTypes as Types, Sequelize, Op } from "sequelize"
-import { RankedCard } from "../model/RankedCard"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
-import { User } from "@models/index"
+import { RankedCard } from "../model/RankedCard"
+import { UserCard } from "../model/UserCard"
 
 export default () => {
 
     RankedCard.init({
-        owner: {
-            type: Types.STRING,
+        id: {
+            type: Types.INTEGER,
+            primaryKey: true,
+            autoIncrement: true
+        },
+        userCardId: {
+            type: Types.INTEGER,
             references: {
-                model: User,
-                key: "discordUserId"
+                model: UserCard,
+                key: "id"
             }
         },
-        date: {
-            type: Types.DATE,
-            primaryKey: true
-        },
+        date: {type: Types.DATE},
         songName: {type: Types.STRING}, 
         songSubName: {type: Types.STRING}, 
         songAuthorName: {type: Types.STRING}, 
@@ -42,17 +44,18 @@ export default () => {
             }}, 
         rankedDate: {type: Types.STRING}, 
         userName: {type: Types.STRING}, 
-        qualified: {type: Types.BOOLEAN}
+        qualified: {type: Types.BOOLEAN},
+        shiny: {type: Types.BOOLEAN}
     }, { 
         sequelize: SequelizeDBManager.getInstance(), 
         modelName: "RankedCard",
-        tableName: "ranked_cards",
+        tableName: "rankedcards_cards",
         scopes: { // query scopes
             /** Query scope to find a player by their discord user id */
-            withDiscordUserId(discordUserId: string) {
+            withUserCardId(userCardId: number) {
                 return {
                     where: {
-                        discordUserId: discordUserId
+                        userCardId: userCardId
                     }
                 }
             }

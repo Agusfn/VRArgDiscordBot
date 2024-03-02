@@ -1,5 +1,5 @@
 import { Discord, Script } from "@lib/index"
-import { Message, MessageButton, MessageActionRow } from "discord.js"
+import { Message, ButtonStyle, ActionRowBuilder, ButtonBuilder } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
 import { generateHashCard, generateRandomCard, drawCardFromData } from "./utils/RankedCardGenerator"
 import logger from "@utils/logger"
@@ -203,13 +203,12 @@ async function sendCard(message: Message, imageBuffer: any) {
 }
 
 async function sendButton(message: Message, cardId: number, cardPrice: number) {
-    const row = new MessageActionRow()
-    .addComponents(
-        new MessageButton()
-            .setCustomId("sellcard_" + cardId) // Este ID se usará para identificar el botón en el evento de interacción
-            .setLabel('Vender esta carta por ' + cardPrice + ' Pesos') // Este es el texto que aparecerá en el botón
-            .setStyle('SECONDARY'), // Esto define el color/estilo del botón, los estilos pueden ser PRIMARY, SECONDARY, SUCCESS, DANGER, o LINK
-    );
+    const button = new ButtonBuilder()
+        .setCustomId("sellcard_" + cardId)
+        .setLabel('Vender esta carta por ' + cardPrice + ' Pesos')
+        .setStyle(ButtonStyle.Secondary);
+    
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
     await message.channel.send({components: [row] });
 }
 

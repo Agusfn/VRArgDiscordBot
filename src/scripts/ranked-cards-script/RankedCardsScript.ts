@@ -1,11 +1,13 @@
-import { Script } from "@lib/index"
-import { Message } from "discord.js"
+import { Discord, Script } from "@lib/index"
+import { Message, MessageButton, MessageActionRow } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
-import { generateHashCard, generateRandomCard } from "./utils/RankedCardGenerator"
+import { generateHashCard, generateRandomCard, drawCardFromData } from "./utils/RankedCardGenerator"
 import logger from "@utils/logger"
 import { RankedCard } from "./model/RankedCard"
+import { UserCard } from "./model/UserCard"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 import initModels from "./db/initModels"
+// import { AnyARecord } from "dns"
 
 export class RankedCardsScript extends Script {
 
@@ -32,14 +34,24 @@ export class RankedCardsScript extends Script {
 
     public async onInitialized() {
 
+        Discord.getInstance().on('interactionCreate', async interaction => {
+          if (!interaction.isButton()) return; // Verificar si la interacción es un botón
+          
+          if (interaction.customId.startsWith("sellcard")) {
+              const cardId = parseInt(interaction.customId.split("_")[1]);
+              await sellCard(interaction.user.id, cardId);
+              await interaction.reply('Proximamente...');
+          }
+        });
+
         CommandManager.newCommand("topcarta", null, async (message: Message, args) => {
             const loading = await this.startLoading(message, "Cargando");
             try {
-                
-                const carta = await findTopCard(message.author.id);
+                const userCarta = await findOrCreateUser(message.author.id);
+                const carta = await findTopCard(userCarta[0].id);
                 if(carta) {
-                    let imageBuffer = carta.get('image');
-                    sendCard(message, imageBuffer);
+                    let cartaGenerada = await drawCardFromData(carta);
+                    sendCard(message, cartaGenerada[0]);
                 }
                 else {
                     message.reply("Ché no tenés cartas");
@@ -55,6 +67,29 @@ export class RankedCardsScript extends Script {
 
         }, "Muestra tu carta Top", "Ranked Cards")
 
+        CommandManager.newCommand("topcartaglobal", null, async (message: Message, args) => {
+            const loading = await this.startLoading(message, "Cargando");
+            try {
+                
+                const carta = await findAllTopCard();
+                if(carta) {
+                    let cartaGenerada = await drawCardFromData(carta);
+                    sendCard(message, cartaGenerada[0]);
+                }
+                else {
+                    message.reply("No hay cartas");
+                }
+
+                this.stopLoading(loading);
+            } catch (error) {
+                logger.error(error);
+                this.stopLoading(loading);
+                message.reply("Hubo un error al intentar obtener la carta.")
+            }
+            
+
+        }, "Muestra la carta top global", "Ranked Cards")
+
         CommandManager.newCommand("cartas", "", async (message: Message, args) => {
 
             let isHash = false;
@@ -63,31 +98,36 @@ export class RankedCardsScript extends Script {
                 isHash = true;
             }
 
+            const userCarta = await findOrCreateUser(message.author.id);
+
             if(!isHash) {
                 try {
-                    const ultimaCarta = await findLastCard(message.author.id);
     
-                    const lastDate = ultimaCarta.get('date');
+                    const lastDraw = userCarta[0].lastDraw ? userCarta[0].lastDraw : new Date(0);
                     const now = new Date();
-                    const timeSince = now.getTime() - lastDate.getTime();
+                    const timeSince = now.getTime() - lastDraw.getTime();
                     
                     const hoursSince = timeSince / (1000 * 60 * 60);
     
                     // Verificar si la diferencia es menor a 24 horas
-                    if (hoursSince < 24) {
+                    if (hoursSince < 23) {
                         // Convertir a horas, minutos y segundos para mostrar
                         const horas = Math.floor(hoursSince);
                         const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
                         const segundos = Math.floor((timeSince / 1000) % 60);
     
                         // Tiempo restante para completar 24 horas
-                        const totalSegundosRestantes = (24 * 60 * 60) - (horas * 60 * 60 + minutos * 60 + segundos);
+                        const totalSegundosRestantes = (23 * 60 * 60) - (horas * 60 * 60 + minutos * 60 + segundos);
                         const horasRestantes = Math.floor(totalSegundosRestantes / 3600);
                         const minutosRestantes = Math.floor((totalSegundosRestantes % 3600) / 60);
                         const segundosRestantes = totalSegundosRestantes % 60;
     
-                        // Formatear el resultado como un string HH:mm:ss
-                        const tiempoRestante = `${horasRestantes} horas, ${minutosRestantes} minutos y ${segundosRestantes} segundos`;
+                        // Formatear el resultado como un string
+
+                        const tiempoRestante = (horasRestantes > 0 ? (horasRestantes + " hora" + (horasRestantes == 1 ? ", " : "s, ")) : "") + 
+                                                (minutosRestantes > 0 ? (minutosRestantes + " minuto" + (minutosRestantes == 1 ? " y " : "s y ")) : "") + 
+                                                segundosRestantes + " segundo" + (segundosRestantes == 1 ? "" : "s");
+                        
                         function delay(ms: number) {
                             return new Promise(resolve => setTimeout(resolve, ms));
                         }
@@ -97,6 +137,9 @@ export class RankedCardsScript extends Script {
                             await message.channel.send("Ni una hora ha pasado...");
                         }
                         return;
+                    }
+                    else {
+                        updateLastDraw(message.author.id, now);
                     }
                 }
                 catch(error) {
@@ -110,23 +153,25 @@ export class RankedCardsScript extends Script {
             try {
 
                 let imageBuffers = [];
+                let cardPrices = [];
+                let cardIds = [];
                 
                 if(isHash) {
                     let generatedCard = await generateHashCard(args[0], args[1]);
                     imageBuffers.push(generatedCard[0]);
+                    cardPrices.push(0);
                 }
                 else {
                     let generatedCard;
                     for(var i = 0; i < 4; i++) {
-                        generatedCard = await generateRandomCard(message.author.username);
+                        let shiny = 500*Math.random() < 1;
+                        generatedCard = await generateRandomCard(message.author.username, shiny);
                         imageBuffers.push(generatedCard[0]);
-                        const cardData = {
-                            owner: message.author.id,
-                            date: new Date(),
-                            value: generatedCard[1],
-                            image: generatedCard[0]
-                        };
-                        saveCard(cardData);
+                        cardPrices.push(calculateCardPrice(generatedCard[1].stars,generatedCard[1].curated,generatedCard[1].chroma,generatedCard[1].shiny))
+                        const cardData = generatedCard[1];
+                        cardData.userCardId = userCarta[0].id;                       
+                        let cartId = await saveCard(cardData);
+                        cardIds.push(cartId);
                     }
                 }
     
@@ -135,6 +180,7 @@ export class RankedCardsScript extends Script {
                 // Enviar carta
                 for(var i = 0; i < imageBuffers.length; i++) {
                     await sendCard(message, imageBuffers[i]);
+                    await sendButton(message, cardIds[i], cardPrices[i]);
                 }                
 
             } catch (error) {
@@ -156,21 +202,46 @@ async function sendCard(message: Message, imageBuffer: any) {
         }]});
 }
 
-async function saveCard(cardData: { owner: string; date: Date; value: number; image: Blob }) {
+async function sendButton(message: Message, cardId: number, cardPrice: number) {
+    const row = new MessageActionRow()
+    .addComponents(
+        new MessageButton()
+            .setCustomId("sellcard_" + cardId) // Este ID se usará para identificar el botón en el evento de interacción
+            .setLabel('Vender esta carta por ' + cardPrice + ' Pesos') // Este es el texto que aparecerá en el botón
+            .setStyle('SECONDARY'), // Esto define el color/estilo del botón, los estilos pueden ser PRIMARY, SECONDARY, SUCCESS, DANGER, o LINK
+    );
+    await message.channel.send({components: [row] });
+}
+
+async function saveCard(cardData: any) {
     try {
       const sequelize =  SequelizeDBManager.getInstance();
       await sequelize.sync();
-      await RankedCard.create(cardData);
+      const card = await RankedCard.create(cardData);
+      return card.id;
     } catch (error) {
       console.error('Error al guardar la carta:', error);
     }
 }
 
-async function findTopCard(userId: string) {
+async function findTopCard(userId: number) {
     try {
       const card = await RankedCard.findOne({
-        where: { owner: userId },
-        order: [['value', 'DESC']],
+        where: { userCardId: userId },
+        order: [['stars', 'DESC']],
+      });
+  
+      return card;
+
+    } catch (error) {
+      console.error('Error al buscar la carta:', error);
+    }
+}
+
+async function findAllTopCard() {
+    try {
+      const card = await RankedCard.findOne({
+        order: [['stars', 'DESC']]
       });
   
       return card;
@@ -211,3 +282,65 @@ async function deleteAllCards(userId: string) {
         console.error('Error al eliminar las cartas:', error);
     }
 }
+
+async function findOrCreateUser(userId: string) {
+    try {
+      const user = await UserCard.findOrCreate({
+        where: { discordUserId: userId }
+      });
+  
+      return user;
+
+    } catch (error) {
+      console.error('Error al buscar o crear el usuario:', error);
+    }
+}
+
+async function sellCard(discordUserId: string, cardId: number) {
+  console.log(discordUserId, cardId);
+}
+
+function calculateCardPrice(stars: number, curated: boolean, chroma: boolean, shiny: boolean) {
+  let value = 5000;
+  const sp = stars/13; //TO-DO obtener el numero maximo de stars de la base de datos al iniciar la aplicacion;
+  const starsWeight = sp*sp*sp*sp;
+  value = value*starsWeight;
+  if(curated) {
+    value = value*1.5;
+  }
+  if(chroma) {
+    value = value*1.2;
+  }
+  if(shiny) {
+    value = value*20;
+  }
+  return Math.round(value);
+}
+
+function updateLastDraw(discordUserId: string, newLastDrawValue: Date) {
+    return UserCard.update(
+      { lastDraw: newLastDrawValue }, // nuevos valores para actualizar
+      { where: { discordUserId: discordUserId } } // criterio para buscar el registro a actualizar
+    )
+    .then(result => {
+      return result;
+    })
+    .catch(error => {
+      console.error('Error al actualizar LastDraw:', error);
+      throw error;
+    });
+  }
+
+  function updateMoney(discordUserId: string, newMoneyValue: number) {
+    return UserCard.update(
+      { money: newMoneyValue }, // nuevos valores para actualizar
+      { where: { discordUserId: discordUserId } } // criterio para buscar el registro a actualizar
+    )
+    .then(result => {
+      return result;
+    })
+    .catch(error => {
+      console.error('Error al actualizar Money:', error);
+      throw error;
+    });
+  }

@@ -17,6 +17,9 @@
 ## Stop:
 >forever stop compiled/index.js
 
+## Install fonts
+
+If there are custom fonts, remember to install them in the target OS environment.
 
 # Install and start BsPoolMakerAPI
 

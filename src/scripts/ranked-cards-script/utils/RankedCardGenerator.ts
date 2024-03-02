@@ -1,11 +1,14 @@
+import { RankedCard } from "../model/RankedCard";
+
 const axios = require('axios');
 const { createCanvas, loadImage } = require('canvas');
 const Canvas = require('canvas');
 const fs = require('fs');
 const stackBlur = require('stackblur-canvas');
 
-const resourcesPath = "src/scripts/ranked-cards-script/utils/resources/"
+const resourcesPath = "resources/ranked-cards-script/"
 Canvas.registerFont(resourcesPath+'Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
+Canvas.registerFont(resourcesPath+'NotoSansJP-Medium.ttf', {  family:'Noto Sans JP', weight: 'normal', style: 'normal'});
 
 const difficultyNames = ["","Easy","","Normal","","Hard","","Expert","","ExpertPlus"];
 const difficultyNamesShort = ["","E","","N","","H","","Ex","","Ex+"];
@@ -14,35 +17,30 @@ const tagNames = ["speed", "challenge", "tech", "balanced", "dance-style", "accu
 const tagNamesDisplay = ["Speed", "Challenge", "Tech", "Balanced", "Dance", "Accuracy", "Fitness","?"];
 const tagsColors = ["rgb(255, 51, 51)","#ff6347","rgb(235, 0, 255)","rgb(255, 199, 0)","#3cb371","rgb(51, 218, 255)","#ffbbbb","#888888"];
 
+let curvePoints: number[][] = [];
+generateCurve();
 
-
-export async function generateRandomCard(userName: string ) {
+export async function generateRandomCard(userName: string, shiny: boolean ) {
   let ran = Math.random();
-  let val;
-  if(ran < 0.75) {
-    val = 0.57735*Math.sqrt(ran);
-  }
-  else {
-    val = -1*Math.sqrt(1-ran)+1
-  }
-  Math.min(Math.max(val, 0), 1);
+  let val = getProbability(ran);
+  val = Math.min(Math.max(val, 0), 1);;
   val = 13*val; // TODO obtener el mapa con mas stars
   let scoresaberInfo = await getLeaderboard(val);
-  return generateCard(scoresaberInfo, userName);
+  return generateCard(scoresaberInfo, userName, shiny);
 }
 
 export async function generateHashCard(hash: string, difficulty: number) {
   let scoresaberInfo = await getLeaderboardByHash(hash, difficulty);
-  return generateCard(scoresaberInfo, "admin");
+  return generateCard(scoresaberInfo, "admin", false);
 }
 
-async function generateCard(scoresaberInfo: any, userName: string) {
+async function generateCard(scoresaberInfo: any, userName: string, shiny: boolean) {
   let beatsaverInfo = await getBeatSaverInfo(scoresaberInfo.songHash);
   let mapData = getBeatsaverDifficultyData(beatsaverInfo, difficultyNames[scoresaberInfo.difficulty.difficulty]);
   return drawCard(scoresaberInfo.songName, scoresaberInfo.songSubName, scoresaberInfo.songAuthorName, scoresaberInfo.levelAuthorName, 
     scoresaberInfo.coverImage, scoresaberInfo.difficulty.difficulty, scoresaberInfo.stars, beatsaverInfo.curator?true:false, 
     mapData.chroma, beatsaverInfo.metadata.bpm, mapData.nps, mapData.njs, beatsaverInfo.stats.upvotes, beatsaverInfo.stats.downvotes, 
-    beatsaverInfo.stats.score, beatsaverInfo.tags, scoresaberInfo.rankedDate, userName, scoresaberInfo.qualified);
+    beatsaverInfo.stats.score, beatsaverInfo.tags, scoresaberInfo.rankedDate, userName, scoresaberInfo.qualified, shiny);
 }
 
 function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
@@ -66,9 +64,15 @@ function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
 
 //CANVAS STUFF
 
+export function drawCardFromData(data: RankedCard) {
+  return drawCard(data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
+    data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, data.tags, data.rankedDate, 
+    data.userName, data.qualified, data.shiny)
+}
+
 async function drawCard(songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
     curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tags: [string], rankedDate: string, 
-    userName: string, qualified: boolean) {
+    userName: string, qualified: boolean, shiny: boolean) {
   const canvas = createCanvas(400, 600);
   const ctx = canvas.getContext('2d');
 
@@ -90,8 +94,21 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     }
   }
   rgbSum = [rgbSum[0]/2400, rgbSum[1]/2400, rgbSum[2]/2400];
-  let brn = 0.62;
-  let textColor = [rgbSum[0] + brn*(255-rgbSum[0]), rgbSum[1] + brn*(255-rgbSum[1]), rgbSum[2] + brn*(255-rgbSum[2])];
+  let brn = 0.7;
+  let toAvgColor = [255,255,255];
+  if(stars >= 13) {
+    toAvgColor = [255,230,200];
+  }
+  else if(stars >= 12) {
+    toAvgColor = [255,200,255];
+  }
+  else if(stars >= 11) {
+    toAvgColor = [200,230,255];
+  }
+  else if(stars >= 10) {
+    toAvgColor = [200,255,230];
+  }
+  let textColor = [rgbSum[0] + brn*(toAvgColor[0]-rgbSum[0]), rgbSum[1] + brn*(toAvgColor[1]-rgbSum[1]), rgbSum[2] + brn*(toAvgColor[2]-rgbSum[2])];
   textColor = [Math.floor(textColor[0]), Math.floor(textColor[1]), Math.floor(textColor[2])];
   let textColorStyle = 'rgba('+textColor[0]+', '+textColor[1]+', '+textColor[2]+', 1)';
 
@@ -102,10 +119,40 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //oscurecer fondo
   ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  if(stars >= 13) {
+    ctx.fillStyle = 'rgba(100, 80, 0, 0.48)';
+  }
+  else if(stars >= 12) {
+    ctx.fillStyle = 'rgba(40, 0, 40, 0.39)';
+  }
+  else if(stars >= 11) {
+    ctx.fillStyle = 'rgba(0, 25, 40, 0.37)';
+  }
+  else if(stars >= 10) {
+    ctx.fillStyle = 'rgba(0, 40, 20, 0.35)';
+  }
+  else if(stars >= 8) {
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.35)';
+  }
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   //dibujar franja de la izquierda
   ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+  if(stars >= 13) {
+    ctx.fillStyle = 'rgba(255, 255, 50, 0.36)';
+  }
+  else if(stars >= 12) {
+    ctx.fillStyle = 'rgba(255, 50, 255, 0.34)';
+  }
+  else if(stars >= 11) {
+    ctx.fillStyle = 'rgba(50, 255, 200, 0.32)';
+  }
+  else if(stars >= 10) {
+    ctx.fillStyle = 'rgba(50, 255, 100, 0.3)';
+  }
+  else if(stars >= 8) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  }
   ctx.fillRect(0, 0, cornerSize, canvas.height);
 
   //dibujar cuadro de abajo
@@ -157,6 +204,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.textBaseline = 'bottom';
   const capHeightRatio = 0.5;//for Teko
   const capWidthRatio = 0.05;//for Teko
+  const goldColor = 'rgba(255, 200, 40, 1)';
   ctx.fillText(title.toUpperCase(), 2 + 78 - fontSize*capWidthRatio, 65 + fontSize*capHeightRatio);
 
   ctx.font = `28px Teko`;
@@ -165,14 +213,14 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //dibujar las estrellas del mapa
   ctx.fillStyle = 'yellow';
-  ctx.font = `26px sans-serif`;
+  ctx.font = `21px Noto Sans JP`;
 
   let starsText = ""
   for(var i = 0; i < Math.floor(stars); i++) {
     starsText = starsText + "★";
   }
   textWidth = ctx.measureText(starsText).width;
-  ctx.fillText(starsText, 77, 131);
+  ctx.fillText(starsText, 77, 128);
   ctx.font = `28px Teko`;
   if(stars == 0) {
     if(qualified) {
@@ -207,29 +255,113 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.drawImage(imagenCover, 75, 130, 265, 265);
   ctx.restore();
 
+  //rainbow shiny
+
+  if(shiny) {
+
+    const rba = 0.2;
+    const rainbow = ['rgba(255, 0, 0, '+rba+')',
+                  'rgba(255, 125, 0, '+rba+')',
+                  'rgba(255, 255, 0, '+rba+')',
+                  'rgba(0, 255, 0, '+rba+')',
+                  'rgba(0, 255, 255, '+rba+')',
+                  'rgba(0, 0, 255, '+rba+')',
+                  'rgba(255, 0, 255, '+rba+')'];
+
+
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "rgba(0, 0, 0, 0)";
+
+
+    ctx.fillStyle = rainbow[0];
+    ctx.beginPath();
+    ctx.moveTo(0,143);
+    ctx.lineTo(0,0);
+    ctx.lineTo(143,0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[1];
+    ctx.beginPath();
+    ctx.moveTo(0,286);
+    ctx.lineTo(0,143);
+    ctx.lineTo(143,0);
+    ctx.lineTo(286,0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[2];
+    ctx.beginPath();
+    ctx.moveTo(0,429);
+    ctx.lineTo(0,286);
+    ctx.lineTo(286,0);
+    ctx.lineTo(400,0);
+    ctx.lineTo(400,29);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[3];
+    ctx.beginPath();
+    ctx.moveTo(0,571);
+    ctx.lineTo(0,429);
+    ctx.lineTo(400,29);
+    ctx.lineTo(400,171);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[4];
+    ctx.beginPath();
+    ctx.moveTo(0,600);
+    ctx.lineTo(0,571);
+    ctx.lineTo(400,171);
+    ctx.lineTo(400,314);
+    ctx.lineTo(114,600);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[5];
+    ctx.beginPath();
+    ctx.moveTo(114,600);
+    ctx.lineTo(400,314);
+    ctx.lineTo(400,457);
+    ctx.lineTo(257,600);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = rainbow[6];
+    ctx.beginPath();
+    ctx.moveTo(257,600);
+    ctx.lineTo(400,600);
+    ctx.lineTo(400,457);
+    ctx.closePath();
+    ctx.fill();
+
+  }
+
   //dibujar mappers
   ctx.fillStyle = textColorStyle;
   ctx.font = `28px Teko`;
   ctx.fillText(levelAuthorName.toUpperCase(), 78, 435);
 
   //dibujar map data
-  ctx.font = `bold 20px Arial`;
+  ctx.font = `bold 20px Noto Sans JP`;
   ctx.textAlign = 'center';
   nps = Math.floor(nps*100)/100;
   ctx.fillText("BPM", 228-95, 505);
   ctx.fillText("NJS", 228, 505);
   ctx.fillText("NPS", 228+95, 505);
-  ctx.font = `26px Arial`;
+  ctx.font = `26px Noto Sans JP`;
   ctx.fillText(bpm, 228-95, 535);
   ctx.fillText(njs, 228, 535);
   ctx.fillText(nps, 228+95, 535);
   ctx.textAlign = 'right';
-  ctx.font = `21px Arial`;
+  ctx.font = `21px Noto Sans JP`;
   ctx.fillText(upvotes + "/" + downvotes, 380, 587);
 
   //dibujar año
   if(rankedDate) {
-    ctx.font = `bold 22px Arial`;
+    ctx.font = `bold 22px Noto Sans JP`;
     if(rankedDate.startsWith("19")) {
       rankedDate = "2018";
     }
@@ -253,7 +385,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     filteredTags = ["none"];
   }
   ctx.textAlign = 'left';
-  ctx.font = `20px Arial`;
+  ctx.font = `20px Noto Sans JP`;
 
   let spaceAdder = 0;
 
@@ -279,7 +411,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
     ctx.restore();
     
     ctx.fillStyle = 'white';
-    ctx.fillText(displayTagText, cornerSize + 18 + spaceAdder, 458+10);
+    ctx.fillText(displayTagText, cornerSize + 18 + spaceAdder, 460+10);
   }
   
 
@@ -293,14 +425,14 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   //dibujar la score bar
   ctx.textAlign = 'right';
-  ctx.font = `21px Arial`;
+  ctx.font = `21px Noto Sans JP`;
   ctx.fillStyle = '#f39c12';
   ctx.fillRect(cornerSize + 10, 560, 192, 30);
   ctx.fillStyle = '#00bc8c';
   ctx.fillRect(cornerSize + 10, 560, 192*score, 30);
   ctx.fillStyle = 'white';
   score = Math.floor(score*1000)/10;
-  ctx.fillText(score+"%", 190, 587);
+  ctx.fillText(score+"%", 190, 590);
 
   //agregar los badges si hay
   const chromaBadge = await loadImage(resourcesPath+"badge_chroma.png");
@@ -316,6 +448,13 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   else if(chroma) {
     ctx.drawImage(chromaBadge, 8, 150, 50, 50);
   }
+
+  //xd
+  //if(100*Math.random() < 1.0) {
+  //  ctx.fillStyle = textColorStyle;
+  //  ctx.font = `bold 32px Teko`;
+  //  ctx.fillText("XD", 392, 180);
+  //}
 
   //recortar esquinas
   ctx.save();
@@ -370,8 +509,50 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   ctx.closePath();
   ctx.stroke();
 
+  if(stars >= 8) {
+    //dibujar extra borde
+    ctx.restore();
+
+    if(stars >= 13) {
+      ctx.strokeStyle = 'rgba(255, 200, 40, 1)';
+    }
+    else if(stars >= 12) {
+      ctx.strokeStyle = 'rgba(255, 50, 255, 1)';
+    }
+    else if(stars >= 11) {
+      ctx.strokeStyle = 'rgba(50, 200, 255, 1)';
+    }
+    else if(stars >= 10) {
+      ctx.strokeStyle = 'rgba(50, 255, 100, 1)';
+    }
+    else {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    }
+
+    ctx.lineWidth = 1.5;
+    const separation = 2;
+    ctx.beginPath();
+    ctx.moveTo(cornerSizeSmall,1+separation);
+    ctx.lineTo(canvas.width-cornerSize,1+separation);
+    ctx.lineTo(canvas.width-1-separation, cornerSize);
+    ctx.lineTo(canvas.width-1-separation, canvas.height-cornerSizeSmall);
+    ctx.lineTo(canvas.width-cornerSizeSmall, canvas.height-1-separation);
+    ctx.lineTo(cornerSize, canvas.height-1-separation);
+    ctx.lineTo(1+separation, canvas.height-cornerSize);
+    ctx.lineTo(1+separation, cornerSizeSmall);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
   const buffer = canvas.toBuffer('image/png');
-  return [buffer, stars];
+  score = score/100;
+  const cardData = {
+    userCardId: 0, date: new Date(),
+    songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
+    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
+    userName, qualified, shiny
+  }
+  return [buffer, cardData];
   //fs.writeFileSync('./card.png', buffer);
   //console.log("Carta dibujada");
 }
@@ -407,5 +588,42 @@ async function getAPIData(url: string) {
     }
   } catch (error) {
     console.error('Error al obtener los datos:', error);
+  }
+}
+
+function getProbability(value: number) {
+  for(var i = 0; i < curvePoints.length-1; i++) {
+    if(value >= curvePoints[i][0] && value < curvePoints[i+1][0]) {
+      let distance = curvePoints[i+1][0] - curvePoints[i][0];
+      let pos = value - curvePoints[i][0];
+      let per = pos/distance;
+      return curvePoints[i][1] + per*(curvePoints[i+1][1] - curvePoints[i][1]);
+    }
+  }
+}
+
+//https://www.desmos.com/calculator/fe6akdvtc0
+//https://www.desmos.com/calculator/0flhmtokny
+function ProbabilityCurve(t: number) {
+  let a1 = [0,0];
+  let a2 = [0.258,0.624];
+  let a3 = [0.885,0.163];
+  let a4 = [1,1];
+  let a5 = pcf(a1[0],a1[1],a2[0],a2[1],t);
+  let a6 = pcf(a2[0],a2[1],a3[0],a3[1],t);
+  let a7 = pcf(a3[0],a3[1],a4[0],a4[1],t);
+  let a8 = pcf(a5[0],a5[1],a6[0],a6[1],t);
+  let a9 = pcf(a6[0],a6[1],a7[0],a7[1],t);
+  let a10 = pcf(a8[0],a8[1],a9[0],a9[1],t);
+  return a10;
+}
+
+function pcf(a: number, b: number, c: number, d: number, t: number) {
+  return [(1-t)*a+c*t, (1-t)*b+d*t];
+}
+
+function generateCurve() {
+  for(var i = 0; i < 100; i++) {
+    curvePoints.push(ProbabilityCurve(0.01*i));
   }
 }

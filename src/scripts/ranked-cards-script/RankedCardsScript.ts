@@ -7,7 +7,7 @@ import { RankedCard } from "./model/RankedCard"
 import { UserCard } from "./model/UserCard"
 import SequelizeDBManager from "@lib/SequelizeDBManager"
 import initModels from "./db/initModels"
-import { AnyARecord } from "dns"
+// import { AnyARecord } from "dns"
 
 export class RankedCardsScript extends Script {
 

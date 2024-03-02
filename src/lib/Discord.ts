@@ -1,4 +1,4 @@
-import DiscordJS, { Guild, TextChannel, Intents, Message } from "discord.js"
+import DiscordJS, { Guild, TextChannel, Message, GatewayIntentBits } from "discord.js"
 import logger from "@utils/logger"
 import { separateMultiLineString } from "@utils/index"
 
@@ -38,7 +38,7 @@ export class Discord {
         
         // Create client instance
         this.clientInstance = new DiscordJS.Client({ 
-            intents: [Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]
+            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers]
         })
 
         // Log into client (async)
@@ -81,10 +81,10 @@ export class Discord {
      */
     public static async getTextChannel(channelId: string, fromCache = true): Promise<TextChannel> {
 
-        const channel: any = fromCache ? this.guild.channels.cache.find(channel => channel.id == channelId) :
+        const channel = fromCache ? this.guild.channels.cache.find(channel => channel.id == channelId) :
             await this.guild.channels.fetch(channelId)
 
-        if(channel.isText()) return <TextChannel>channel
+        if(channel.isTextBased()) return <TextChannel>channel
         else return null
     }
 

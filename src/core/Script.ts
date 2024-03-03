@@ -1,15 +1,19 @@
-import { CronFrequency } from "@ts/enums"
-import * as cron from "node-cron"
-import logger from "@utils/logger"
-import { logException } from "@utils/index"
+import { DiscordClient } from "./DiscordClient";
 
 export abstract class Script {
 
+    constructor(public client: DiscordClient) {
+
+    }
 
     /**
      * The name of our script.
      */
-    protected abstract scriptName: string
+    protected abstract scriptName: string;
 
+
+    public getName() {
+        return this.scriptName
+    }
     
 }

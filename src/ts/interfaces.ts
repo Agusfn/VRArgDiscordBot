@@ -1,28 +1,28 @@
-import { Message } from "discord.js"
-import { CommandType } from "./enums"
-
-
-export type CommandActionFunction = (...args: any) => any
+import { Script } from "@core/Script"
+import { CacheType, ChatInputCommandInteraction, ClientEvents, Events, SlashCommandBuilder } from "discord.js"
 
 /**
- * A command, which is the medium of interaction with this bot. These commands are "classic" plain text discord message commands, not Discord Slash Commands.
+ * Object that contains the definition and execution callback for a Discord command within our application.
  */
-export interface BotCommand {
-    type: CommandType,
-    groupName: string,
-    name: string,
-    args?: string,
-    description?: string,
-    //commandAction: CommandActionFunction,
-    /** Only for public commands. Id of channel if restricted. */
-    restrictedChannelId?: string
+export interface DiscordCommand<T extends Script> {
+    /** This is the important piece of data that is sent to Discord in order to register a new command. */
+    data: SlashCommandBuilder,
+    /** Excecution function for the command. */
+    execute: (script: T, interaction: ChatInputCommandInteraction<CacheType>) => Promise<void>,
+    /** Script reference where this command belongs to, to add context for the command. */
+    script?: Script
 }
 
 /**
- * The metadata containing Discord Message included in every bot-commander command parse, so we can access said Message in the final onCommand handlers.
+ * Object that contains the definition and execution callback for a Discord event within our application.
  */
- export interface CommandMetadata {
-    message: Message
+export interface DiscordEvent<T extends Script> {
+    /** The specific type of the event. */
+    name: keyof ClientEvents,
+    /** Whether to call this only once, or each time it occurs. */
+    once: boolean,
+    /** The execution function for the event. Its arguments are determined by the event type. */
+    execute: (script: T, ...args: any) => Promise<void>
 }
 
 

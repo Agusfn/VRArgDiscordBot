@@ -1,6 +1,8 @@
 import path from "path";
 import * as fs from 'fs';
 import logger from "./logger";
+import { DiscordCommand } from "@ts/interfaces";
+import { Script } from "@core/Script";
 
 
 /**
@@ -8,22 +10,18 @@ import logger from "./logger";
  * @param folderPath 
  * @returns 
  */
-export const getCommandsFromFolder = (folderPath: string): any[] => {
+export const getCommandsFromFolder = (folderPath: string): DiscordCommand<Script>[] => {
 
     const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
-    const commands: any[] = [];
+    const commands: DiscordCommand<Script>[] = [];
 
     for (const file of commandFiles) {
         const filePath = path.join(folderPath, file);
 
-        console.log("command filePath", filePath);
-        const command = require(filePath).default;
-        console.log("contents: ", JSON.stringify(command, null, 4))
+        const command: DiscordCommand<Script> = require(filePath).default;
 
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if (command && 'data' in command && 'execute' in command) {
-            //client.commands.set(command.data.name, command);
             commands.push(command);
         } else {
             logger.warn(`[WARNING] The command at ${filePath} is empty or missing a required "data" or "execute" property.`);
@@ -38,12 +36,12 @@ export const getCommandsFromFolder = (folderPath: string): any[] => {
  * Get all commands from a folder of folders of commands.
  * @param foldersPath Path of the folder that has also many folders.
  */
-export const getCommandsFromFolders = (foldersPath: string): any[] => {
+export const getCommandsFromFolders = (foldersPath: string): DiscordCommand<Script>[] => {
 
     //const foldersPath = path.join(__dirname, 'commands');
     
     const commandFolders = fs.readdirSync(foldersPath);
-    const commands: any[] = [];
+    const commands: DiscordCommand<Script>[] = [];
 
     for (const folder of commandFolders) {
 
@@ -58,7 +56,7 @@ export const getCommandsFromFolders = (foldersPath: string): any[] => {
 }
 
 /**
- * Obtain all existing command folder paths of existing scripts.
+ * Obtain the command folder path for each existing script and return them all
  * @returns 
  */
 export const getScriptCommandsFoldersPaths = (): string[] => {

@@ -2,11 +2,13 @@ import { Script } from "./Script"
 //import SequelizeDBManager from "@lib/SequelizeDBManager"
 import logger from "@utils/logger"
 import { camelToHyphen } from "@utils/index"
-import { DiscordManager } from "./DiscordManager"
+import { DiscordClient } from "./DiscordClient"
 import path from "path";
+import { getCommandsFromFolder } from "@utils/commandFolders";
+import { getEventsFromFolder } from "@utils/eventFolders";
 
 
-type ScriptConstructor = new () => Script;
+type ScriptConstructor = new (client: DiscordClient) => Script;
 
 
 export class ScriptLoader {
@@ -15,7 +17,7 @@ export class ScriptLoader {
 
 
     constructor(
-        private discordManager: DiscordManager, 
+        private discordClient: DiscordClient, 
         private scriptClasses: ScriptConstructor[]
     ) {
 
@@ -29,48 +31,52 @@ export class ScriptLoader {
         // Instantiate scripts
         for(let ScriptClass of this.scriptClasses) {
 
-            const script = new ScriptClass()
-            this.scriptInstances.push(script)
+            const script = new ScriptClass(this.discordClient);
+            this.scriptInstances.push(script);
 
-            // Register commands of this script
-            const commandsDirPath = path.join(__dirname, "../scripts/" + camelToHyphen(ScriptClass.name) + "/commands");
-            this.discordManager.registerCommandsFromFolder(commandsDirPath);
+            // Register Discord commands and events of this script
+            const scriptPath = path.join(__dirname, "../scripts/" + camelToHyphen(ScriptClass.name));
+            this.registerDiscordCommandsFromDir(scriptPath + "/commands", script);
+            this.registerDiscordEventsFromDir(scriptPath + "/events", script);
+
 
             /*if(typeof script.initDbModels == "function") {
                 script.initDbModels()
             }*/
+
+            logger.info(`Initialized ${script.getName()}!`);
         }
 
-        logger.info("All models initialized. Synchronizing...")
+        //logger.info("All models initialized. Synchronizing...")
         // Once all scripts were initialized, sync the new models (if any) in DB
         //await SequelizeDBManager.syncModels()
 
-        // Call script onInitialized events defined by the user (if exists)
-        // for(let script of this.scriptInstances) {
-        //     this.callScriptOnInitialized(script) // (async)
-        // }
+
     }
 
-
-
-
-
-
     /**
-     * Call "onInitialized" for a script, asynchronously, catching any error that may appear.
+     * Register the discord commands defined by all command files within a directory, to run in the context of a specific Script.
+     * @param folderPath 
      * @param script 
      */
-    // private async callScriptOnInitialized(script: Script) {
-    //     if(typeof script.onInitialized == "function") {
-    //         try {
-    //             await script.onInitialized() // custom defined initialization per-script
-    //             logger.info("Initialized "+script.getName()+"!")
-    //         } catch(error: any) {
-    //             logger.error("Error executing onInitialized() on script " + script.getName())
-    //             logException(error)
-    //         }
-    //     }
-    // }
+    public registerDiscordCommandsFromDir(folderPath: string, script: Script) {
+        const commands = getCommandsFromFolder(folderPath);
+        for(const command of commands) {
+            this.discordClient.registerNewCommand(command, script);
+        }
+    }
+
+    /**
+     * Register the discord events defined by all event files within a directory, to run in the context of a specific Script.
+     * @param folderPath 
+     * @param script 
+     */
+    public registerDiscordEventsFromDir(folderPath: string, script: Script) {
+        const events = getEventsFromFolder(folderPath);
+        for(const event of events) {
+            this.discordClient.registerNewEvent(event, script);
+        }
+    }
 
 
 }

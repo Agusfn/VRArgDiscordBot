@@ -1,10 +1,9 @@
 import { Script } from "./Script"
 //import SequelizeDBManager from "@lib/SequelizeDBManager"
 import logger from "@utils/logger"
-import { camelToHyphen, logException } from "@utils/index"
+import { camelToHyphen } from "@utils/index"
 import { DiscordManager } from "./DiscordManager"
 import path from "path";
-import { getCommandsFromFolder } from "@utils/scriptFolders";
 
 
 type ScriptConstructor = new () => Script;
@@ -33,9 +32,9 @@ export class ScriptLoader {
             const script = new ScriptClass()
             this.scriptInstances.push(script)
 
-            // Load commands
-            const commands = this.getCommandsOfScript(ScriptClass);
-
+            // Register commands of this script
+            const commandsDirPath = path.join(__dirname, "../scripts/" + camelToHyphen(ScriptClass.name) + "/commands");
+            this.discordManager.registerCommandsFromFolder(commandsDirPath);
 
             /*if(typeof script.initDbModels == "function") {
                 script.initDbModels()
@@ -53,17 +52,8 @@ export class ScriptLoader {
     }
 
 
-    getCommandsOfScript(scriptClass: ScriptConstructor) {
-        console.log("ScriptClass name", scriptClass.name);
-        const commandsDirPath = path.join(__dirname, this.getDirPathOfScriptName(scriptClass.name) + "/commands");
-        console.log("commandsDirPath path ", commandsDirPath)
-        const commands = getCommandsFromFolder(commandsDirPath);
-        console.log("commands", commands);
-    }
 
-    getDirPathOfScriptName(scriptClassName: string): string {
-        return "../scripts/" + camelToHyphen(scriptClassName);
-    }
+
 
 
     /**

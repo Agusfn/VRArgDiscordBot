@@ -1,5 +1,6 @@
 import path from "path";
 import * as fs from 'fs';
+import logger from "./logger";
 
 
 /**
@@ -21,11 +22,11 @@ export const getCommandsFromFolder = (folderPath: string): any[] => {
         console.log("contents: ", JSON.stringify(command, null, 4))
 
         // Set a new item in the Collection with the key as the command name and the value as the exported module
-        if ('data' in command && 'execute' in command) {
+        if (command && 'data' in command && 'execute' in command) {
             //client.commands.set(command.data.name, command);
             commands.push(command);
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            logger.warn(`[WARNING] The command at ${filePath} is empty or missing a required "data" or "execute" property.`);
         }
     }
 
@@ -56,3 +57,26 @@ export const getCommandsFromFolders = (foldersPath: string): any[] => {
     return commands;
 }
 
+/**
+ * Obtain all existing command folder paths of existing scripts.
+ * @returns 
+ */
+export const getScriptCommandsFoldersPaths = (): string[] => {
+
+    const scriptsPath = path.join(__dirname, '../', 'scripts');
+    const scriptFolders = fs.readdirSync(scriptsPath);
+    
+    const folderPaths: string[] = [];
+
+    for (const folder of scriptFolders) {
+    
+        // Grab all the command files from the commands directory you created earlier
+        const commandsDirPath = path.join(scriptsPath, folder, "commands");
+
+        if(fs.existsSync(commandsDirPath)) {
+            folderPaths.push(commandsDirPath);
+        }
+    }
+
+    return folderPaths;
+}

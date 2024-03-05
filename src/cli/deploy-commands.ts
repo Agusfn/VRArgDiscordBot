@@ -3,7 +3,7 @@
  */
 
 require('dotenv').config()
-import "./fixTsPaths"
+import "../fixTsPaths"
 import { REST, RESTPostAPIApplicationCommandsJSONBody, Routes } from "discord.js";
 import { getCommandsFromFolder, getScriptCommandsFoldersPaths } from "@utils/commandFolders";
 import logger from "@utils/logger";

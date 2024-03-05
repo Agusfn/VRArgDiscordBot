@@ -1,5 +1,5 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model, Op } from "sequelize"
-import * as SSApiTypes from "@services/ScoreSaberAPI/types"
+import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, Op } from "sequelize"
+import * as SSApiTypes from "@services/ScoreSaber/types"
 import { User } from "@scripts/core-script/models/User"
 import { PlayerPerformanceInfo } from "../types"
 import sequelize from "@core/sequelize"
@@ -46,6 +46,13 @@ export class SSPlayer extends Model<InferAttributes<SSPlayer>, InferCreationAttr
     lastPeriodicScoreFetch: Date
     /** Whether this player is subscribed for milestone announcements in the milestone announcements channel. */
     milestoneAnnouncements: boolean
+
+
+    // createdAt can be undefined during creation
+    declare createdAt: CreationOptional<Date>;
+    // updatedAt can be undefined during creation
+    declare updatedAt: CreationOptional<Date>;
+
 
     /** For eager loading from sequelize */
     declare readonly User?: User;
@@ -141,7 +148,9 @@ SSPlayer.init({
     milestoneAnnouncements: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
-    }
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE
 }, 
 { 
     sequelize: sequelize, 

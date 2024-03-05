@@ -9,25 +9,31 @@ import logger from "@utils/logger"
  */
 export class UserManager {
 
+    //////////////////
+    // Static methods for present user cache (for accessing between all scripts) //
+
     /** Cache with discordUserIds of all present users (members of the server). */
-    private presentUserIds: string[] = [];
+    private static presentUserIds: string[] = [];
 
     /**
      * Check if a user is present on the server (by its discordUserId) by checking in local cached array.
      * @param discordUserId The id of the user (discord user id).
      * @returns 
      */
-    public isUserPresent(discordUserId: string): boolean {
+    public static isUserPresent(discordUserId: string): boolean {
         return this.presentUserIds.find(id => id == discordUserId) ? true : false;
     }
     
-    public addUserIdToPresentUsers(userId: string) {
+    public static addUserIdToPresentUsers(userId: string) {
         this.presentUserIds.push(userId);
     }
 
-    public removeUserIdFromPresentUsers(userId: string) {
+    public static removeUserIdFromPresentUsers(userId: string) {
         this.presentUserIds = this.presentUserIds.filter(id => id != userId);
     }
+
+    //////////////
+
 
     /**
      * Synchronize all the users in the server with their User entity within this bot.
@@ -44,7 +50,7 @@ export class UserManager {
         for(const [key, member] of currentMembers) {
 
             if(member.user.bot) continue;
-            this.addUserIdToPresentUsers(member.user.id); // add to user id cache
+            UserManager.addUserIdToPresentUsers(member.user.id); // add to user id cache
 
             const user = allUsers.find(user => user.discordUserId == member.user.id)
             if(user) {
@@ -80,7 +86,7 @@ export class UserManager {
         if(usersLeft > 0) {
             logger.info("Marked 'absent' " + usersLeft + ' users that were not found in the server.')
         }
-        logger.info("Cache of present user ids loaded. Count: " + this.presentUserIds.length);
+        logger.info("Cache of present user ids loaded. Count: " + UserManager.presentUserIds.length);
     }
 
 
@@ -109,7 +115,7 @@ export class UserManager {
     public async createUserOnMemberJoin(member: DiscordJS.GuildMember) {
 
         if(member.user.bot) return
-        this.addUserIdToPresentUsers(member.user.id);
+        UserManager.addUserIdToPresentUsers(member.user.id);
 
         const user = await User.findByPk(member.user.id)
         if(user) {
@@ -140,7 +146,7 @@ export class UserManager {
         
         if(member.user.bot) return;
 
-        this.removeUserIdFromPresentUsers(member.user.id);
+        UserManager.removeUserIdFromPresentUsers(member.user.id);
 
         const count = await User.update({ 
             isPresent: false, leaveDate: new Date() 

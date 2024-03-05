@@ -2,13 +2,13 @@ import { Script } from "./Script"
 //import SequelizeDBManager from "@lib/SequelizeDBManager"
 import logger from "@utils/logger"
 import { camelToHyphen } from "@utils/index"
-import { DiscordClient } from "./DiscordClient"
+import { DiscordClientWrapper } from "./DiscordClient"
 import path from "path";
 import { getCommandsFromFolder } from "@utils/commandFolders";
 import { getEventsFromFolder } from "@utils/eventFolders";
 
 
-type ScriptConstructor = new (client: DiscordClient) => Script;
+type ScriptConstructor = new (client: DiscordClientWrapper) => Script;
 
 
 export class ScriptLoader {
@@ -17,7 +17,7 @@ export class ScriptLoader {
 
 
     constructor(
-        private discordClient: DiscordClient, 
+        private discordClient: DiscordClientWrapper, 
         private scriptClasses: ScriptConstructor[]
     ) {
 
@@ -75,7 +75,6 @@ export class ScriptLoader {
      */
     public registerDiscordEventsFromDir(folderPath: string, script: Script): number {
         const events = getEventsFromFolder(folderPath);
-        console.log("events", JSON.stringify(events, null, 4));
         for(const event of events) {
             this.discordClient.registerNewEvent(event, script);
         }

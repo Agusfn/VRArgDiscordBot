@@ -1,12 +1,12 @@
 import { DiscordEvent } from "@ts/interfaces";
-import { Client, Events, GuildMember } from "discord.js";
+import { Events } from "discord.js";
 import { CoreScript } from "../CoreScript";
 
 export default {
-	name: Events.GuildMemberAdd,
-	execute(script, guildMember) {
+	name: Events.GuildMemberAdd, // when a member just joins the server
+	async execute(script, guildMember) {
 
-		console.log(script.getName(), "guild member added", guildMember)
+		await script.userManager.createUserOnMemberJoin(guildMember);
 
 	},
 } as DiscordEvent<CoreScript, Events.GuildMemberAdd>;

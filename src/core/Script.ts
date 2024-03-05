@@ -1,8 +1,8 @@
-import { DiscordClient } from "./DiscordClient";
+import { DiscordClientWrapper } from "./DiscordClient";
 
 export abstract class Script {
 
-    constructor(public client: DiscordClient) {
+    constructor(public client: DiscordClientWrapper) {
 
     }
 

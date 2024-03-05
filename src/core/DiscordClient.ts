@@ -4,28 +4,51 @@ import DiscordJS, { Guild, TextChannel, Message, GatewayIntentBits, Collection, 
 import { Script } from "./Script";
 import { DiscordCommand, DiscordEvent } from "@ts/interfaces";
 
+/**
+ * A discord client wrapper, made to work around a single Discord Guild
+ */
+export class DiscordClientWrapper {
 
-export class DiscordClient {
-
+    /** Instance reference for special access needs from outside app scope. */
     private static instance: DiscordJS.Client | null;
 
-    private client = new DiscordJS.Client({ 
-        intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers]
-    });
+    public static getInstance() {
+        return this.instance;
+    }
+
+    //
+    
+    /**
+     * The discord client itself.
+     */
+    private client: DiscordJS.Client;
+
+    /**
+     * The guild where this Discord Client works around.
+     */
+    private guild: DiscordJS.Guild;
 
     /**
      * Local map with all existing registered commands. Registered commands are checked upon a new command calling arriving from Discord server, and if it exists, executed.
      */
     private commands: Collection<string, DiscordCommand<Script>> = new Collection();
 
+
     constructor(private botToken: string, private guildId: string) {
-        DiscordClient.instance = this.client;
+
+        this.client = new DiscordJS.Client({ 
+            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers]
+        });
+
+        DiscordClientWrapper.instance = this.client;
+
     }
 
-    public static getInstance() {
-        return this.instance;
-    }
 
+    /**
+     * Get the Discord Client itself
+     * @returns 
+     */
     public getClient() {
         return this.client;
     }
@@ -34,8 +57,21 @@ export class DiscordClient {
         return this.commands;
     }
 
+    /**
+     * Get the guild on which this Discord client works
+     * @returns 
+     */
+    public getGuild() {
+        return this.guild;
+    }
+
     public async login() {
+        // Login
         await this.client.login(this.botToken);
+
+        // Fetch guild object and save
+        this.guild = await this.client.guilds.fetch(this.guildId);
+        
         logger.info("Logged into Discord.")
     }
 

@@ -1,4 +1,4 @@
-import { DiscordClient } from "@core/DiscordClient";
+import { DiscordClientWrapper } from "@core/DiscordClient";
 import { Script } from "@core/Script";
 import { DiscordCommand } from "@ts/interfaces";
 import { UserManager } from "./services/UserManager";
@@ -8,7 +8,7 @@ export class CoreScript extends Script {
 
     public userManager = new UserManager();
 
-    constructor(public client: DiscordClient) {
+    constructor(public client: DiscordClientWrapper) {
         super(client);
     }
 

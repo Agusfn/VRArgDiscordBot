@@ -2,7 +2,7 @@ import * as ModuleAlias from 'module-alias'
 
 ModuleAlias.addAliases({
     '@core': __dirname + '/core',
-    '@lib': __dirname + '/lib',
+    '@services': __dirname + '/services',
     '@models': __dirname + '/models',
     '@scripts': __dirname + '/scripts',
     '@ts': __dirname + '/ts',

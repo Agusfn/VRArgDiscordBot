@@ -12,6 +12,8 @@ import { Script } from "@core/Script";
  */
 export const getCommandsFromFolder = (folderPath: string): DiscordCommand<Script>[] => {
 
+    if(!fs.existsSync(folderPath)) return [];
+    
     const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
     const commands: DiscordCommand<Script>[] = [];

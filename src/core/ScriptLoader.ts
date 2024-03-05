@@ -39,17 +39,8 @@ export class ScriptLoader {
             const cmdsCount = this.registerDiscordCommandsFromDir(scriptPath + "/commands", script);
             const evtsCount = this.registerDiscordEventsFromDir(scriptPath + "/events", script);
 
-            /*if(typeof script.initDbModels == "function") {
-                script.initDbModels()
-            }*/
-
             logger.info(`Initialized ${script.getName()}! Registered ${cmdsCount} commands and ${evtsCount} events.`);
         }
-
-        //logger.info("All models initialized. Synchronizing...")
-        // Once all scripts were initialized, sync the new models (if any) in DB
-        //await SequelizeDBManager.syncModels()
-
 
     }
 

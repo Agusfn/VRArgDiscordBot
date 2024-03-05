@@ -4,9 +4,9 @@ import { CoreScript } from "../CoreScript";
 
 export default {
 	name: Events.GuildMemberAdd,
-	execute(script, guildMember: GuildMember) {
+	execute(script, guildMember) {
 
 		console.log(script.getName(), "guild member added", guildMember)
 
 	},
-} as DiscordEvent<CoreScript>;
+} as DiscordEvent<CoreScript, Events.GuildMemberAdd>;

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import logger from "./logger";
 import { DiscordEvent } from "@ts/interfaces";
 import { Script } from "@core/Script";
+import { ClientEvents } from "discord.js";
 
 
 /**
@@ -10,18 +11,19 @@ import { Script } from "@core/Script";
  * @param folderPath 
  * @returns 
  */
-export const getEventsFromFolder = (folderPath: string): DiscordEvent<Script>[] => {
+export const getEventsFromFolder = (folderPath: string): DiscordEvent<Script, keyof ClientEvents>[] => {
 
     if(!fs.existsSync(folderPath)) return [];
 
     const eventFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
-    const events: DiscordEvent<Script>[] = [];
+    const events: DiscordEvent<Script, keyof ClientEvents>[] = [];
 
+    console.log("eventFiles", eventFiles)
     for (const file of eventFiles) {
         const filePath = path.join(folderPath, file);
 
-        const event: DiscordEvent<Script> = require(filePath).default;
+        const event: DiscordEvent<Script, keyof ClientEvents> = require(filePath).default;
 
         if (event && event.name && event.execute) {
             events.push(event);

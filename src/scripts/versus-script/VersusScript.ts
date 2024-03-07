@@ -1,5 +1,5 @@
 import { Script } from "@lib/index"
-import { Message, MessageAttachment } from "discord.js"
+import { Message } from "discord.js"
 import { CommandManager } from "@lib/CommandManager"
 import axios from "axios"
 

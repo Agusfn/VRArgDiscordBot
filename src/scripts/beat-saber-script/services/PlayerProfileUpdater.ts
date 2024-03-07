@@ -12,17 +12,22 @@ import { UserManager } from "@scripts/core-script/services/UserManager"
  */
 export class PlayerProfileUpdater {
 
+    constructor(private playerTriggerEvents: PlayerTriggerEvents) {
+
+    }
+
+
     /**
      * Whether the fetcher is runnning
      */
-    private static updaterRunning: boolean = false
+    private updaterRunning: boolean = false
 
     
     /**
      * Start the ScoreSaber Player profile update, updating every SSPlayer with their Discord account linked.
      * @returns 
      */
-    public static async startProfileUpdater() {
+    public async checkPlayersProfileUpdates() {
 
         try {
 
@@ -58,11 +63,11 @@ export class PlayerProfileUpdater {
                 newPerformances.push(player.getPerformanceInfo())
     
                 // (async) send player updated profile event to PlayerTriggerEvents
-                PlayerTriggerEvents.onPlayerUpdateProfile(player, oldPlayerData)
+                this.playerTriggerEvents.onPlayerUpdateProfile(player, oldPlayerData)
             }
     
             // (async) Call on all players update performance info at once for accurate rank comparison.
-            PlayerTriggerEvents.onAllPlayersUpdatePerformanceInfo(previousPerformances, newPerformances)
+            this.playerTriggerEvents.onAllPlayersUpdatePerformanceInfo(previousPerformances, newPerformances)
     
             this.updaterRunning = false
 

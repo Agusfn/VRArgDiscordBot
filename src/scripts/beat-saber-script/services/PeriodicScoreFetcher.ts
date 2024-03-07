@@ -17,11 +17,16 @@ export class PeriodicScoreFetcher {
     private fetchRunning: boolean = false
 
 
+    constructor(private playerScoreSaver: PlayerScoreSaver) {
+
+    }
+
+
     /**
      * Start ScoreSaber periodic Score fetching for all SS Players with their Discord user linked.
      * @returns 
      */
-    public async startPeriodicFetch() {
+    public async checkPlayersNewScores() {
 
         try {
 
@@ -60,7 +65,7 @@ export class PeriodicScoreFetcher {
                         }
     
                         // Save scores and leaderboards for this player
-                        const { newScoreListEndReached } = await PlayerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
+                        const { newScoreListEndReached } = await this.playerScoreSaver.saveNewScoresForPlayer(player, scoresCollection)
     
                         if(newScoreListEndReached) {
                             keepFetching = false

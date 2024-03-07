@@ -15,11 +15,14 @@ export class HistoricScoreFetcher {
     private fetchRunning: boolean = false
     private playerFetchQueue: SSPlayer[] = []
 
+    constructor(private playerScoreSaver: PlayerScoreSaver) {
+
+    }
 
     /**
      * Start historic score fetcher by adding all pending fetch users to fetch queue and processing it.
      */
-     public async startFetcher() {
+     public async checkPlayerHistoricScores() {
 
         if(this.fetchRunning) return // don't start if already running
         this.fetchRunning = true
@@ -62,7 +65,7 @@ export class HistoricScoreFetcher {
 
         // run fetcher if not already running
         if(!this.fetchRunning) { 
-            this.startFetcher() // async
+            this.checkPlayerHistoricScores() // async
         }
 
     }
@@ -131,7 +134,7 @@ export class HistoricScoreFetcher {
                     logger.info(`Historic fetcher: Fetched page ${nextFetchPage} of player ${player.name}. Got ${scorePageCollection.playerScores.length} scores.`)
                 }
 
-                await PlayerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
+                await this.playerScoreSaver.saveHistoricScorePageForPlayer(player, scorePageCollection)
 
                 player.lastHistoryFetchPage = nextFetchPage
                 await player.save()

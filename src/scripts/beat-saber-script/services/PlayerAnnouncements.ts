@@ -10,10 +10,15 @@ import { formatAcc } from "../utils/other"
  */
 export class PlayerAnnouncements {
 
-    constructor(private outputChannel: TextChannel) {
+    private outputChannel: TextChannel;
+
+    constructor() {
 
     }
 
+    public setOutputChannel(outputChannel: TextChannel) {
+        this.outputChannel = outputChannel;
+    }
 
     /**
      * 

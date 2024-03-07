@@ -101,8 +101,6 @@ export class DiscordClientWrapper {
         }
     }
 
-
-
     public setCommandListener() {
 
         this.client.on(Events.InteractionCreate, async interaction => {
@@ -130,6 +128,14 @@ export class DiscordClientWrapper {
 
     }
     
+    /**
+     * Obtain a channel from the main Guild from cache.
+     * @param channelId 
+     * @returns 
+     */
+    public getChannel(channelId: string) {
+        return this.guild.channels.cache.find(channel => channel.id == channelId);
+    }
 
 
 }

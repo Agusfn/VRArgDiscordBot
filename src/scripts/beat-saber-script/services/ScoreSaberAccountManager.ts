@@ -100,7 +100,7 @@ export class ScoreSaberAccountManager {
      * @param scoreSaberId 
      * @param isSelfUser If the discordUserId is the one making this request (for validation msg purposes)
      */
-    public async unlinkScoreSaberAccountFromUser(discordUserId: string, isSelfUser = true): Promise<SSPlayer> {
+    public async unlinkScoreSaberAccountFromUser(discordUserId: string, isSelfUser: boolean): Promise<SSPlayer> {
 
         // check user has linked scoresaber account
         const ssPlayer = await SSPlayer.findOne({where: { discordUserId: discordUserId }})

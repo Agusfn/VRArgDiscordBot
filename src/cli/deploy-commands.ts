@@ -35,8 +35,8 @@ const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN);
 		);
 
 		logger.info(`Successfully reloaded ${data.length} application (/) commands.`);
-	} catch (error) {
+	} catch (error: any) {
 		// And of course, make sure you catch and log any errors!
-		logger.error(error);
+		logger.error(error?.stack || error);
 	}
 })();

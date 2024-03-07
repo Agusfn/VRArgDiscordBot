@@ -44,7 +44,7 @@ export class ScriptLoader {
 
     }
 
-    public callAllScriptsOnInitialized() {
+    public callScriptsOnReady() {
         for(const scriptInstance of this.scriptInstances) {
             if(scriptInstance.onReady) {
                 scriptInstance.onReady(); // async

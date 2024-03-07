@@ -83,9 +83,9 @@ export class PeriodicScoreFetcher {
     
             this.fetchRunning = false
 
-        } catch (error) {
+        } catch (error: any) {
             logger.error("Error ocurred runnning periodic score fetcher. This call to periodic fetcher was stopped.")
-            logException(error)
+            logger.error(error?.stack || error);
             this.fetchRunning = false
         }
 

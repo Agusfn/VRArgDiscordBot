@@ -5,8 +5,6 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import logger from "@utils/logger";
 import { CoreScript } from "@scripts/core-script/CoreScript";
-import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
-
 
 (async() => {
 
@@ -18,7 +16,7 @@ import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
 
     const scriptLoader = new ScriptLoader(discordClient, [
         CoreScript,
-        BeatSaberScript
+        ...require("./scriptList").default
     ]);
     
     // Register Discord universal event listener for slash commands
@@ -27,8 +25,14 @@ import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
     // Register all other Discord events and read slash commands from all scripts
     await scriptLoader.initializeScripts();
 
+    // Register call onReady() of Scripts when client is ready (will be called after login)
+    discordClient.onReady(() => {
+        scriptLoader.callScriptsOnReady();
+    });
+
     // Log into discord after all events and commands have been registered
     await discordClient.login();
+
 
 
 })()

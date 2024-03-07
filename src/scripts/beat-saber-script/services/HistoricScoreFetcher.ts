@@ -90,11 +90,11 @@ export class HistoricScoreFetcher {
                     logger.info("Historic fetcher: Fetched all history for SS player " + ssPlayer.id + ". New queue length: " + this.playerFetchQueue.length)
                 }
                 
-            } catch(error) {
+            } catch(error: any) {
                 // if max retries
                     // set waitingForRetry true
                     // set timer in X seconds to re-run
-                console.log(error)
+                logger.error(error?.stack || error)
                 break
             }
         }

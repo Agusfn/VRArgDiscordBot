@@ -1,11 +1,11 @@
 require('dotenv').config()
 import "./fixTsPaths"
+import { TestScript } from "@scripts/test-script/TestScript";
 import { ScriptLoader } from "@core/ScriptLoader";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import logger from "@utils/logger";
 import { CoreScript } from "@scripts/core-script/CoreScript";
-import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
 
 
 (async() => {
@@ -18,7 +18,7 @@ import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
 
     const scriptLoader = new ScriptLoader(discordClient, [
         CoreScript,
-        BeatSaberScript
+        TestScript
     ]);
     
     // Register Discord universal event listener for slash commands

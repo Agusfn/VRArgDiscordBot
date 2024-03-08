@@ -47,7 +47,7 @@
     "baseUrl": "./src",                             /* Base directory to resolve non-absolute module names. */
     "paths": {
       "@core/*": ["./core/*"],
-      "@services/*": ["./services/*"],
+      "@lib/*": ["./lib/*"],
       "@models/*": ["./models/*"],
       "@scripts/*": ["./scripts/*"],
       "@ts/*": ["./ts/*"],

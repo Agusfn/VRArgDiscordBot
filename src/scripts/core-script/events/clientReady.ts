@@ -9,6 +9,6 @@ export default {
 		// Sync our Users in database according to the current guild member list (creates new Users, mark users that have left)
 		const members = await script.client.getGuild().members.fetch();
 		await script.userManager.syncGuildMembers(members);
-		
+
 	},
 } as DiscordEvent<CoreScript, Events.ClientReady>;

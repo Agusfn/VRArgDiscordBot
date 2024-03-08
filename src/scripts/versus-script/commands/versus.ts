@@ -1,7 +1,8 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { VersusScript } from "../VersusScript";
 import axios from "axios";
+import html2canvas from "html2canvas";
 
 
 export default {
@@ -33,18 +34,34 @@ export default {
 
 			const html = await axios.get(imageUrl).then(res => res.data)
 
-			// convert html to image
-			const image = await script.htmlToImage(html)
-			
-			// Enviar el archivo .bplist como respuesta al usuario
-			await interaction.reply({
-				files: [{
-					attachment: buffer,
-					name: 'versus.bplist'
-				}]
+			// convert html text to a DOM element
+			const jsdom = require("jsdom");
+			const dom = new jsdom.JSDOM(html);
+
+			// Convertir HTML a imagen usando html2canvas
+			const canvas = await html2canvas(dom.window.document.body, {
+				allowTaint: true,
+				useCORS: true,
+				scale: 2
 			});
-
-
+			// Obtener la URL de la imagen generada
+			const imageBlob = await new Promise((resolve) => {
+					canvas.toBlob(resolve, "image/png"); // Puedes cambiar el formato a "image/jpeg" si lo prefieres
+			});
+			
+			// Enviar el archivo .bplist y la imagen generada
+			await interaction.reply({
+				files: [
+					{
+						attachment: buffer,
+						name: 'versus.bplist' 
+					},
+					{
+						attachment: imageBlob,
+						name: 'versus.png'
+					}
+				]
+			});
 
 	} catch (error) {
 		console.error(error)

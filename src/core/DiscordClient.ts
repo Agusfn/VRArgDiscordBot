@@ -116,8 +116,8 @@ export class DiscordClientWrapper {
 
             try {
                 await command.execute(command.script, interaction);
-            } catch (error: any) {
-                logger.error(error?.stack || error);
+            } catch (error) {
+                logger.error(error);
                 if (interaction.replied || interaction.deferred) {
                     await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
                 } else {
@@ -135,13 +135,6 @@ export class DiscordClientWrapper {
      */
     public getChannel(channelId: string) {
         return this.guild.channels.cache.find(channel => channel.id == channelId);
-    }
-
-
-    public onReady(func: () => any) {
-        this.client.once(Events.ClientReady, () => {
-            func();
-        })
     }
 
 

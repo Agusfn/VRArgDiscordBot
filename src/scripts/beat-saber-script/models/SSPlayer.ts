@@ -197,3 +197,9 @@ SSPlayer.belongsTo(User, {
     foreignKey: "discordUserId"
 })
 
+SSPlayer.hasMany(PlayerScore, {
+    foreignKey: "playerId"
+})
+PlayerScore.belongsTo(SSPlayer, {
+    foreignKey: "playerId"
+})

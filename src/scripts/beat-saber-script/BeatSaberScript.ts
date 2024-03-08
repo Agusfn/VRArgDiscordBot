@@ -1,5 +1,5 @@
 import { Script } from "@core/Script";
-import { HistoricScoreFetcher, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerScoreSaver, PlayerTriggerEvents, ScoreSaberAccountManager, ScoreSaberDataCache } from "./services";
+import { HistoricScoreFetcher, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerScoreSaver, PlayerTriggerEvents, ScoreSaberAccountManager } from "./services";
 import * as cron from "node-cron"
 import { PlayerAnnouncements } from "./services/PlayerAnnouncements";
 import { DiscordClientWrapper } from "@core/DiscordClient";
@@ -26,26 +26,25 @@ export class BeatSaberScript extends Script {
     }
 
 
-    async onReady() {
+    onReady(): void | Promise<void> {
 
-        await ScoreSaberDataCache.initialize();
-        await this.playerTriggerEvents.initialize();
+        console.log("BS script onready!");
 
         const channel = this.client.getChannel(process.env.CHANNEL_ID_BEATSABER_MILESTONES) as TextChannel;
         this.playerAnnouncements.setOutputChannel(channel);
 
-        // Check new already submitted scores from all players
-        this.historicScoreFetcher.checkPlayerHistoricScores();
+        // // Check new already submitted scores from all players
+        // this.historicScoreFetcher.checkPlayerHistoricScores();
 
-        // Each 20 minutes, check for any new score recently uploaded
-        cron.schedule("*/20 * * * *", () => {
-            this.periodicScoreFetcher.checkPlayersNewScores();
-        });
+        // // Each 20 minutes, check for any new score recently uploaded
+        // cron.schedule("*/20 * * * *", () => {
+        //     this.periodicScoreFetcher.checkPlayersNewScores();
+        // });
 
-        // Each 25 minutes, check for changes in scoresaber players profiles (rank, nickname, etc)
-        cron.schedule("*/25 * * * *", () => {
-            this.playerProfileUpdater.checkPlayersProfileUpdates();
-        });
+        // // Each 25 minutes, check for changes in scoresaber players profiles (rank, nickname, etc)
+        // cron.schedule("*/25 * * * *", () => {
+        //     this.playerProfileUpdater.checkPlayersProfileUpdates();
+        // });
 
     }
 

@@ -71,9 +71,9 @@ export class PlayerProfileUpdater {
     
             this.updaterRunning = false
 
-        } catch(error: any) {
+        } catch(error) {
             logger.error("Error ocurred runnning player profile updater. This call to player profile updater was stopped.")
-            logger.error(error?.stack || error);
+            logException(error)
             this.updaterRunning = false
         }
 

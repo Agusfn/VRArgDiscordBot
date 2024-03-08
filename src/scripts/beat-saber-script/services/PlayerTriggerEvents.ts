@@ -109,8 +109,7 @@ export class PlayerTriggerEvents {
 
             // Send announcement about players surpassing others in avg accuracy
             await this.announcePlayersPerformanceDifference(oldPerformances, newPerformances, "avgAccuracy", "higher")
-        } catch (error: any) {
-            logger.error("Error on trigger events: " + error?.stack || error)
+        } catch (error) {
             logException(error)
         }
 
@@ -231,8 +230,7 @@ export class PlayerTriggerEvents {
                     // send announcement for each opponent
             }
 
-        } catch(error: any) {
-            logger.error(error?.stack || error);
+        } catch(error) {
             logException(error)
         }
 

@@ -1,6 +1,4 @@
-import { ChatInputCommandInteraction, TextChannel } from "discord.js";
 import logger from "./logger"
-import { separateMultiLineString } from "./strings";
 
 
 export function sleep(ms: number) {
@@ -36,27 +34,4 @@ export const logException = (error: any) => {
         }
     }
 
-}
-
-export const replyLongMessageToInteraction = async (interaction: ChatInputCommandInteraction, messageContent: string) => {
-        
-    const messagesContents = separateMultiLineString(messageContent, 1900) // message content limit is 2000
-
-    for(let i = 0; i < messagesContents.length; i++) {
-        if(i == 0) { // first response is reply of interaction to acknowledge command
-            await interaction.reply(messagesContents[i]);
-        } else { // subsequent are just normal messages
-            await interaction.channel.send(messagesContents[i]);
-        }
-    }
-}
-
-
-export const sendLongMessageToChannel = async (channel: TextChannel, messageContent: string) => {
-        
-    const messagesContents = separateMultiLineString(messageContent, 1900) // message content limit is 2000
-
-    for(const messageContent of messagesContents) {
-        await channel.send(messageContent)
-    }
 }

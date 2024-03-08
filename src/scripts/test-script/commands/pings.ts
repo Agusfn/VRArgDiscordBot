@@ -1,15 +1,13 @@
-import { DiscordCommand } from "@ts/interfaces";
-import { SlashCommandBuilder } from "discord.js";
-import { TestScript } from "../TestScript";
+import { SlashCommandBuilder, ChatInputCommandInteraction, CacheType } from "discord.js";
 
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName('ping')
 		.setDescription('Replies with Pong!'),
-	async execute(script: TestScript, interaction) {
-		
-		await interaction.reply(`Pong from ${script.getName()}!`);
+	async execute(interaction: ChatInputCommandInteraction<CacheType>) {
+
+		await interaction.reply('Pong!');
 		
 	},
-} as DiscordCommand<TestScript>;
+};

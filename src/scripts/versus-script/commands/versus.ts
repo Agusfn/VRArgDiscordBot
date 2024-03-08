@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { VersusScript } from "../VersusScript";
 import axios from "axios";
 
@@ -33,10 +33,18 @@ export default {
 
 			const html = await axios.get(imageUrl).then(res => res.data)
 
-			const image = await script.convertToImage(html)
+			// convert html to image
+			const image = await script.htmlToImage(html)
+			
+			// Enviar el archivo .bplist como respuesta al usuario
+			await interaction.reply({
+				files: [{
+					attachment: buffer,
+					name: 'versus.bplist'
+				}]
+			});
 
-			// Enviar el archivo .bplist y la imagen
-			interaction.reply("test")
+
 
 	} catch (error) {
 		console.error(error)

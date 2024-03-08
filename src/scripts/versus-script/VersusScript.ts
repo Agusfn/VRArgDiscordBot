@@ -9,16 +9,15 @@ export class VersusScript extends Script {
         super(client);
     }
 
-    public async convertToImage(html: string) {
-        const nodeHtmlToImage = require('node-html-to-image')
-        const image = await nodeHtmlToImage({
-                html: html,
-                puppeteerArgs: {
-                        args: ['--no-sandbox']
-                }
-        })
-        return image
-    }
-
+    // public async convertToImage(html: string) {
+    //     const nodeHtmlToImage = require('node-html-to-image')
+    //     const image = await nodeHtmlToImage({
+    //             html: html,
+    //             puppeteerArgs: {
+    //                     args: ['--no-sandbox']
+    //             }
+    //     })
+    //     return image
+    // }
 
 }

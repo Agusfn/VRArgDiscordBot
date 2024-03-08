@@ -19,6 +19,7 @@ export const getEventsFromFolder = (folderPath: string): DiscordEvent<Script, ke
 
     const events: DiscordEvent<Script, keyof ClientEvents>[] = [];
 
+    console.log("eventFiles", eventFiles)
     for (const file of eventFiles) {
         const filePath = path.join(folderPath, file);
 

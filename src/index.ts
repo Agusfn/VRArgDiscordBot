@@ -2,7 +2,7 @@ require('dotenv').config()
 import "./fixTsPaths"
 import { TestScript } from "@scripts/test-script/TestScript";
 import { ScriptLoader } from "@core/ScriptLoader";
-import { DiscordClientWrapper } from "@core/DiscordClient";
+import { DiscordClient } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import logger from "@utils/logger";
 import { CoreScript } from "@scripts/core-script/CoreScript";
@@ -10,7 +10,7 @@ import { CoreScript } from "@scripts/core-script/CoreScript";
 
 (async() => {
 
-    const discordClient = new DiscordClientWrapper(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID);
+    const discordClient = new DiscordClient(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID);
 
     // Make sure DB connection works
     await sequelize.authenticate();
@@ -38,7 +38,7 @@ process.on('SIGINT', function() {
     logger.info("Closing gracefully...");
     logger.end();
     sequelize.close();
-    DiscordClientWrapper.getInstance().destroy();
+    DiscordClient.getInstance().destroy();
     process.exit();
 });
 

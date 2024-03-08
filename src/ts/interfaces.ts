@@ -24,3 +24,15 @@ export interface DiscordEvent<T extends Script, Event extends keyof ClientEvents
     /** The execution function for the event. Its arguments are determined by the event type. */
     execute: (script: T, ...args: ClientEvents[Event]) => Promise<void>
 }
+
+
+export interface UserI {
+    discordUserId: string
+    /** This is the discord username (which cannot be changed) */
+    username: string
+    joinDate: Date
+    isPresent: boolean
+    leaveDate: Date
+    isAdmin: boolean
+}
+

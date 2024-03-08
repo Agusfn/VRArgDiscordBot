@@ -1,9 +1,9 @@
-import { DiscordClientWrapper } from "@core/DiscordClient";
+import { DiscordClient } from "@core/DiscordClient";
 import { Script } from "../../core/Script";
 
 export class TestScript extends Script {
 
-    constructor(client: DiscordClientWrapper) {
+    constructor(client: DiscordClient) {
         super(client);
     }
 

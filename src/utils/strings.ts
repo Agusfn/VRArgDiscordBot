@@ -22,8 +22,3 @@ export const separateMultiLineString = (str: string, maxStringLength: number): s
     return strings
 }
 
-
-
-export const camelToHyphen = (camelCase: string): string => {
-    return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}

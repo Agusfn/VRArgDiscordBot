@@ -9,4 +9,4 @@ export default {
 		console.log(script.getName(), "guild member removed", guildMember)
 
 	},
-} as DiscordEvent<CoreScript, Events.GuildMemberRemove>;
+} as DiscordEvent<CoreScript>;

@@ -8,4 +8,4 @@ export default {
 	execute(script: TestScript, client: Client) {
 		console.log(`Ready! Logged in as ${client.user.tag}. Script: ${script.getName()}`);
 	},
-} as DiscordEvent<TestScript, Events.ClientReady>;
+} as DiscordEvent<TestScript>;

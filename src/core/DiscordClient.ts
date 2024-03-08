@@ -1,6 +1,6 @@
 import logger from "@utils/logger";
 import { getCommandsFromFolder } from "@utils/commandFolders";
-import DiscordJS, { Guild, TextChannel, Message, GatewayIntentBits, Collection, Events, ClientEvents } from "discord.js"
+import DiscordJS, { Guild, TextChannel, Message, GatewayIntentBits, Collection, Events } from "discord.js"
 import { Script } from "./Script";
 import { DiscordCommand, DiscordEvent } from "@ts/interfaces";
 
@@ -56,7 +56,7 @@ export class DiscordClient {
      * @param event 
      * @param script The reference script from where this command is being called, to add context on the callback.
      */
-    public registerNewEvent(event: DiscordEvent<Script, keyof ClientEvents>, script: Script) {
+    public registerNewEvent(event: DiscordEvent<Script>, script: Script) {
         // Register the event listener for this new event, and inject script as 1st argument
         if (event.once) {
             this.client.once(event.name, (...args) => event.execute(script, ...args));

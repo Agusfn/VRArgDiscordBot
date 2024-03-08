@@ -1,5 +1,5 @@
 import { Script } from "@core/Script"
-import { CacheType, ChatInputCommandInteraction, ClientEvents, SlashCommandBuilder } from "discord.js"
+import { CacheType, ChatInputCommandInteraction, ClientEvents, Events, SlashCommandBuilder } from "discord.js"
 
 /**
  * Object that contains the definition and execution callback for a Discord command within our application.
@@ -16,13 +16,13 @@ export interface DiscordCommand<T extends Script> {
 /**
  * Object that contains the definition and execution callback for a Discord event within our application.
  */
-export interface DiscordEvent<T extends Script, Event extends keyof ClientEvents> {
+export interface DiscordEvent<T extends Script> {
     /** The specific type of the event. */
-    name: Event,
+    name: keyof ClientEvents,
     /** Whether to call this only once, or each time it occurs. */
     once: boolean,
     /** The execution function for the event. Its arguments are determined by the event type. */
-    execute: (script: T, ...args: ClientEvents[Event]) => Promise<void>
+    execute: (script: T, ...args: any) => Promise<void>
 }
 
 

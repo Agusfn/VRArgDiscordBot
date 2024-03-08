@@ -34,20 +34,7 @@ export default {
 
 			const html = await axios.get(imageUrl).then(res => res.data)
 
-			// convert html text to a DOM element
-			const jsdom = require("jsdom");
-			const dom = new jsdom.JSDOM(html);
-
-			// Convertir HTML a imagen usando html2canvas
-			const canvas = await html2canvas(dom.window.document.body, {
-				allowTaint: true,
-				useCORS: true,
-				scale: 2
-			});
-			// Obtener la URL de la imagen generada
-			const imageBlob = await new Promise((resolve) => {
-					canvas.toBlob(resolve, "image/png"); // Puedes cambiar el formato a "image/jpeg" si lo prefieres
-			});
+			const imageBlob = convertToImage(html)
 			
 			// Enviar el archivo .bplist y la imagen generada
 			await interaction.reply({
@@ -71,3 +58,14 @@ export default {
 	return
 	},
 } as DiscordCommand<VersusScript>;
+
+function convertToImage(html: string) {
+	const nodeHtmlToImage = require('node-html-to-image')
+	const image = nodeHtmlToImage({
+					html: html,
+					puppeteerArgs: {
+									args: ['--no-sandbox']
+					}
+	})
+	return image
+}

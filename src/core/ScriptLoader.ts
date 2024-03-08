@@ -44,14 +44,6 @@ export class ScriptLoader {
 
     }
 
-    public callAllScriptsOnInitialized() {
-        for(const scriptInstance of this.scriptInstances) {
-            if(scriptInstance.onReady) {
-                scriptInstance.onReady(); // async
-            }
-        }
-    }
-
     /**
      * Register the discord commands defined by all command files within a directory, to run in the context of a specific Script.
      * @param folderPath 

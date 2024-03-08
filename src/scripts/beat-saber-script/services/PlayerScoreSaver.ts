@@ -13,9 +13,6 @@ type PlayerScoreI = any
  */
 export class PlayerScoreSaver {
     
-    constructor(private playerTriggerEvents: PlayerTriggerEvents) {
-
-    }
 
     /**
      * Store a page of scores taken from SS API for a given SSPlayer, and store any Leaderboard (song map) that was not previously stored. Used in historic fetcher.
@@ -127,7 +124,7 @@ export class PlayerScoreSaver {
 
         // (async) Call event trigger of player submitting new score page
         if(scoresToSave.length > 0) {
-            this.playerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
+            PlayerTriggerEvents.onPlayerSubmitNewScorePage(player, scoresToSave)
         }
 
         return {

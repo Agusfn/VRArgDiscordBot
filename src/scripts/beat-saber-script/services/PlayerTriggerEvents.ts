@@ -1,46 +1,44 @@
+import { SSPlayer, PlayerScore } from "../model/index"
+import { PlayerPerformanceInfo, PlayerScoreI, SSPlayerI } from "../ts"
 import logger from "@utils/logger"
 import { PlayerAnnouncements } from "./PlayerAnnouncements"
 import { logException } from "@utils/other"
-import { PlayerScore, SSPlayer } from "../models"
-import { PlayerPerformanceInfo } from "../types"
-import { Countries } from "@services/ScoreSaber/types"
-import { UserManager } from "@scripts/core-script/services/UserManager"
-import { isScoreSignificantlyImproved } from "../utils/other"
-
+import { Sequelize } from "sequelize"
+import { isScoreSignificantlyImproved } from "../utils/index"
+import { SSCountries } from "../config"
+import { UserManager } from "@lib/UserManager"
 
 export class PlayerTriggerEvents {
 
-
-    constructor(private playerAnnouncements: PlayerAnnouncements) {
-
-    }
 
 
     /**
      * List of player ids who are subscribed to milestone announcements.
      */
-    private milestoneSubscribedPlayerIds: string[] = []
+    private static milestoneSubscribedPlayerIds: string[] = []
 
     /**
      * Cache with all of the SSPlayers global ranks. Either with their Discord account linked or not, or subscribed to announcements or not.
      */
-    private playerGlobalRanks: {[playerId: string]: number} = {}
+    private static playerGlobalRanks: {[playerId: string]: number} = {}
     
     /**
      * Cache with all of the SSPlayers accuracies. Either with their Discord account linked or not, or subscribed to announcements or not.
      */
-    private playerAccuracies: {[playerId: string]: number} = {}
+    private static playerAccuracies: {[playerId: string]: number} = {}
 
     /**
      * Cache with all of the SSPlayers countries. Either with their Discord account linked or not, or subscribed to announcements or not.
      */
-    private playerCountries: {[playerId: string]: string} = {}
+    private static playerCountries: {[playerId: string]: string} = {}
 
 
 
-    public async initialize() {
+    public static async initialize() {
 
         logger.info("Initializing PlayerTriggerEvents cache")
+
+        await PlayerAnnouncements.initialize()
 
         const players = await SSPlayer.findAll()
 
@@ -61,7 +59,7 @@ export class PlayerTriggerEvents {
      * @param player ScoreSaber Player with their Discord account linked
      * @param oldPlayer 
      */
-    public onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayer) {
+    public static onPlayerUpdateProfile(player: SSPlayer, oldPlayer: SSPlayerI) {
 
         if(process.env.DEBUG == "true") {
             logger.info("event handler called for player " + player.name + " updating profile")
@@ -90,7 +88,7 @@ export class PlayerTriggerEvents {
      * @param oldPerformances 
      * @param newPerformances 
      */
-    public async onAllPlayersUpdatePerformanceInfo(oldPerformances: PlayerPerformanceInfo[], newPerformances: PlayerPerformanceInfo[]) {
+    public static async onAllPlayersUpdatePerformanceInfo(oldPerformances: PlayerPerformanceInfo[], newPerformances: PlayerPerformanceInfo[]) {
 
         // for testing only
         // newPerformances.find(p => p.playerId == "76561198128883308").rank = 200
@@ -123,7 +121,7 @@ export class PlayerTriggerEvents {
      * @param newPlayerPerformances 
      * @param announceFunction 
      */
-    private async announcePlayersPerformanceDifference(oldPerformances: PlayerPerformanceInfo[], newPlayerPerformances: PlayerPerformanceInfo[], attributeName: "rank" | "avgAccuracy", metricCriteria: "higher" | "lower") {
+    private static async announcePlayersPerformanceDifference(oldPerformances: PlayerPerformanceInfo[], newPlayerPerformances: PlayerPerformanceInfo[], attributeName: "rank" | "avgAccuracy", metricCriteria: "higher" | "lower") {
 
         /** Returns true if metric "a" is better than "b" according to the specified criteria. */
         const higherMetric = (a: number, b: number) => {
@@ -162,9 +160,9 @@ export class PlayerTriggerEvents {
                 if(playersSurpassed.length > 0) {
                     console.log("players surpassed by " + player.playerId + ": ", playersSurpassed)
                     if(attributeName == "rank") {
-                        await this.playerAnnouncements.playerSurpassedPlayersInRank(player, playersSurpassed)
+                        await PlayerAnnouncements.playerSurpassedPlayersInRank(player, playersSurpassed)
                     } else if(attributeName == "avgAccuracy") {
-                        await this.playerAnnouncements.playerSurpassedPlayersInAccuracy(player, playersSurpassed)
+                        await PlayerAnnouncements.playerSurpassedPlayersInAccuracy(player, playersSurpassed)
                     }
                 }
 
@@ -180,7 +178,7 @@ export class PlayerTriggerEvents {
      * @param player 
      * @param scores 
      */
-    public async onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScore[]) {
+    public static async onPlayerSubmitNewScorePage(player: SSPlayer, scores: PlayerScoreI[]) {
 
         try {
 
@@ -196,9 +194,9 @@ export class PlayerTriggerEvents {
     
                     if(newScore.modifiedScore > topServerScore.modifiedScore) {
                         if(topServerScore.playerId != player.id) { // player sniped another player's top score
-                            await this.playerAnnouncements.playerMadeTopServerScore(player, newScore, topServerScore)
+                            await PlayerAnnouncements.playerMadeTopServerScore(player, newScore, topServerScore)
                         } else { // player improved own top score
-                            await this.playerAnnouncements.playerImprovedTopScore(player, newScore, topServerScore)
+                            await PlayerAnnouncements.playerImprovedTopScore(player, newScore, topServerScore)
                         }
                     } else { // player didn't improve the top server score
 
@@ -207,9 +205,9 @@ export class PlayerTriggerEvents {
                         const topScoreOfCountry = this.getTopScoreFromPresentPlayer(scoresFromCountry);
     
                         if(topScoreOfCountry && newScore.modifiedScore > topScoreOfCountry.modifiedScore && topScoreOfCountry.playerId != player.id &&
-                            player.country == Countries.ARGENTINA) // argentina is temporarily the only who has top country announcement (because all top players are registered in the bot)) { 
+                            player.country == SSCountries.ARGENTINA) // argentina is temporarily the only who has top country announcement (because all top players are registered in the bot)) { 
                         {
-                            await this.playerAnnouncements.playerMadeTopCountryScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
+                            await PlayerAnnouncements.playerMadeTopCountryScore(player, newScore, topScoreOfCountry) // player sniper another player's top country score
                         } else {
 
                             // Get the best score for this map for this player (if it exists)
@@ -217,13 +215,13 @@ export class PlayerTriggerEvents {
                             const previousPlayerTopScore = playerPreviousScores.length > 0 ? playerPreviousScores.reduce((prev, current) => current.modifiedScore > prev.modifiedScore ? current : prev) : null
                             
                             if(previousPlayerTopScore && isScoreSignificantlyImproved(previousPlayerTopScore.accuracy, newScore.accuracy)) {
-                                await this.playerAnnouncements.playerSignificantlyImprovedOwnScore(player, newScore, previousPlayerTopScore)
+                                await PlayerAnnouncements.playerSignificantlyImprovedOwnScore(player, newScore, previousPlayerTopScore)
                             }
                         }
                     }
     
                 } else { // no players submitted any score for this leaderboard
-                    await this.playerAnnouncements.playerHasFirstScoredRankedMap(player, newScore)
+                    await PlayerAnnouncements.playerHasFirstScoredRankedMap(player, newScore)
                 }
     
                 // future: if player improved score than any of their opponents (use existing query)
@@ -241,7 +239,7 @@ export class PlayerTriggerEvents {
      * obtain the highest score of a player present in the server.
      * @param scores array with scores
      */
-    private getTopScoreFromPresentPlayer(scores: PlayerScore[]): PlayerScore {
+    private static getTopScoreFromPresentPlayer(scores: PlayerScore[]): PlayerScore {
         if(Array.isArray(scores) && scores.length > 0) {
             let maxScore: PlayerScore = null;
 
@@ -259,7 +257,7 @@ export class PlayerTriggerEvents {
     }
 
 
-    private onPlayerUpdateAvgRankedAccuracy(player: SSPlayer, oldAccuracy: number, newAccuracy: number) {
+    private static onPlayerUpdateAvgRankedAccuracy(player: SSPlayer, oldAccuracy: number, newAccuracy: number) {
         // if player surpassed any other player subscribed in milestones
             // send acc surpass announcement of said players
 
@@ -267,7 +265,7 @@ export class PlayerTriggerEvents {
             // send announcement of acc surpass for each opponent
     }
 
-    private onPlayerUpdateGlobalRank(player: SSPlayer, oldRank: number, newRank: number) {
+    private static onPlayerUpdateGlobalRank(player: SSPlayer, oldRank: number, newRank: number) {
         // if player surpassed any other player subscribed in milestones
             // send global rank surpass announcement of said players
 
@@ -280,9 +278,9 @@ export class PlayerTriggerEvents {
 
     }
 
-    private onPlayerUpdateCountryRank(player: SSPlayer, oldRank: number, newRank: number) {
+    private static onPlayerUpdateCountryRank(player: SSPlayer, oldRank: number, newRank: number) {
         if(newRank == 1) {
-            this.playerAnnouncements.sendForPlayerTop1Country(player, player.country)
+            PlayerAnnouncements.sendForPlayerTop1Country(player, player.country)
         }
     }
 

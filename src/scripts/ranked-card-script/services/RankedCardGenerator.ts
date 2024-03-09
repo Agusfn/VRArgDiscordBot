@@ -72,7 +72,7 @@ export function drawCardFromData(data: RankedCard) {
 }
 
 async function drawCard(songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
-    curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tags: string[], rankedDate: string, 
+    curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tagsArray: string[], rankedDate: string, 
     userName: string, qualified: boolean, shiny: boolean) {
   const canvas = createCanvas(400, 600);
   const ctx = canvas.getContext('2d');
@@ -373,13 +373,13 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   }
 
   //dibujar tags
-  if(!tags) {
-    tags = ["none"];
+  if(!tagsArray) {
+    tagsArray = ["none"];
   }
   let filteredTags = [];
-  for(var i = 0; i < tags.length; i++) {
-    if(tagNames.includes(tags[i])) {
-      filteredTags.push(tags[i]);
+  for(var i = 0; i < tagsArray.length; i++) {
+    if(tagNames.includes(tagsArray[i])) {
+      filteredTags.push(tagsArray[i]);
     }
   }
   if(filteredTags.length == 0) {
@@ -547,12 +547,12 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   const buffer = canvas.toBuffer('image/png');
   score = score/100;
-  const tagsString: string = JSON.stringify(tags);
+  const tags: string = JSON.stringify(tagsArray);
 
   const cardData = {
     userCardId: 0, date: new Date(),
     songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
-    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tagsString, rankedDate, 
+    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
     userName, qualified, shiny
   }
   return [buffer, cardData];

@@ -65,8 +65,9 @@ function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
 //CANVAS STUFF
 
 export function drawCardFromData(data: RankedCard) {
+  const tagsArray: string[] = JSON.parse(data.tags);
   return drawCard(data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
-    data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, data.tags, data.rankedDate, 
+    data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, tagsArray, data.rankedDate, 
     data.userName, data.qualified, data.shiny)
 }
 
@@ -546,10 +547,12 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
 
   const buffer = canvas.toBuffer('image/png');
   score = score/100;
+  const tagsString: string = JSON.stringify(tags);
+
   const cardData = {
     userCardId: 0, date: new Date(),
     songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
-    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
+    curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tagsString, rankedDate, 
     userName, qualified, shiny
   }
   return [buffer, cardData];

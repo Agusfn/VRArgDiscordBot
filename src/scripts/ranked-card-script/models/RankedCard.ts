@@ -21,7 +21,7 @@ export class RankedCard extends Model<InferAttributes<RankedCard>, InferCreation
     upvotes: number
     downvotes: number
     score: number
-    tags: string[]
+    tags: string
     rankedDate: string
     userName: string
     qualified: boolean
@@ -59,14 +59,7 @@ RankedCard.init({
     upvotes: {type: Types.INTEGER}, 
     downvotes: {type: Types.INTEGER}, 
     score: {type: Types.FLOAT}, 
-    tags: {type: Types.TEXT,
-        get() {
-            const value = this.getDataValue('tags');
-            return value ? JSON.parse(value.toString()) : null;
-        }/*,
-        set(value) {
-            this.setDataValue('tags', JSON.stringify(value));
-        }*/}, 
+    tags: {type: Types.TEXT}, 
     rankedDate: {type: Types.STRING}, 
     userName: {type: Types.STRING}, 
     qualified: {type: Types.BOOLEAN},
@@ -89,5 +82,9 @@ RankedCard.init({
 });
 
 RankedCard.belongsTo(UserCard, {
+    foreignKey: "userCardId"
+})
+
+UserCard.hasMany(RankedCard, {
     foreignKey: "userCardId"
 })

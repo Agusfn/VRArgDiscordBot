@@ -46,7 +46,3 @@ UserCard.init({
 
     }
 });
-
-UserCard.hasMany(RankedCard, {
-    foreignKey: "userCardId"
-})

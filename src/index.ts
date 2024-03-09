@@ -33,8 +33,6 @@ import { CoreScript } from "@scripts/core-script/CoreScript";
     // Log into discord after all events and commands have been registered
     await discordClient.login();
 
-
-
 })()
 
 

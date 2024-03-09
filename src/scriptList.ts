@@ -1,5 +1,5 @@
 import { BeatSaberScript } from "@scripts/beat-saber-script/BeatSaberScript";
-import { RankedCardScript } from "@scripts/ranked-cards-script/RankedCardScript";
+import { RankedCardScript } from "@scripts/ranked-card-script/RankedCardScript";
 
 export default [
     BeatSaberScript,

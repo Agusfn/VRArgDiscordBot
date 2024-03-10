@@ -4,7 +4,8 @@ import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
 import { drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
-import { calculateCardPrice, findAllTopCard, findTopCard, saveCard } from "../services/RankedCardManager";
+import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard } from "../services/RankedCardManager";
+import { RankedCard } from "../models";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -28,6 +29,15 @@ export default {
             subcommand
                 .setName('mostrar')
                 .setDescription('(Próximamente) Muestra tus cartas seleccionadas')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('buscar')
+                .setDescription('Busca entre tus cartas, puedes buscar por nombre, artista o mapper')
+                .addStringOption(option =>
+                    option.setName('texto')
+                        .setDescription('Texto a buscar')
+                        .setRequired(true)
+                    )
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -50,6 +60,11 @@ export default {
             }
             else if (interaction.options.getSubcommand() === 'mostrar') {
                 await interaction.reply('(Próximamente)...');
+            }
+            else if (interaction.options.getSubcommand() === 'buscar') {
+                await interaction.deferReply();
+                const searchText = interaction.options.getString('texto');
+                await showFirstResultCard(interaction, searchText);
             }
         }
         },
@@ -176,6 +191,23 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
             interaction.followUp("Ché no tenés cartas");
         }
 
+    } catch (error) {
+        logger.error(error);
+        interaction.followUp("Hubo un error al intentar obtener la carta.")
+    }
+}
+
+async function showFirstResultCard(interaction: ChatInputCommandInteraction<CacheType>, searchText: string) {
+    try {
+        const cards = await findCard(interaction.user.id, searchText);
+        const carta = cards[0];
+        if(carta) {
+            let cartaGenerada = await drawCardFromData(carta);
+            sendCard(interaction, cartaGenerada[0]);
+        }
+        else {
+            interaction.followUp("No se encontro ninguna carta");
+        }
     } catch (error) {
         logger.error(error);
         interaction.followUp("Hubo un error al intentar obtener la carta.")

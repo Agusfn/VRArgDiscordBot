@@ -91,7 +91,7 @@ export async function drawUserDeck(interaction: ChatInputCommandInteraction<Cach
         const ctx = canvas.getContext('2d');
 
         // Carga la imagen base del deck
-        const deckBase = await loadImage(path.join('resources/ranked-cards-script', 'deck_base.png'));
+        const deckBase = await loadImage(path.join('resources/ranked-cards-script', 'deck_base2.png'));
         ctx.drawImage(deckBase, 0, 0, canvasWidth, canvasHeight);
 
         const positions = [[454, 38], [33,38], [245,38], [33,334], [245,334], [860,38], [1073,38], [860,334], [1073,334]];
@@ -113,10 +113,12 @@ export async function drawUserDeck(interaction: ChatInputCommandInteraction<Cach
         }
 
         const topcard = await findTopCard(userId);
-        const topgeneratedCard = await drawCardFromData(topcard);
-        const topcardBuffer = topgeneratedCard[0];
-        const topcardImage = await loadImage(topcardBuffer);
-        ctx.drawImage(topcardImage, 33, 665, smallSize[0], smallSize[1]);
+        if(topcard) {
+            const topgeneratedCard = await drawCardFromData(topcard);
+            const topcardBuffer = topgeneratedCard[0];
+            const topcardImage = await loadImage(topcardBuffer);
+            ctx.drawImage(topcardImage, 33, 665, smallSize[0], smallSize[1]);
+        }
 
         const avatarURL = interaction.user.displayAvatarURL({ size: 256 });
         if (avatarURL) {

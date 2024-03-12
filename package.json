@@ -26,6 +26,7 @@
     "node-html-to-image": "^4.0.0",
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.37.0",
+    "sharp": "^0.33.2",
     "sqlite3": "^5.0.2",
     "stackblur-canvas": "^2.7.0",
     "winston": "^3.3.3",

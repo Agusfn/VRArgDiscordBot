@@ -93,6 +93,45 @@ export async function findCard(discordUserId: string, searchText: string) {
   }
 }
 
+export async function findCardById(cardId: number) {
+  try {
+      // Buscar cartas que coincidan con los criterios de búsqueda
+      const cards = await RankedCard.findAll({
+          where: {
+              id: cardId
+          },
+      });
+      return cards; // Retorna un array de cartas que cumplen con la condición
+  } catch (error) {
+      console.error('Error al buscar la carta:', error);
+  }
+}
+
+export async function countUserCards(userId: number) {
+  try {
+      const count = await RankedCard.count({
+          where: { userCardId: userId },
+      });
+      return count;
+  } catch (error) {
+      console.error('Error al contar las cartas:', error);
+  }
+}
+
+export async function countCardsByMinimumStars(userId: number, minStars: number) {
+  try {
+      const count = await RankedCard.count({
+          where: {
+              userCardId: userId,
+              stars: { [Op.gte]: minStars },
+          },
+      });
+      return count;
+  } catch (error) {
+      console.error('Error al contar las cartas por estrellas mínimas:', error);
+  }
+}
+
 export async function sellCard(discordUserId: string, cardId: number) {
     console.log(discordUserId + " " + cardId);
 }

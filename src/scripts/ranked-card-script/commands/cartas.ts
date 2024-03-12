@@ -83,6 +83,26 @@ export default {
                         .setDescription('Número de página para mostrar (opcional)')
                         .setRequired(false)
                 )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('cambiar')
+                .setDescription('Propone un intercambio de cartas con otro usuario. Vence luego de 30 segundos.')
+                .addIntegerOption(option =>
+                    option.setName('id_carta_a_dar')
+                        .setDescription('ID de tu carta que deseas dar en el intercambio')
+                        .setRequired(true))
+                .addIntegerOption(option =>
+                    option.setName('id_carta_a_recibir')
+                        .setDescription('ID de la carta que deseas recibir en el intercambio')
+                        .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('aceptar')
+                .setDescription('Acepta el intercambio propuesto')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('rechazar')
+                .setDescription('Rechaza el intercambio propuesto')
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -132,6 +152,15 @@ export default {
             else if (interaction.options.getSubcommand() === 'inventariotop') {
                 await interaction.deferReply();
                 await handleInventarioCommand(interaction, true);
+            }
+            else if (interaction.options.getSubcommand() === 'cambiar') {
+                await handleTradeCommand(interaction);
+            }
+            else if (interaction.options.getSubcommand() === 'aceptar') {
+                await handleAcceptTradeCommand(interaction);
+            }
+            else if (interaction.options.getSubcommand() === 'rechazar') {
+                await handleDenyTradeCommand(interaction);
             }
         }
     },
@@ -337,4 +366,82 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         console.error('Error al mostrar el inventario:', error);
         await interaction.followUp('Hubo un error al intentar mostrar tu inventario de cartas o la página no existe.');
     }
+}
+
+const tradeProposals = new Map(); // userId a la propuesta
+
+async function handleTradeCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+    const cardToGiveId = interaction.options.getInteger('id_carta_a_dar');
+    const cardToReceiveId = interaction.options.getInteger('id_carta_a_recibir');
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+
+    // Verifica que ambas cartas existan
+    const cardToGive = await RankedCard.findByPk(cardToGiveId);
+    const cardToReceive = await RankedCard.findByPk(cardToReceiveId);
+
+    if (!cardToGive || !cardToReceive) {
+        await interaction.reply('Una o ambas cartas no existen.');
+        return;
+    }
+
+    // Verifica que la carta a dar pertenece al usuario y la carta a recibir no
+    if (cardToGive.userCardId !== userId || cardToReceive.userCardId === userId) {
+        await interaction.reply('No puedes intercambiar cartas que no te pertenecen o intercambiar por una carta que ya es tuya.');
+        return;
+    }
+
+    // Verificar si ya existe una propuesta en curso para este usuario
+    if (tradeProposals.has(userId)) {
+        const existingProposal = tradeProposals.get(userId);
+        // Verificar si aún está en el tiempo límite de espera
+        if (Date.now() - existingProposal.timestamp < 30000) { // 30 segundos
+            await interaction.reply('Ya tienes una propuesta de intercambio en curso. Por favor espera.');
+            return;
+        }
+    }
+
+    // Aquí sigue tu lógica para verificar las cartas y demás condiciones
+
+    // Si pasa todas las verificaciones, almacenar la propuesta con un timestamp
+    tradeProposals.set(userId, { cardToGiveId, cardToReceiveId, receiverId: cardToReceive.userCardId, timestamp: Date.now() });
+
+    const proposal = [...tradeProposals.values()].find(proposal => proposal.receiverId === userId);
+    // Establecer un temporizador para eliminar la propuesta después de 30 segundos si no se acepta
+    setTimeout(() => {
+        if (tradeProposals.has(userId) && tradeProposals.get(userId).timestamp === proposal.timestamp) {
+            tradeProposals.delete(userId);
+            // Opcional: Notificar al usuario que su propuesta de intercambio ha expirado
+        }
+    }, 30000);
+
+    await interaction.reply('Propuesta de intercambio enviada. El otro usuario tiene 30 segundos para aceptar.');
+}
+
+async function handleAcceptTradeCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+
+    // Verificar si hay una propuesta de intercambio dirigida al usuario
+    const proposal = [...tradeProposals.values()].find(proposal => proposal.receiverId === userId);
+
+    if (!proposal) {
+        await interaction.reply('No tienes ninguna propuesta de intercambio pendiente.');
+        return;
+    }
+
+
+    // Verificar si la propuesta ha expirado
+    if (Date.now() - proposal.timestamp >= 30000) { // 30 segundos
+        await interaction.reply('La propuesta de intercambio ha expirado.');
+        tradeProposals.delete(proposal.receiverId); // Limpiar la propuesta expirada
+        return;
+    }
+
+    // Aquí sigue tu lógica para completar el intercambio y demás operaciones
+    await interaction.reply('Intercambio completado con éxito.');
+}
+
+async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<CacheType>) { 
+
 }

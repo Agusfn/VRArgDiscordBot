@@ -9,8 +9,11 @@ export interface DiscordCommand<T extends Script> {
     data: SlashCommandBuilder,
     /** Excecution function for the command. */
     execute: (script: T, interaction: ChatInputCommandInteraction<CacheType>) => Promise<void>,
-    /** Script reference where this command belongs to, to add context for the command. */
-    script?: Script
+    /** Commands cooldown in seconds before being able to use it again. */
+    cooldownSecs?: number,
+
+    /** Script reference where this command belongs to, to add context for the command (do not assign this value on the command file). */
+    script?: Script,
 }
 
 /**

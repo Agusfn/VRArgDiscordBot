@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { APIApplicationCommandOption, ApplicationCommandOptionType, PermissionsBitField, SlashCommandBuilder } from "discord.js";
+import { ApplicationCommandOptionType, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { CoreScript } from "../CoreScript";
 
 
@@ -16,32 +16,25 @@ export default {
 
 			text += "\n**__" + groupName + "__**\n"
 
-			for(const { data } of groupedCommands[groupName]) {
+			for(const { data: cmdData } of groupedCommands[groupName]) {
 
-
-				console.log("command", data.name);
-				console.log("perm", data.default_member_permissions);
-				const perm = interaction.member.permissions as PermissionsBitField;
-				if(perm.has(data.default_member_permissions as any)) {
-					console.log("HAS PERM")
-				} else {
-					console.log("NO PERM")
+				// Skip this command if the user does not have the command permission to execute it
+				const memberPerms = interaction.member.permissions as PermissionsBitField;
+				if(cmdData.default_member_permissions && !memberPerms.has(cmdData.default_member_permissions as any)) {
+					continue;
 				}
 
+				text += "**/" + cmdData.name + "**";
 
-
-				//console.log("options", JSON.stringify(data.options, null, 4));
-
-				const subcommandList = getSubcommandList(data);
-
-				text += "**/" + data.name + "**";
-				if(subcommandList) {
+				const subcommandList = getSubcommandList(cmdData);
+				if(subcommandList) { // command has subcommands
 					text += " _`subcomando`_";
-				} else {
-					text += getCommandParamList(data);
+				} else { // command has normal parameters
+					text += getCommandParamList(cmdData);
 				}
-				text += (data.description ? ": " + data.description : " (sin descripción)") + "\n";
+				text += (cmdData.description ? ": " + cmdData.description : " (sin descripción)") + "\n";
 
+				// Append subcommand list
 				if(subcommandList) {
 					text += subcommandList + "\n";
 				}

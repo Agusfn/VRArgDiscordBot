@@ -1,11 +1,11 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, Message, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
-import { drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
+import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
 import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard } from "../services/RankedCardManager";
-import { RankedCard } from "../models";
+import { drawUserDeck, placeCard, removeCardFromPosition } from "../services/UserDeckManager";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -34,10 +34,34 @@ export default {
                 .setName('buscar')
                 .setDescription('Busca entre tus cartas, puedes buscar por nombre, artista o mapper')
                 .addStringOption(option =>
-                    option.setName('texto')
+                    option
+                        .setName('texto')
                         .setDescription('Texto a buscar')
                         .setRequired(true)
                     )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('colocar')
+                .setDescription('Coloca la carta que elijas en la posicion que elijas')
+                .addIntegerOption(option => 
+                    option
+                        .setName("id")
+                        .setDescription('Id de la carta a colocar')
+                        .setRequired(true))
+                .addIntegerOption(option => 
+                    option
+                        .setName("posicion")
+                        .setDescription('Posición a colocar la carta (0-8)')
+                        .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('quitar')
+                .setDescription('Quita la carta que elijas de la posicion que elijas')
+                .addIntegerOption(option => 
+                    option
+                        .setName("posicion")
+                        .setDescription('Posición a quitar la carta (0-8)')
+                        .setRequired(true))
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -59,15 +83,29 @@ export default {
                 await openTopCardGlobal(interaction);
             }
             else if (interaction.options.getSubcommand() === 'mostrar') {
-                await interaction.reply('(Próximamente)...');
+                await interaction.deferReply();
+                await drawUserDeck(interaction);
             }
             else if (interaction.options.getSubcommand() === 'buscar') {
                 await interaction.deferReply();
                 const searchText = interaction.options.getString('texto');
                 await showFirstResultCard(interaction, searchText);
             }
+            else if (interaction.options.getSubcommand() === 'colocar') {
+                await interaction.deferReply();
+                const cardId = interaction.options.getInteger('id');
+                const position = interaction.options.getInteger('posicion');
+                const userCarta = await findOrCreateUser(interaction.user.id);
+                await placeCard(interaction, userCarta[0].id, cardId, position);
+            }
+            else if (interaction.options.getSubcommand() === 'quitar') {
+                await interaction.deferReply();
+                const position = interaction.options.getInteger('posicion');
+                const userCarta = await findOrCreateUser(interaction.user.id);
+                await removeCardFromPosition(interaction, userCarta[0].id, position);
+            }
         }
-        },
+    },
 } as DiscordCommand<RankedCardScript>;
 
 async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>) {
@@ -89,7 +127,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             const hoursSince = timeSince / (1000 * 60 * 60);
 
             // Verificar si la diferencia es menor a 24 horas
-            if (hoursSince < 23) {
+            if (hoursSince < 0) {
                 // Convertir a horas, minutos y segundos para mostrar
                 const horas = Math.floor(hoursSince);
                 const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
@@ -142,12 +180,13 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             for(var i = 0; i < 4; i++) {
                 let shiny = 500*Math.random() < 1;
                 generatedCard = await generateRandomCard(interaction.user.username, shiny);
-                imageBuffers.push(generatedCard[0]);
                 cardPrices.push(calculateCardPrice(generatedCard[1].stars,generatedCard[1].curated,generatedCard[1].chroma,generatedCard[1].shiny))
                 const cardData = generatedCard[1];
                 cardData.userCardId = userCarta[0].id;                       
                 let cartId = await saveCard(cardData);
                 cardIds.push(cartId);
+                generatedCard[0] = await addCardId(generatedCard[0], cartId);
+                imageBuffers.push(generatedCard[0]);
             }
         }
         // Enviar carta
@@ -167,6 +206,7 @@ async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheT
         const carta = await findAllTopCard();
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {
@@ -185,6 +225,7 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
         const carta = await findTopCard(userCarta[0].id);
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {
@@ -203,6 +244,7 @@ async function showFirstResultCard(interaction: ChatInputCommandInteraction<Cach
         const carta = cards[0];
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {

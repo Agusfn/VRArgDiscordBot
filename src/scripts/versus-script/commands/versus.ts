@@ -2,7 +2,6 @@ import { DiscordCommand } from "@ts/interfaces";
 import { SlashCommandBuilder } from "discord.js";
 import { VersusScript } from "../VersusScript";
 import axios from "axios";
-import html2canvas from "html2canvas";
 
 
 export default {

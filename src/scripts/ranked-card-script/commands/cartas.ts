@@ -6,6 +6,7 @@ import logger from "@utils/logger";
 import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
 import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard } from "../services/RankedCardManager";
 import { drawUserDeck, placeCard, removeCardFromPosition } from "../services/UserDeckManager";
+import { RankedCard } from "../models";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -13,7 +14,7 @@ export default {
 		.setDescription('Comandos relacionados con el generador de cartas de mapas ranked de Scoresaber')
         .addSubcommand(subcommand =>
             subcommand
-                .setName('sacar')
+                .setName('abrir')
                 .setDescription('Abre un paquete de 4 cartas')
         )
         .addSubcommand(subcommand =>
@@ -62,6 +63,26 @@ export default {
                         .setName("posicion")
                         .setDescription('Posición a quitar la carta (0-8)')
                         .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('inventario')
+                .setDescription('Muestra tu inventario de cartas.')
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('inventariotop')
+                .setDescription('Muestra tu inventario de cartas top.')
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -70,7 +91,7 @@ export default {
         const { commandName } = interaction;
 
         if (commandName === 'cartas') {
-            if (interaction.options.getSubcommand() === 'sacar') {
+            if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
                 await openCardPack([], interaction);
             }
@@ -103,6 +124,14 @@ export default {
                 const position = interaction.options.getInteger('posicion');
                 const userCarta = await findOrCreateUser(interaction.user.id);
                 await removeCardFromPosition(interaction, userCarta[0].id, position);
+            }
+            else if (interaction.options.getSubcommand() === 'inventario') {
+                await interaction.deferReply();
+                await handleInventarioCommand(interaction, false);
+            }
+            else if (interaction.options.getSubcommand() === 'inventariotop') {
+                await interaction.deferReply();
+                await handleInventarioCommand(interaction, true);
             }
         }
     },
@@ -274,3 +303,37 @@ async function sendButton(interaction: ChatInputCommandInteraction<CacheType>, c
     await interaction.channel.send({components: [row] });
 }
 
+async function handleInventarioCommand(interaction: ChatInputCommandInteraction<CacheType>, top: boolean) {
+    // Obtén el ID del usuario de Discord
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+    // Verifica si se proporcionó una opción de página, si no, usa la página 1 como predeterminado
+    const page = interaction.options.getInteger('pagina') || 1;
+    const pageSize = 10; // Número de cartas por página
+    const offset = (page - 1) * pageSize;
+
+    try {
+        // Suponiendo que tienes una función para obtener las cartas del usuario
+        const { count, rows } = await RankedCard.findAndCountAll({
+            where: { userCardId: userId },
+            order: [[top? 'stars' : 'id', 'DESC']], // Ordena por ID de mayor a menor
+            limit: pageSize,
+            offset: offset,
+        });
+
+        if (rows.length === 0) {
+            await interaction.reply('No tienes cartas en tu inventario o la página no existe.');
+            return;
+        }
+
+        // Formatea las cartas para el mensaje
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ID: **${card.id}**, Nombre: **${card.songName}**, Estrellas: **${card.stars}**`).join('\n');
+        const totalPages = Math.ceil(count / pageSize);
+
+        await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
+
+    } catch (error) {
+        console.error('Error al mostrar el inventario:', error);
+        await interaction.followUp('Hubo un error al intentar mostrar tu inventario de cartas o la página no existe.');
+    }
+}

@@ -8,7 +8,7 @@ import { TextChannel } from "discord.js";
 export class BeatSaberScript extends Script {
 
 
-    protected scriptName = "Beat Saber Script";
+    protected scriptTitle = "Beat Saber General";
     
     private playerAnnouncements = new PlayerAnnouncements();
     private playerTriggerEvents = new PlayerTriggerEvents(this.playerAnnouncements);

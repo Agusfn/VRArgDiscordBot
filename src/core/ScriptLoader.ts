@@ -39,7 +39,7 @@ export class ScriptLoader {
             const cmdsCount = this.registerDiscordCommandsFromDir(scriptPath + "/commands", script);
             const evtsCount = this.registerDiscordEventsFromDir(scriptPath + "/events", script);
 
-            logger.info(`Initialized ${script.getName()}! Registered ${cmdsCount} commands and ${evtsCount} events.`);
+            logger.info(`Initialized ${ScriptClass.name}! Registered ${cmdsCount} commands and ${evtsCount} events.`);
         }
 
     }

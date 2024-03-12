@@ -12,7 +12,8 @@ export class CoreScript extends Script {
         super(client);
     }
 
-    protected scriptName = "Core Script";
+    scriptTitle = "Comandos principales";
+
 
     
     public groupCommandsByScript() {
@@ -20,7 +21,9 @@ export class CoreScript extends Script {
         const groupedCommands: { [groupName: string]: DiscordCommand<Script>[] } = {};
 
         for(const [commandName, command] of this.client.getCommands()) {
-            const groupName = command.script!.getName();
+
+            const groupName = command.script!.getTitle();
+
             if(!groupedCommands[groupName]) {
                 groupedCommands[groupName] = [command];
             } else {

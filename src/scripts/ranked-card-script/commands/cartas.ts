@@ -327,7 +327,8 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         }
 
         // Formatea las cartas para el mensaje
-        const cardsList = rows.map((card, index) => `${offset + index + 1}. ID: **${card.id}**, Nombre: **${card.songName}**, Estrellas: **${card.stars}**`).join('\n');
+        const difficultySquares = ["",":green_square:","",":blue_square:","",":green_square:","",":red_square:","",":purple_square:"];
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}`).join('\n');
         const totalPages = Math.ceil(count / pageSize);
 
         await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);

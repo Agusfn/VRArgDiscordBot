@@ -156,7 +156,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             const hoursSince = timeSince / (1000 * 60 * 60);
 
             // Verificar si la diferencia es menor a 24 horas
-            if (hoursSince < 0) {
+            if (hoursSince < 23) {
                 // Convertir a horas, minutos y segundos para mostrar
                 const horas = Math.floor(hoursSince);
                 const minutos = Math.floor((timeSince / (1000 * 60)) % 60);

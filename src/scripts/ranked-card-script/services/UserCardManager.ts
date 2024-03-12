@@ -13,6 +13,19 @@ export async function findOrCreateUser(userId: string) {
     }
 }
 
+export async function findUserCardById(userId: number) {
+  try {
+    const user = await UserCard.findOne({
+      where: { id: userId }
+    });
+
+    return user;
+
+  } catch (error) {
+    console.error('Error al buscar o crear el usuario:', error);
+  }
+}
+
 export async function updateLastDraw(discordUserId: string, newLastDrawValue: Date) {
     return UserCard.update(
       { lastDraw: newLastDrawValue }, // nuevos valores para actualizar

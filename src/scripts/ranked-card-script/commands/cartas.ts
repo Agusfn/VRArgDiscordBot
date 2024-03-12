@@ -1,12 +1,14 @@
 import { DiscordCommand } from "@ts/interfaces";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { RankedCardScript } from "../RankedCardScript";
-import { findOrCreateUser, updateLastDraw } from "../services/UserCardManager";
+import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
 import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
-import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard } from "../services/RankedCardManager";
-import { drawUserDeck, placeCard, removeCardFromPosition } from "../services/UserDeckManager";
+import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
+import { drawUserDeck, placeCard, removeCardFromPosition, removeFromUserDeck } from "../services/UserDeckManager";
 import { RankedCard } from "../models";
+import { DiscordClientWrapper } from "@core/DiscordClient";
+import sequelize from "@core/sequelize";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -356,8 +358,8 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         }
 
         // Formatea las cartas para el mensaje
-        const difficultySquares = ["",":green_square:","",":blue_square:","",":green_square:","",":red_square:","",":purple_square:"];
-        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}`).join('\n');
+        
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}`).join('\n');
         const totalPages = Math.ceil(count / pageSize);
 
         await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
@@ -366,6 +368,11 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         console.error('Error al mostrar el inventario:', error);
         await interaction.followUp('Hubo un error al intentar mostrar tu inventario de cartas o la página no existe.');
     }
+}
+
+function cardToText(card: RankedCard) {
+    const difficultySquares = ["",":green_square:","",":blue_square:","",":green_square:","",":red_square:","",":purple_square:"];
+    return `${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}`
 }
 
 const tradeProposals = new Map(); // userId a la propuesta
@@ -379,6 +386,9 @@ async function handleTradeCommand(interaction: ChatInputCommandInteraction<Cache
     // Verifica que ambas cartas existan
     const cardToGive = await RankedCard.findByPk(cardToGiveId);
     const cardToReceive = await RankedCard.findByPk(cardToReceiveId);
+
+    const receiverUser = await findUserCardById(cardToReceive.userCardId);
+    const receiverDiscordId = receiverUser.discordUserId;
 
     if (!cardToGive || !cardToReceive) {
         await interaction.reply('Una o ambas cartas no existen.');
@@ -404,18 +414,30 @@ async function handleTradeCommand(interaction: ChatInputCommandInteraction<Cache
     // Aquí sigue tu lógica para verificar las cartas y demás condiciones
 
     // Si pasa todas las verificaciones, almacenar la propuesta con un timestamp
-    tradeProposals.set(userId, { cardToGiveId, cardToReceiveId, receiverId: cardToReceive.userCardId, timestamp: Date.now() });
+    const timestamp = Date.now();
+    tradeProposals.set(userId, { 
+        cardToGiveId, 
+        cardToReceiveId, 
+        senderId: cardToGive.userCardId,
+        receiverId: cardToReceive.userCardId, 
+        timestamp 
+    });
 
-    const proposal = [...tradeProposals.values()].find(proposal => proposal.receiverId === userId);
+    const receiverDiscordUser = await DiscordClientWrapper.getInstance().users.fetch(receiverDiscordId);
+    await interaction.reply(`**Propuesta de intercambio enviada:** ${receiverDiscordUser.displayName} tiene 30 segundos para aceptar.`);
+    await interaction.channel.send("**"+interaction.user.displayName + "** recibe: " + cardToText(cardToReceive) + " de **" + receiverDiscordUser.displayName+"**");
+    await interaction.channel.send("**"+receiverDiscordUser.displayName + "** recibe: " + cardToText(cardToGive) + " de **" + interaction.user.displayName+"**");
+    await interaction.channel.send("Usa **/cartas** (aceptar/rechazar)");
+
     // Establecer un temporizador para eliminar la propuesta después de 30 segundos si no se acepta
     setTimeout(() => {
-        if (tradeProposals.has(userId) && tradeProposals.get(userId).timestamp === proposal.timestamp) {
+        const currentProposal = tradeProposals.get(userId);
+        // Verifica si la propuesta aún existe y coincide con el timestamp original
+        if (currentProposal && currentProposal.timestamp === timestamp) {
             tradeProposals.delete(userId);
-            // Opcional: Notificar al usuario que su propuesta de intercambio ha expirado
+            // Notificar al usuario que su propuesta de intercambio ha expirado podría ser aquí, pero depende de si tienes una forma de enviarles un mensaje en este punto.
         }
     }, 30000);
-
-    await interaction.reply('Propuesta de intercambio enviada. El otro usuario tiene 30 segundos para aceptar.');
 }
 
 async function handleAcceptTradeCommand(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -438,10 +460,25 @@ async function handleAcceptTradeCommand(interaction: ChatInputCommandInteraction
         return;
     }
 
-    // Aquí sigue tu lógica para completar el intercambio y demás operaciones
+    const transaction = await sequelize.transaction();
+    await removeFromUserDeck(transaction, proposal.cardToGiveId, proposal.cardToReceiveId);
+    await updateCardOwnership(transaction, proposal.cardToGiveId, proposal.receiverId, proposal.cardToReceiveId, proposal.senderId);
+    await transaction.commit();
+
     await interaction.reply('Intercambio completado con éxito.');
 }
 
 async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<CacheType>) { 
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
 
+    // Verificar si hay una propuesta de intercambio dirigida al usuario
+    const proposal = [...tradeProposals.values()].find(proposal => proposal.receiverId === userId);
+
+    if (!proposal) {
+        await interaction.reply('No tienes ninguna propuesta de intercambio pendiente.');
+        return;
+    }
+    tradeProposals.delete(proposal.receiverId);
+    await interaction.reply('Intercambio rechazado con éxito.');
 }

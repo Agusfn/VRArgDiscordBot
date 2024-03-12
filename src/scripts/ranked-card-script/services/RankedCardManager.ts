@@ -132,6 +132,25 @@ export async function countCardsByMinimumStars(userId: number, minStars: number)
   }
 }
 
+export async function updateCardOwnership(transaction: any, cardIdToGive: number, newOwnerIdForGivenCard: number, cardIdToReceive: number, newOwnerIdForReceivedCard: number) {
+  try {
+      // Actualiza la carta dada al nuevo propietario
+      await RankedCard.update({ userCardId: newOwnerIdForGivenCard }, {
+          where: { id: cardIdToGive },
+          transaction
+      });
+
+      // Actualiza la carta recibida al nuevo propietario
+      await RankedCard.update({ userCardId: newOwnerIdForReceivedCard }, {
+          where: { id: cardIdToReceive },
+          transaction
+      });
+  } catch (error) {
+      await transaction.rollback();
+      throw error; // Manejo de error más robusto puede ser necesario
+  }
+}
+
 export async function sellCard(discordUserId: string, cardId: number) {
     console.log(discordUserId + " " + cardId);
 }

@@ -12,6 +12,18 @@ export class UserManager {
     //////////////////
     // Static methods for present user cache (for accessing between all scripts) //
 
+    
+    /**
+     * Get a user by their discord user id
+     * @param discordUserId 
+     * @returns 
+     */
+
+    public static async getUserByDiscordId(discordUserId: string) {
+        return await User.findByPk(discordUserId)
+    }
+
+
     /** Cache with discordUserIds of all present users (members of the server). */
     private static presentUserIds: string[] = [];
 
@@ -163,6 +175,7 @@ export class UserManager {
         }
         
     }
+
 
 
 }

@@ -12,9 +12,26 @@ export default {
         .setName('registrar')
         .setDescription('Registrar tu cumpleaños.')
         .addStringOption(option => option
-          .setName("fecha")
-          .setDescription("Fecha de tu cumpleaños en formato DD/MM/YYYY")
-          .setRequired(true))
+          .setName("dia")
+          .setDescription("Día de tu cumpleaños.")
+          .setRequired(true)
+          .setMinLength(2)
+          .setMaxLength(2)
+    )
+    .addStringOption(option => option
+      .setName("mes")
+      .setDescription("Mes de tu cumpleaños.")
+      .setRequired(true)
+      .setMinLength(2)
+      .setMaxLength(2)
+    )
+    .addStringOption(option => option
+      .setName("año")
+      .setDescription("Año de tu cumpleaños.")
+      .setRequired(true)
+      .setMinLength(4)
+      .setMaxLength(4)
+    )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -29,23 +46,19 @@ export default {
 	async execute(script, interaction) {
 
     const subcommand = interaction.options.getSubcommand();
-
-    // reply with the subcommand
-    // interaction.reply(`Subcommand: ${subcommand}`);
-
+    
     switch(subcommand) {
       case "registrar":
-        const fecha = interaction.options.getString("fecha");
-        const fechaSplit = fecha.split("/");
-        const dia = parseInt(fechaSplit[0]);
-        const mes = parseInt(fechaSplit[1]);
-        const anio = parseInt(fechaSplit[2]);
+        const dia = parseInt(interaction.options.getString("dia"));
+        const mes = parseInt(interaction.options.getString("mes"));
+        const anio = parseInt(interaction.options.getString("año"));
+
         const fechaNacimiento = new Date(anio, mes - 1, dia);
         const birthday = await script.playerBirthdayManager.registerBirthday(interaction.user.id, fechaNacimiento);
         if(birthday) {
           interaction.reply(`Tu cumpleaños ha sido registrado correctamente!`);
         } else {
-          interaction.reply("No se ha podido registrar tu cumpleaños. Inténtalo de nuevo más tarde.");
+          interaction.reply(script.playerBirthdayManager.getErrorMsg());
         }
         break;
       case "desvincular":
@@ -53,7 +66,7 @@ export default {
         if(desvinculado) {
           interaction.reply(`Tu cumpleaños ha sido desvinculado correctamente!`);
         } else {
-          interaction.reply("No se ha podido desvincular tu cumpleaños. Inténtalo de nuevo más tarde.");
+          interaction.reply(script.playerBirthdayManager.getErrorMsg());
         }
         break;
       case "ver":
@@ -61,7 +74,7 @@ export default {
         if(userBirthday) {
           interaction.reply(`Tu cumpleaños está registrado para el ${userBirthday.getDate()}/${userBirthday.getMonth() + 1}/${userBirthday.getFullYear()}`);
         } else {
-          interaction.reply("No tienes tu cumpleaños registrado.");
+          interaction.reply(script.playerBirthdayManager.getErrorMsg());
         }
         break;
     }

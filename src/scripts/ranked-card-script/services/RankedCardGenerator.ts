@@ -560,6 +560,29 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   //console.log("Carta dibujada");
 }
 
+export async function addCardId(buffer: any, cardId: number) {
+    // Cargar la imagen
+    const imagen = await loadImage(buffer);
+
+    // Crear un canvas con las dimensiones de la imagen
+    const canvas = createCanvas(imagen.width, imagen.height);
+    const ctx = canvas.getContext('2d');
+
+    // Dibujar la imagen en el canvas
+    ctx.drawImage(imagen, 0, 0, imagen.width, imagen.height);
+
+    // Configurar el estilo del texto
+    ctx.font = '12px Arial'; // Cambia el tamaño y la fuente a tu gusto
+    ctx.fillStyle = 'white'; // Cambia el color del texto a tu gusto
+    ctx.textAlign = 'right';
+
+    // Agregar el texto sobre la imagen
+    ctx.fillText(cardId, 375, 595); // Cambia la posición a tu gusto
+
+    // Convertir el canvas a un buffer y retornarlo
+    return canvas.toBuffer();
+}
+
 
 //API STUFF
 

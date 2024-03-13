@@ -1,5 +1,4 @@
 import { DataTypes as Types, InferAttributes, InferCreationAttributes, Model, Op, Sequelize } from "sequelize"
-import { RankedCard } from "./RankedCard"
 import sequelize from "@core/sequelize"
 import { User } from "@scripts/core-script/models/User"
 

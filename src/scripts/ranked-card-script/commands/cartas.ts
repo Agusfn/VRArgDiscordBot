@@ -1,10 +1,11 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, Message, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
-import { drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
+import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
 import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard } from "../services/RankedCardManager";
+import { drawUserDeck, placeCard, removeCardFromPosition } from "../services/UserDeckManager";
 import { RankedCard } from "../models";
 
 export default {
@@ -13,7 +14,7 @@ export default {
 		.setDescription('Comandos relacionados con el generador de cartas de mapas ranked de Scoresaber')
         .addSubcommand(subcommand =>
             subcommand
-                .setName('sacar')
+                .setName('abrir')
                 .setDescription('Abre un paquete de 4 cartas')
         )
         .addSubcommand(subcommand =>
@@ -34,10 +35,54 @@ export default {
                 .setName('buscar')
                 .setDescription('Busca entre tus cartas, puedes buscar por nombre, artista o mapper')
                 .addStringOption(option =>
-                    option.setName('texto')
+                    option
+                        .setName('texto')
                         .setDescription('Texto a buscar')
                         .setRequired(true)
                     )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('colocar')
+                .setDescription('Coloca la carta que elijas en la posicion que elijas')
+                .addIntegerOption(option => 
+                    option
+                        .setName("id")
+                        .setDescription('Id de la carta a colocar')
+                        .setRequired(true))
+                .addIntegerOption(option => 
+                    option
+                        .setName("posicion")
+                        .setDescription('Posición a colocar la carta (0-8)')
+                        .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('quitar')
+                .setDescription('Quita la carta que elijas de la posicion que elijas')
+                .addIntegerOption(option => 
+                    option
+                        .setName("posicion")
+                        .setDescription('Posición a quitar la carta (0-8)')
+                        .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('inventario')
+                .setDescription('Muestra tu inventario de cartas.')
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('inventariotop')
+                .setDescription('Muestra tu inventario de cartas top.')
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -46,7 +91,7 @@ export default {
         const { commandName } = interaction;
 
         if (commandName === 'cartas') {
-            if (interaction.options.getSubcommand() === 'sacar') {
+            if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
                 await openCardPack([], interaction);
             }
@@ -59,15 +104,37 @@ export default {
                 await openTopCardGlobal(interaction);
             }
             else if (interaction.options.getSubcommand() === 'mostrar') {
-                await interaction.reply('(Próximamente)...');
+                await interaction.deferReply();
+                await drawUserDeck(interaction);
             }
             else if (interaction.options.getSubcommand() === 'buscar') {
                 await interaction.deferReply();
                 const searchText = interaction.options.getString('texto');
                 await showFirstResultCard(interaction, searchText);
             }
+            else if (interaction.options.getSubcommand() === 'colocar') {
+                await interaction.deferReply();
+                const cardId = interaction.options.getInteger('id');
+                const position = interaction.options.getInteger('posicion');
+                const userCarta = await findOrCreateUser(interaction.user.id);
+                await placeCard(interaction, userCarta[0].id, cardId, position);
+            }
+            else if (interaction.options.getSubcommand() === 'quitar') {
+                await interaction.deferReply();
+                const position = interaction.options.getInteger('posicion');
+                const userCarta = await findOrCreateUser(interaction.user.id);
+                await removeCardFromPosition(interaction, userCarta[0].id, position);
+            }
+            else if (interaction.options.getSubcommand() === 'inventario') {
+                await interaction.deferReply();
+                await handleInventarioCommand(interaction, false);
+            }
+            else if (interaction.options.getSubcommand() === 'inventariotop') {
+                await interaction.deferReply();
+                await handleInventarioCommand(interaction, true);
+            }
         }
-        },
+    },
 } as DiscordCommand<RankedCardScript>;
 
 async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>) {
@@ -142,12 +209,13 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             for(var i = 0; i < 4; i++) {
                 let shiny = 500*Math.random() < 1;
                 generatedCard = await generateRandomCard(interaction.user.username, shiny);
-                imageBuffers.push(generatedCard[0]);
                 cardPrices.push(calculateCardPrice(generatedCard[1].stars,generatedCard[1].curated,generatedCard[1].chroma,generatedCard[1].shiny))
                 const cardData = generatedCard[1];
                 cardData.userCardId = userCarta[0].id;                       
                 let cartId = await saveCard(cardData);
                 cardIds.push(cartId);
+                generatedCard[0] = await addCardId(generatedCard[0], cartId);
+                imageBuffers.push(generatedCard[0]);
             }
         }
         // Enviar carta
@@ -167,6 +235,7 @@ async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheT
         const carta = await findAllTopCard();
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {
@@ -185,6 +254,7 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
         const carta = await findTopCard(userCarta[0].id);
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {
@@ -203,6 +273,7 @@ async function showFirstResultCard(interaction: ChatInputCommandInteraction<Cach
         const carta = cards[0];
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
             sendCard(interaction, cartaGenerada[0]);
         }
         else {
@@ -232,3 +303,38 @@ async function sendButton(interaction: ChatInputCommandInteraction<CacheType>, c
     await interaction.channel.send({components: [row] });
 }
 
+async function handleInventarioCommand(interaction: ChatInputCommandInteraction<CacheType>, top: boolean) {
+    // Obtén el ID del usuario de Discord
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+    // Verifica si se proporcionó una opción de página, si no, usa la página 1 como predeterminado
+    const page = interaction.options.getInteger('pagina') || 1;
+    const pageSize = 10; // Número de cartas por página
+    const offset = (page - 1) * pageSize;
+
+    try {
+        // Suponiendo que tienes una función para obtener las cartas del usuario
+        const { count, rows } = await RankedCard.findAndCountAll({
+            where: { userCardId: userId },
+            order: [[top? 'stars' : 'id', 'DESC']], // Ordena por ID de mayor a menor
+            limit: pageSize,
+            offset: offset,
+        });
+
+        if (rows.length === 0) {
+            await interaction.reply('No tienes cartas en tu inventario o la página no existe.');
+            return;
+        }
+
+        // Formatea las cartas para el mensaje
+        const difficultySquares = ["",":green_square:","",":blue_square:","",":green_square:","",":red_square:","",":purple_square:"];
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}`).join('\n');
+        const totalPages = Math.ceil(count / pageSize);
+
+        await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
+
+    } catch (error) {
+        console.error('Error al mostrar el inventario:', error);
+        await interaction.followUp('Hubo un error al intentar mostrar tu inventario de cartas o la página no existe.');
+    }
+}

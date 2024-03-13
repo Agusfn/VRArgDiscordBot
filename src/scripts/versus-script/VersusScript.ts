@@ -1,10 +1,10 @@
 import { Script } from "@core/Script";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 
-export class RankedCardScript extends Script {
+export class VersusScript extends Script {
 
-    protected scriptTitle = "Ranked Card Script";
-
+    protected scriptTitle = "Versus Script";
+    
     constructor(public client: DiscordClientWrapper) {
         super(client);
     }

@@ -27,7 +27,7 @@ export default {
         )
         .addSubcommand(subcommand =>
             subcommand
-                .setName('global')
+                .setName('topglobal')
                 .setDescription('Muestra la carta top global')
         ).addSubcommand(subcommand =>
             subcommand
@@ -140,7 +140,7 @@ export default {
                 await interaction.deferReply();
                 await openTopCard(interaction);
             }
-            else if (interaction.options.getSubcommand() === 'global') {
+            else if (interaction.options.getSubcommand() === 'topglobal') {
                 await interaction.deferReply();
                 await openTopCardGlobal(interaction);
             }

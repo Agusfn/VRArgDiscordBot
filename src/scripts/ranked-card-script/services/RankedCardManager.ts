@@ -168,7 +168,7 @@ export function calculateCardPrice(card: RankedCard) {
         break;
       }
     }
-    value = 50 + value;
+    value = 10 + value;
     if(card.curated) {
       value = value*1.5;
     }

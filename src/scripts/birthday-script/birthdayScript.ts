@@ -23,7 +23,7 @@ export class BirthdayScript extends Script {
 
   async onReady() {
 
-    const channel = this.client.getChannel(process.env.CHANNEL_ID_BEATSABER_MILESTONES) as TextChannel;
+    const channel = this.client.getChannel(process.env.CHANNEL_ID_GENERAL) as TextChannel;
     this.birthdayAnnouncements.setOutputChannel(channel);
 
     this.periodicBirthdayFetcher.checkUsersBirthdays();

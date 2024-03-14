@@ -40,6 +40,9 @@ export class PeriodicBirthdayFetcher {
                 return user.birthday.getDate() == today.getDate() && user.birthday.getMonth() == today.getMonth()
             })
 
+            // Testing
+            // const usersWithBirthdayToday = usersBirthdays
+
             if(usersWithBirthdayToday.length == 0) {
                 logger.info("Birthday fetcher: No users with birthday today.")
                 return

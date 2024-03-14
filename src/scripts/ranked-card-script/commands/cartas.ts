@@ -6,9 +6,10 @@ import logger from "@utils/logger";
 import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
 import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
 import { drawUserDeck, placeCard, removeCardFromPosition, removeFromUserDeck } from "../services/UserDeckManager";
-import { RankedCard } from "../models";
+import { RankedCard, UserCard, UserDeck } from "../models";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
+import { Transaction } from "sequelize";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -31,7 +32,7 @@ export default {
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('mostrar')
-                .setDescription('(Próximamente) Muestra tus cartas seleccionadas')
+                .setDescription('Muestra tu expositor de cartas')
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('buscar')
@@ -105,6 +106,22 @@ export default {
             subcommand
                 .setName('rechazar')
                 .setDescription('Rechaza el intercambio propuesto')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('vender')
+                .setDescription('Vende una de tus cartas.')
+                .addIntegerOption(option =>
+                    option.setName('id')
+                        .setDescription('ID de la carta que deseas vender')
+                        .setRequired(true))
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('dinero')
+                .setDescription('Muestra cuánto dinero tienes.')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('comprar')
+                .setDescription('Compra un paquete de 4 cartas por 1000 pesos y lo abre.')
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -115,7 +132,9 @@ export default {
         if (commandName === 'cartas') {
             if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
-                await openCardPack([], interaction);
+                const transaction = await sequelize.transaction();
+                await openCardPack([], interaction, transaction, false);
+                await transaction.commit();
             }
             else if (interaction.options.getSubcommand() === 'top') {
                 await interaction.deferReply();
@@ -164,11 +183,21 @@ export default {
             else if (interaction.options.getSubcommand() === 'rechazar') {
                 await handleDenyTradeCommand(interaction);
             }
+            else if (interaction.options.getSubcommand() === 'vender') {
+                await handleSellCardCommand(interaction, interaction.options.getInteger('id'));
+            }
+            else if (interaction.options.getSubcommand() === 'dinero') {
+                await handleMoneyCommand(interaction);
+            }
+            else if (interaction.options.getSubcommand() === 'comprar') {
+                await interaction.deferReply();
+                await handleBuyCardCommand(interaction);
+            }
         }
     },
 } as DiscordCommand<RankedCardScript>;
 
-async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>) {
+async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>, transaction: Transaction, buy: boolean) {
     let isHash = false;
 
     if(args.length >=2 && args[0] != null) {
@@ -187,7 +216,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             const hoursSince = timeSince / (1000 * 60 * 60);
 
             // Verificar si la diferencia es menor a 24 horas
-            if (hoursSince < 23) {
+            if (hoursSince < 23 && !buy) {
                 // Convertir a horas, minutos y segundos para mostrar
                 const horas = Math.floor(hoursSince);
                 const minutos = Math.floor((timeSince / (1000 * 60)) % 60);
@@ -216,11 +245,14 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                 return;
             }
             else {
-                updateLastDraw(interaction.user.id, now);
+                updateLastDraw(interaction.user.id, now, transaction);
             }
         }
         catch(error) {
             logger.error(error);
+            interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
+            await transaction.rollback();
+            return;
         }
     }
 
@@ -240,10 +272,10 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             for(var i = 0; i < 4; i++) {
                 let shiny = 500*Math.random() < 1;
                 generatedCard = await generateRandomCard(interaction.user.username, shiny);
-                cardPrices.push(calculateCardPrice(generatedCard[1].stars,generatedCard[1].curated,generatedCard[1].chroma,generatedCard[1].shiny))
+                cardPrices.push(calculateCardPrice(generatedCard[1]))
                 const cardData = generatedCard[1];
                 cardData.userCardId = userCarta[0].id;                       
-                let cartId = await saveCard(cardData);
+                let cartId = await saveCard(cardData, transaction);
                 cardIds.push(cartId);
                 generatedCard[0] = await addCardId(generatedCard[0], cartId);
                 imageBuffers.push(generatedCard[0]);
@@ -257,7 +289,8 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
 
     } catch (error) {
         logger.error(error);
-        interaction.followUp("Hubo un error al intentar generar la/s carta/s.")
+        interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
+        await transaction.rollback();
     }
 }
 
@@ -267,7 +300,7 @@ async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheT
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
             cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            sendCard(interaction, cartaGenerada[0]);
+            await sendCard(interaction, cartaGenerada[0]);
         }
         else {
             interaction.followUp("No hay cartas");
@@ -286,7 +319,8 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
             cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            sendCard(interaction, cartaGenerada[0]);
+            await sendCard(interaction, cartaGenerada[0]);
+            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
         }
         else {
             interaction.followUp("Ché no tenés cartas");
@@ -305,7 +339,8 @@ async function showFirstResultCard(interaction: ChatInputCommandInteraction<Cach
         if(carta) {
             let cartaGenerada = await drawCardFromData(carta);
             cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            sendCard(interaction, cartaGenerada[0]);
+            await sendCard(interaction, cartaGenerada[0]);
+            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
         }
         else {
             interaction.followUp("No se encontro ninguna carta");
@@ -359,7 +394,7 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
 
         // Formatea las cartas para el mensaje
         
-        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}`).join('\n');
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
         const totalPages = Math.ceil(count / pageSize);
 
         await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
@@ -481,4 +516,97 @@ async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<C
     }
     tradeProposals.delete(proposal.receiverId);
     await interaction.reply('Intercambio rechazado con éxito.');
+}
+
+export async function handleSellCardCommand(interaction: any, cardId: number) {
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+
+    const transaction = await sequelize.transaction();
+
+    try {
+        // Buscar la carta y verificar que pertenezca al usuario
+        const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
+
+        if (!card) {
+            await interaction.reply('No se encontró la carta o no te pertenece.');
+            return;
+        }
+
+        // Calcular el precio de la carta
+        const price = calculateCardPrice(card);
+
+        // Actualizar el dinero del usuario en UserCard
+        await UserCard.increment('money', { by: price, where: { id: userId }, transaction });
+
+        // Eliminar la carta de RankedCard y UserDeck
+        await UserDeck.destroy({ where: { cardId }, transaction });
+        await RankedCard.destroy({ where: { id: cardId }, transaction });
+        
+
+        await transaction.commit();
+        await interaction.reply(`Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error al vender la carta:', error);
+        await interaction.reply('Hubo un error al intentar vender tu carta.');
+    }
+}
+
+async function handleMoneyCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+
+    try {
+        // Buscar el registro de UserCard del usuario
+        const userCard = await UserCard.findOne({ where: { id: userId } });
+
+        if (!userCard) {
+            await interaction.reply('No se encontró información de dinero para tu usuario.');
+            return;
+        }
+
+        await interaction.reply(`Tienes un total de ${userCard.money} pesos.`);
+    } catch (error) {
+        console.error('Error al obtener el dinero del usuario:', error);
+        await interaction.reply('Hubo un error al intentar mostrar tu dinero.');
+    }
+}
+
+async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<CacheType>) {
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+    const price = 1000; // Costo del paquete
+
+    const transaction = await sequelize.transaction();
+    try {
+        // Inicia una transacción
+        
+
+        // Verifica el saldo actual del usuario
+        const userCard = await UserCard.findOne({ where: { id: userId } ,  transaction });
+
+        if (!userCard || userCard.money < price) {
+            await interaction.followUp('No tienes suficiente guita para comprar un paquete de cartas. Necesitas 1000 pesos.');
+            return;
+        }
+
+        // Descuenta el precio de la carta del saldo del usuario
+        await UserCard.update({ money: userCard.money - price }, {
+            where: { id: userId },
+            transaction
+        });
+        await interaction.followUp('Abriendo paquete de 4 cartas por 1000 pesos...');
+
+        await openCardPack([], interaction, transaction, true);
+        
+        // Si todo sale bien, confirmas la transacción
+        await transaction.commit();
+
+        await interaction.followUp('Compra realizada con éxito.');
+    } catch (error) {
+        console.error('Error al comprar la carta:', error);
+        await transaction.rollback();
+        await interaction.followUp('Hubo un error al intentar comprar la carta. Tu dinero ha sido devuelto.');
+    }
 }

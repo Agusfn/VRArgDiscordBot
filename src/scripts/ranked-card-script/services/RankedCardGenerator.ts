@@ -22,7 +22,7 @@ generateCurve();
 
 export async function generateRandomCard(userName: string, shiny: boolean ) {
   let ran = Math.random();
-  let val = getProbability(ran);
+  let val = getCardProbability(ran);
   val = Math.min(Math.max(val, 0), 1);;
   val = 13*val; // TODO obtener el mapa con mas stars
   let scoresaberInfo = await getLeaderboard(val);
@@ -617,7 +617,7 @@ async function getAPIData(url: string) {
   }
 }
 
-function getProbability(value: number) {
+export function getCardProbability(value: number) {
   for(var i = 0; i < curvePoints.length-1; i++) {
     if(value >= curvePoints[i][0] && value < curvePoints[i+1][0]) {
       let distance = curvePoints[i+1][0] - curvePoints[i][0];
@@ -626,14 +626,24 @@ function getProbability(value: number) {
       return curvePoints[i][1] + per*(curvePoints[i+1][1] - curvePoints[i][1]);
     }
   }
+  return 1;
+}
+
+export function getCardProbabilityWeight(value: number) {
+  for(var i = 0; i < curvePoints.length-1; i++) {
+    if(value >= curvePoints[i][1] && value < curvePoints[i+1][1]) {
+      return curvePoints[i][0];
+    }
+  }
+  return 1;
 }
 
 //https://www.desmos.com/calculator/fe6akdvtc0
 //https://www.desmos.com/calculator/0flhmtokny
 function ProbabilityCurve(t: number) {
   let a1 = [0,0];
-  let a2 = [0.258,0.624];
-  let a3 = [0.885,0.163];
+  let a2 = [0.59,0.708];
+  let a3 = [0.99,0.239];
   let a4 = [1,1];
   let a5 = pcf(a1[0],a1[1],a2[0],a2[1],t);
   let a6 = pcf(a2[0],a2[1],a3[0],a3[1],t);
@@ -649,7 +659,7 @@ function pcf(a: number, b: number, c: number, d: number, t: number) {
 }
 
 function generateCurve() {
-  for(var i = 0; i < 100; i++) {
-    curvePoints.push(ProbabilityCurve(0.01*i));
+  for(var i = 0; i < 10000; i++) {
+    curvePoints.push(ProbabilityCurve(0.0001*i));
   }
 }

@@ -1,15 +1,17 @@
 import { RankedCard } from "../models";
 import sequelize from "@core/sequelize";
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { findOrCreateUser } from "./UserCardManager";
+import { getCardProbabilityWeight } from "./RankedCardGenerator";
 
-export async function saveCard(cardData: any) {
+export async function saveCard(cardData: any, transaction: Transaction) {
     try {
       await sequelize.sync();
-      const card = await RankedCard.create(cardData);
+      const card = await RankedCard.create(cardData, {transaction});
       return card.id;
     } catch (error) {
       console.error('Error al guardar la carta:', error);
+      transaction.rollback();
     }
 }
 
@@ -155,18 +157,25 @@ export async function sellCard(discordUserId: string, cardId: number) {
     console.log(discordUserId + " " + cardId);
 }
 
-export function calculateCardPrice(stars: number, curated: boolean, chroma: boolean, shiny: boolean) {
-    let value = 5000;
-    const sp = stars/13; //TO-DO obtener el numero maximo de stars de la base de datos al iniciar la aplicacion;
-    const starsWeight = sp*sp*sp*sp;
-    value = value*starsWeight;
-    if(curated) {
+const pricePoints = [[0,0],[6,50],[7.5,80],[8,200],[9.5,300],[10,500],[10.9,600],[11,1000],[11.9,1400],[12,2500],[12.9,3200],[13,5000],[15,50000]];
+
+export function calculateCardPrice(card: RankedCard) {
+    let value = 0;
+    for(var i = 0; i < pricePoints.length-1; i++) {
+      if(card.stars >= pricePoints[i][0] && card.stars < pricePoints[i+1][0]) {
+        const pos = card.stars - pricePoints[i][0];
+        value = pricePoints[i][1] + (pos / (pricePoints[i+1][0] - pricePoints[i][0])) * (pricePoints[i+1][1] - pricePoints[i][1]);
+        break;
+      }
+    }
+    value = 50 + value;
+    if(card.curated) {
       value = value*1.5;
     }
-    if(chroma) {
+    if(card.chroma) {
       value = value*1.2;
     }
-    if(shiny) {
+    if(card.shiny) {
       value = value*20;
     }
     return Math.round(value);

@@ -1,4 +1,7 @@
+import { User } from "discord.js";
 import { RankedCard } from "../models";
+import { getBeatSaverInfo, getLeaderboard, getLeaderboardByHash } from "./ApiFunctions";
+import sharp from "sharp";
 
 const axios = require('axios');
 const { createCanvas, loadImage } = require('canvas');
@@ -37,7 +40,7 @@ export async function generateHashCard(hash: string, difficulty: number) {
 async function generateCard(scoresaberInfo: any, userName: string, shiny: boolean) {
   let beatsaverInfo = await getBeatSaverInfo(scoresaberInfo.songHash);
   let mapData = getBeatsaverDifficultyData(beatsaverInfo, difficultyNames[scoresaberInfo.difficulty.difficulty]);
-  return drawCard(scoresaberInfo.songName, scoresaberInfo.songSubName, scoresaberInfo.songAuthorName, scoresaberInfo.levelAuthorName, 
+  return drawCard(beatsaverInfo.id, scoresaberInfo.songHash, scoresaberInfo.songName, scoresaberInfo.songSubName, scoresaberInfo.songAuthorName, scoresaberInfo.levelAuthorName, 
     scoresaberInfo.coverImage, scoresaberInfo.difficulty.difficulty, scoresaberInfo.stars, beatsaverInfo.curator?true:false, 
     mapData.chroma, beatsaverInfo.metadata.bpm, mapData.nps, mapData.njs, beatsaverInfo.stats.upvotes, beatsaverInfo.stats.downvotes, 
     beatsaverInfo.stats.score, beatsaverInfo.tags, scoresaberInfo.rankedDate, userName, scoresaberInfo.qualified, shiny);
@@ -66,21 +69,21 @@ function getBeatsaverDifficultyData(beatsaverInfo: any, difficulty: string) {
 
 export function drawCardFromData(data: RankedCard) {
   const tagsArray: string[] = JSON.parse(data.tags);
-  return drawCard(data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
+  return drawCard(data.bsr, data.hash, data.songName, data.songSubName, data.songAuthorName, data.levelAuthorName, data.coverImage, data.difficulty, data.stars, 
     data.curated, data.chroma, data.bpm, data.nps, data.njs, data.upvotes, data.downvotes, data.score, tagsArray, data.rankedDate, 
     data.userName, data.qualified, data.shiny)
 }
 
-async function drawCard(songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
+const cornerSize = 65;
+const cornerSizeSmall = 25;
+
+async function drawCard(bsr: string, hash: string, songName: string, songSubName: string, songAuthorName: string, levelAuthorName: string, coverImage: string, difficulty: number, stars: number, 
     curated: boolean, chroma: boolean, bpm: number, nps: number, njs: number, upvotes: number, downvotes: number, score: number, tagsArray: string[], rankedDate: string, 
     userName: string, qualified: boolean, shiny: boolean) {
   const canvas = createCanvas(400, 600);
   const ctx = canvas.getContext('2d');
 
   const imagenCover = await loadImage(coverImage);
-
-  let cornerSize = 65;
-  let cornerSizeSmall = 25;
 
   //dibujar fondo difuminado
   ctx.drawImage(imagenCover, 0, 0, canvas.width, canvas.height);
@@ -550,7 +553,7 @@ async function drawCard(songName: string, songSubName: string, songAuthorName: s
   const tags: string = JSON.stringify(tagsArray);
 
   const cardData = {
-    userCardId: 0, date: new Date(),
+    userCardId: 0, bsr, hash, date: new Date(),
     songName, songSubName, songAuthorName, levelAuthorName, coverImage, difficulty, stars, 
     curated, chroma, bpm, nps, njs, upvotes, downvotes, score, tags, rankedDate, 
     userName, qualified, shiny
@@ -581,40 +584,6 @@ export async function addCardId(buffer: any, cardId: number) {
 
     // Convertir el canvas a un buffer y retornarlo
     return canvas.toBuffer();
-}
-
-
-//API STUFF
-
-async function getLeaderboard(fromStar: number) {
-  let result = await getAPIData(`https://scoresaber.com/api/leaderboards?ranked=true&minStar=${fromStar}&category=3&sort=1&withMetadata=true`);
-  return result.leaderboards[Math.floor(Math.random()*result.leaderboards.length)];
-}
-
-async function getLeaderboardByHash(hash: string, difficulty: number) {
-  let result = await getAPIData(`https://scoresaber.com/api/leaderboard/by-hash/${hash}/info?difficulty=${difficulty}`);
-  return result;
-}
-
-async function getBeatSaverInfo(hash: string) {
-  return await getAPIData(`https://api.beatsaver.com/maps/hash/${hash}`);
-}
-
-async function getAPIData(url: string) {
-  try {
-    const response = await axios.get(url);
-
-    if (response.data) {
-      let result = response.data;
-
-      return result;
-
-    } else {
-      console.log('No se encontraron resultados.');
-    }
-  } catch (error) {
-    console.error('Error al obtener los datos:', error);
-  }
 }
 
 export function getCardProbability(value: number) {
@@ -662,4 +631,93 @@ function generateCurve() {
   for(var i = 0; i < 10000; i++) {
     curvePoints.push(ProbabilityCurve(0.0001*i));
   }
+}
+
+export async function drawMapShowCase(slots: boolean[], cards: RankedCard[], user: User) {
+  const canvas = createCanvas(1280, 640);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(40, 40, 40, 1)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let diffIds = [1,3,5,7,9];
+  let diffCount = 0;
+  for(var i = 0; i < slots.length; i++){
+    if(slots[i] == true) {
+      diffCount++;
+    }
+  }
+  let cardwidth = 240;
+  let cardHspace = cardwidth * diffCount;
+  let marginHspace = 1280-cardHspace;
+  let margin = marginHspace/(diffCount+1);
+  let marginBottom = (1280-(cardwidth*5))/6;
+
+  let c = 0;
+  for(var i = 0; i < 5; i++) {
+    if(slots[i]==false){
+      continue;
+    }
+    drawSlot(ctx, (c+1)*margin + c*cardwidth, 640-cardwidth*1.5-marginBottom, difficultyColors[diffIds[i]], cardwidth);
+    if(cards[i] != null) {
+      const drawnCard = await drawCardFromData(cards[i]);
+      const buffer = drawnCard[0];
+      const cardImage = await loadImage(buffer);
+      ctx.drawImage(cardImage, (c+1)*margin + c*cardwidth, 640-cardwidth*1.5-marginBottom, cardwidth, cardwidth*1.5);
+    }
+    c++;
+  }
+
+  //dibujar usuario
+  const avatarSize = 210;
+  const avatarURL = user.displayAvatarURL({ size: 256 });
+  if (avatarURL) {
+      const imageResponse = await axios.get(avatarURL, {
+          responseType: 'arraybuffer',
+      });
+      const profileImg = await sharp(imageResponse.data).toFormat('png').toBuffer();
+      const avatarImage = await loadImage(profileImg);
+      ctx.drawImage(avatarImage, 1280-marginBottom-avatarSize, marginBottom, avatarSize, avatarSize);
+  }
+  //dibujamos cover
+  const coverImage = await loadImage(cards[0].coverImage);
+  ctx.drawImage(coverImage, marginBottom, marginBottom, avatarSize, avatarSize);
+
+  //separador
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.fillRect(marginBottom, avatarSize+marginBottom*2, 1280-2*marginBottom, marginBottom);
+
+  //texto
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.font = `80px Teko`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText((cards[0].songName + cards[0].songSubName).toUpperCase(), marginBottom*2+avatarSize, 0);
+  ctx.font = `45px Teko`;
+  ctx.fillText(cards[0].songAuthorName.toUpperCase(), marginBottom*2+avatarSize, 80);
+  ctx.fillText(cards[0].levelAuthorName.toUpperCase(), marginBottom*2+avatarSize, 175);
+  return canvas.toBuffer();
+}
+
+function drawSlot(ctx: any, x: number, y: number, color: string, cardWidth: number) {
+  const cardHeight = cardWidth*1.5;
+  const cornerMult = cardWidth/400;
+  const cs = cornerSize*cornerMult;
+  const css = cornerSizeSmall*cornerMult;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x+css,y);
+  ctx.lineTo(x+cardWidth-cs,y);
+  ctx.lineTo(x+cardWidth, y+cs);
+  ctx.lineTo(x+cardWidth, y+cardHeight-css);
+  ctx.lineTo(x+cardWidth-css, y+cardHeight);
+  ctx.lineTo(x+cs, y+cardHeight);
+  ctx.lineTo(x, y+cardHeight-cs);
+  ctx.lineTo(x, y+css);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 }

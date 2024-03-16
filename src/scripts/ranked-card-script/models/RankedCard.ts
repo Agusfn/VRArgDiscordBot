@@ -5,6 +5,8 @@ import sequelize from "@core/sequelize"
 export class RankedCard extends Model<InferAttributes<RankedCard>, InferCreationAttributes<RankedCard>> { 
     id: number
     userCardId: number
+    bsr: string
+    hash: string
     date: Date
     songName: string
     songSubName: string
@@ -43,6 +45,8 @@ RankedCard.init({
             key: "id"
         }
     },
+    bsr: {type: Types.STRING}, 
+    hash: {type: Types.STRING}, 
     date: {type: Types.DATE},
     songName: {type: Types.STRING}, 
     songSubName: {type: Types.STRING}, 

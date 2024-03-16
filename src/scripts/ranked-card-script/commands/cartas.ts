@@ -3,13 +3,14 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputComma
 import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
-import { addCardId, drawCardFromData, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
-import { calculateCardPrice, findAllTopCard, findCard, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
+import { addCardId, drawCardFromData, drawMapShowCase, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
+import { calculateCardPrice, findAllTopCard, findCard, findCardByBsr, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
 import { drawUserDeck, placeCard, removeCardFromPosition, removeFromUserDeck } from "../services/UserDeckManager";
 import { RankedCard, UserCard, UserDeck } from "../models";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import { Transaction } from "sequelize";
+import { getBeatSaverInfo } from "../services/ApiFunctions";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -36,7 +37,7 @@ export default {
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('buscar')
-                .setDescription('Busca entre tus cartas, puedes buscar por nombre, artista o mapper')
+                .setDescription('Busca entre tus cartas, puedes buscar por nombre, artista, mapper o id (bsr)')
                 .addStringOption(option =>
                     option
                         .setName('texto')
@@ -122,6 +123,16 @@ export default {
             subcommand
                 .setName('comprar')
                 .setDescription('Compra un paquete de 4 cartas por 1000 pesos y lo abre.')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('mapa')
+                .setDescription('Muestra las cartas que tienes del mapa especificado.')
+                .addStringOption(option =>
+                    option
+                        .setName('bsr')
+                        .setDescription('Bsr del mapa a mostrar')
+                        .setRequired(true)
+                    )
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -192,6 +203,11 @@ export default {
             else if (interaction.options.getSubcommand() === 'comprar') {
                 await interaction.deferReply();
                 await handleBuyCardCommand(interaction);
+            }
+            else if (interaction.options.getSubcommand() === 'mapa') {
+                await interaction.deferReply();
+                const bsr = interaction.options.getString('bsr');
+                await handleMapCommand(interaction, bsr);
             }
         }
     },
@@ -608,5 +624,51 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
         console.error('Error al comprar la carta:', error);
         await transaction.rollback();
         await interaction.followUp('Hubo un error al intentar comprar la carta. Tu dinero ha sido devuelto.');
+    }
+}
+
+async function handleMapCommand(interaction: ChatInputCommandInteraction<CacheType>, bsr: string) {
+    try {
+        const cards = await findCardByBsr(interaction.user.id, bsr);
+        if(!cards) {
+            interaction.followUp("No");
+            return;
+        }
+        const hash = cards[0].hash;
+        const beatSaverInfo = await getBeatSaverInfo(hash);
+        
+        let diffExist = [false,false,false,false,false];
+        const diffsNames = ["Easy","Normal","Hard","Expert","ExpertPlus"];
+        const diffsVal = [1,3,5,7,9];
+        const cardsSorted = []
+        for(var i = 0; i < beatSaverInfo.versions[0].diffs.length; i++) {
+            let diff = beatSaverInfo.versions[0].diffs[i];
+            if(diff.characteristic != 'Standard') {
+                continue;
+            }
+            if(!diff.stars || diff.stars <= 0) {
+                continue;
+            }
+            for(var j = 0; j < diffsNames.length; j++) {
+                if(diff.difficulty == diffsNames[j]) {
+                    diffExist[j] = true;
+                    for(var k = 0; k < cards.length; k++) {
+                        if(diffsVal[j] == cards[k].difficulty) {
+                            cardsSorted[j] = cards[k];
+                        }
+                    }
+                }
+            }
+        }
+        await interaction.followUp({ 
+            files: [{
+                    attachment: await drawMapShowCase(diffExist, cardsSorted, interaction.user),
+                    name: "map.png" 
+        }]});
+
+
+    } catch (error) {
+        logger.error(error);
+        interaction.followUp("Hubo un error al intentar obtener la carta.")
     }
 }

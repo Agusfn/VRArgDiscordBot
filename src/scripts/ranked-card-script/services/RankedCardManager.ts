@@ -82,11 +82,28 @@ export async function findCard(discordUserId: string, searchText: string) {
           where: {
               userCardId: userCarta[0].id,
               [Op.or]: [
+                  { bsr: { [Op.like]: `%${searchText}%` } },
                   { songName: { [Op.like]: `%${searchText}%` } },
                   { songSubName: { [Op.like]: `%${searchText}%` } },
                   { songAuthorName: { [Op.like]: `%${searchText}%` } },
                   { levelAuthorName: { [Op.like]: `%${searchText}%` } },
               ],
+          },
+      });
+      return cards; // Retorna un array de cartas que cumplen con la condición
+  } catch (error) {
+      console.error('Error al buscar las cartas:', error);
+  }
+}
+
+export async function findCardByBsr(discordUserId: string, bsr: string) {
+  try {
+      // Buscar cartas que coincidan con los criterios de búsqueda
+      const userCarta = await findOrCreateUser(discordUserId);
+      const cards = await RankedCard.findAll({
+          where: {
+              userCardId: userCarta[0].id,
+              bsr: bsr
           },
       });
       return cards; // Retorna un array de cartas que cumplen con la condición

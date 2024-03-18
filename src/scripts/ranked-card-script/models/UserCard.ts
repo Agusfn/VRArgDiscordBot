@@ -7,6 +7,7 @@ export class UserCard extends Model<InferAttributes<UserCard>, InferCreationAttr
     discordUserId: string
     lastDraw: Date
     money: number
+    sendReminder: boolean
 }
 
 UserCard.init({
@@ -28,6 +29,10 @@ UserCard.init({
     money: {
         type: Types.INTEGER,
         defaultValue: 0
+    },
+    sendReminder: {
+        type: Types.BOOLEAN,
+        defaultValue: false
     }
 }, { 
     sequelize: sequelize, 
@@ -42,6 +47,5 @@ UserCard.init({
                 }
             }
         }
-
     }
 });

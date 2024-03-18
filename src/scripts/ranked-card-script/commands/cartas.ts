@@ -133,6 +133,10 @@ export default {
                         .setDescription('Bsr del mapa a mostrar')
                         .setRequired(true)
                     )
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('recordar')
+                .setDescription('Activa un recordatorio para abrir tu siguiente paquete de cartas.')
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -209,6 +213,13 @@ export default {
                 const bsr = interaction.options.getString('bsr');
                 await handleMapCommand(interaction, bsr);
             }
+            else if (interaction.options.getSubcommand() === 'recordar') {
+                await interaction.deferReply();
+                const userCarta = await findOrCreateUser(interaction.user.id);
+                userCarta[0].sendReminder = true;
+                await userCarta[0].save();
+                await interaction.followUp(`Recordatorio activado. Recibirás un recordatorio cuando puedas sacar cartas nuevamente.`);
+            }
         }
     },
 } as DiscordCommand<RankedCardScript>;
@@ -253,10 +264,21 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                 function delay(ms: number) {
                     return new Promise(resolve => setTimeout(resolve, ms));
                 }
-                await interaction.followUp("Tenés que esperar " + tiempoRestante + " antes de poder sacar cartas de nuevo");
-                if(hoursSince < 1) {
-                    await delay(1023);
-                    await interaction.channel.send("Ni una hora ha pasado...");
+                if(userCarta[0].sendReminder) {
+                    await interaction.followUp("Che, me pediste que te avisara y eso voy a hacer.. o no confias en mi?");
+                    const tiempoRestantesito = (horasRestantes > 0 ? (horasRestantes + " horita" + (horasRestantes == 1 ? ", " : "s, ")) : "") + 
+                                        (minutosRestantes > 0 ? (minutosRestantes + " minutito" + (minutosRestantes == 1 ? " y " : "s y ")) : "") + 
+                                        segundosRestantes + " segundito" + (segundosRestantes == 1 ? "" : "s");
+                    await delay(800);
+                    await interaction.channel.send("Podés aguantar " + tiempoRestantesito + "?");
+                }
+                else {
+                    await interaction.followUp("Tenés que esperar " + tiempoRestante + " antes de poder sacar cartas de nuevo");
+                    if(hoursSince < 1) {
+                        await delay(1000);
+                        await interaction.channel.send("Ni una hora ha pasado...");
+                    }
+                    await interaction.channel.send("Usa **/cartas recordar** si desea recibir un recordatorio cuando puedas abrir cartas nuevamente.");
                 }
                 return;
             }

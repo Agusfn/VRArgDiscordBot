@@ -44,6 +44,12 @@ export default {
                         .setDescription('Texto a buscar')
                         .setRequired(true)
                     )
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('colocar')
@@ -229,6 +235,7 @@ export default {
                 await interaction.followUp(`Recordatorio activado. Recibirás un recordatorio cuando puedas sacar cartas nuevamente.`);
             }
             else if (interaction.options.getSubcommand() === 'mostrar') {
+                await interaction.deferReply();
                 await handleShowCardCommand(interaction, interaction.options.getInteger('id'));
             }
         }
@@ -289,7 +296,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                         await delay(1000);
                         await interaction.channel.send("Ni una hora ha pasado...");
                     }
-                    await interaction.channel.send("Usa **/cartas recordar** si desea recibir un recordatorio cuando puedas abrir cartas nuevamente.");
+                    await interaction.channel.send("Usa **/cartas recordar** si deseas recibir un recordatorio cuando puedas abrir cartas nuevamente.");
                 }
                 return;
             }
@@ -409,7 +416,7 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
         });
 
         if (rows.length === 0) {
-            await interaction.reply('No se encontraron cartas.');
+            await interaction.followUp('No se encontraron cartas.');
             return;
         }
 
@@ -418,7 +425,7 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
         const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
         const totalPages = Math.ceil(count / pageSize);
 
-        await interaction.followUp("**Resultados** - Página " + page + " de " + totalPages + "\n" + cardsList);
+        await interaction.followUp("**Resultados de: ** \"" + searchText + "\" - Página " + page + " de " + totalPages + "\n" + cardsList);
 
     } catch (error) {
         console.error('Error al mostrar el resultado:', error);
@@ -463,7 +470,7 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         });
 
         if (rows.length === 0) {
-            await interaction.reply('No tienes cartas en tu inventario o la página no existe.');
+            await interaction.followUp('No tienes cartas en tu inventario o la página no existe.');
             return;
         }
 

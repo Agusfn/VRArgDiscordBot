@@ -5,6 +5,7 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import logger from "@utils/logger";
 import { CoreScript } from "@scripts/core-script/CoreScript";
+import { updateRankedCards } from "@scripts/ranked-card-script/services/RankedCardMigration";
 
 (async() => {
 
@@ -32,6 +33,8 @@ import { CoreScript } from "@scripts/core-script/CoreScript";
 
     // Log into discord after all events and commands have been registered
     await discordClient.login();
+
+    await updateRankedCards();//REMOVER AL TERMINAR LA MIGRACION!!
 
 })()
 

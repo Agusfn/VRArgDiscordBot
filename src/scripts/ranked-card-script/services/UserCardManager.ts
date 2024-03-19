@@ -1,3 +1,4 @@
+import { Transaction } from "sequelize";
 import { UserCard } from "../models";
 
 export async function findOrCreateUser(userId: string) {
@@ -13,11 +14,27 @@ export async function findOrCreateUser(userId: string) {
     }
 }
 
-export async function updateLastDraw(discordUserId: string, newLastDrawValue: Date) {
-    return UserCard.update(
-      { lastDraw: newLastDrawValue }, // nuevos valores para actualizar
-      { where: { discordUserId: discordUserId } } // criterio para buscar el registro a actualizar
-    )
+export async function findUserCardById(userId: number) {
+  try {
+    const user = await UserCard.findOne({
+      where: { id: userId }
+    });
+
+    return user;
+
+  } catch (error) {
+    console.error('Error al buscar o crear el usuario:', error);
+  }
+}
+
+export async function updateLastDraw(discordUserId: string, newLastDrawValue: Date, transaction: Transaction) {
+  return UserCard.update(
+    { lastDraw: newLastDrawValue }, // nuevos valores para actualizar
+    {
+      where: { discordUserId: discordUserId }, // criterio para buscar el registro a actualizar
+      transaction: transaction // incluir el objeto de transacción aquí
+    }
+  )
     .then(result => {
       return result;
     })

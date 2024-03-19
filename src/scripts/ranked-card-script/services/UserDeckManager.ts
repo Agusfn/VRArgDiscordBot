@@ -163,3 +163,22 @@ export async function drawUserDeck(interaction: ChatInputCommandInteraction<Cach
         interaction.followUp("Hubo un error al intentar mostrar tus cartas.");
     }
 }
+
+export async function removeFromUserDeck(transaction: any, cardIdToGive: number, cardIdToReceive: number) {
+    try {
+        // Remueve la carta dada del UserDeck
+        await UserDeck.destroy({
+            where: { cardId: cardIdToGive },
+            transaction
+        });
+
+        // Remueve la carta recibida del UserDeck, si existe
+        await UserDeck.destroy({
+            where: { cardId: cardIdToReceive },
+            transaction
+        });
+    } catch (error) {
+        await transaction.rollback();
+        throw error; // Manejo de error más robusto puede ser necesario
+    }
+}

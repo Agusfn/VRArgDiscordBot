@@ -4,12 +4,12 @@ import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
 import { addCardId, drawCardFromData, drawMapShowCase, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
-import { calculateCardPrice, findAllTopCard, findCard, findCardByBsr, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
+import { calculateCardPrice, findAllTopCard, findCard, findCardByBsr, findCardById, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
 import { drawUserDeck, placeCard, removeCardFromPosition, removeFromUserDeck } from "../services/UserDeckManager";
 import { RankedCard, UserCard, UserDeck } from "../models";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
 
 export default {
@@ -32,7 +32,7 @@ export default {
                 .setDescription('Muestra la carta top global')
         ).addSubcommand(subcommand =>
             subcommand
-                .setName('mostrar')
+                .setName('perfil')
                 .setDescription('Muestra tu expositor de cartas')
         ).addSubcommand(subcommand =>
             subcommand
@@ -137,6 +137,14 @@ export default {
             subcommand
                 .setName('recordar')
                 .setDescription('Activa un recordatorio para abrir tu siguiente paquete de cartas.')
+        ).addSubcommand(subcommand =>
+            subcommand
+                .setName('mostrar')
+                .setDescription('Muestra una de tus cartas.')
+                .addIntegerOption(option =>
+                    option.setName('id')
+                        .setDescription('ID de la carta que deseas mostrar')
+                        .setRequired(true))
         ),
     async execute(script, interaction) {
         // Asegurarse de que estamos manejando un comando
@@ -159,14 +167,14 @@ export default {
                 await interaction.deferReply();
                 await openTopCardGlobal(interaction);
             }
-            else if (interaction.options.getSubcommand() === 'mostrar') {
+            else if (interaction.options.getSubcommand() === 'perfil') {
                 await interaction.deferReply();
                 await drawUserDeck(interaction);
             }
             else if (interaction.options.getSubcommand() === 'buscar') {
                 await interaction.deferReply();
                 const searchText = interaction.options.getString('texto');
-                await showFirstResultCard(interaction, searchText);
+                await handleSearchCommand(interaction, searchText);
             }
             else if (interaction.options.getSubcommand() === 'colocar') {
                 await interaction.deferReply();
@@ -219,6 +227,9 @@ export default {
                 userCarta[0].sendReminder = true;
                 await userCarta[0].save();
                 await interaction.followUp(`Recordatorio activado. Recibirás un recordatorio cuando puedas sacar cartas nuevamente.`);
+            }
+            else if (interaction.options.getSubcommand() === 'mostrar') {
+                await handleShowCardCommand(interaction, interaction.options.getInteger('id'));
             }
         }
     },
@@ -370,22 +381,48 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
     }
 }
 
-async function showFirstResultCard(interaction: ChatInputCommandInteraction<CacheType>, searchText: string) {
+async function handleSearchCommand(interaction: ChatInputCommandInteraction<CacheType>, searchText: string) {
+    // Obtén el ID del usuario de Discord
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
+    // Verifica si se proporcionó una opción de página, si no, usa la página 1 como predeterminado
+    const page = interaction.options.getInteger('pagina') || 1;
+    const pageSize = 10; // Número de cartas por página
+    const offset = (page - 1) * pageSize;
+
     try {
-        const cards = await findCard(interaction.user.id, searchText);
-        const carta = cards[0];
-        if(carta) {
-            let cartaGenerada = await drawCardFromData(carta);
-            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            await sendCard(interaction, cartaGenerada[0]);
-            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
+        // Suponiendo que tienes una función para obtener las cartas del usuario
+        const { count, rows } = await RankedCard.findAndCountAll({
+            where: { 
+                userCardId: userId,
+                [Op.or]: [
+                    { bsr: { [Op.like]: `%${searchText}%` } },
+                    { songName: { [Op.like]: `%${searchText}%` } },
+                    { songSubName: { [Op.like]: `%${searchText}%` } },
+                    { songAuthorName: { [Op.like]: `%${searchText}%` } },
+                    { levelAuthorName: { [Op.like]: `%${searchText}%` } },
+                ],
+            },
+            order: [['id', 'DESC']], // Ordena por ID de mayor a menor
+            limit: pageSize,
+            offset: offset,
+        });
+
+        if (rows.length === 0) {
+            await interaction.reply('No se encontraron cartas.');
+            return;
         }
-        else {
-            interaction.followUp("No se encontro ninguna carta");
-        }
+
+        // Formatea las cartas para el mensaje
+        
+        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
+        const totalPages = Math.ceil(count / pageSize);
+
+        await interaction.followUp("**Resultados** - Página " + page + " de " + totalPages + "\n" + cardsList);
+
     } catch (error) {
-        logger.error(error);
-        interaction.followUp("Hubo un error al intentar obtener la carta.")
+        console.error('Error al mostrar el resultado:', error);
+        await interaction.followUp('Hubo un error al intentar mostrar tu busqueda de cartas o la página no existe.');
     }
 }
 
@@ -689,6 +726,25 @@ async function handleMapCommand(interaction: ChatInputCommandInteraction<CacheTy
         }]});
 
 
+    } catch (error) {
+        logger.error(error);
+        interaction.followUp("Hubo un error al intentar obtener la carta.")
+    }
+}
+
+async function handleShowCardCommand(interaction: ChatInputCommandInteraction<CacheType>, cardId: number) {
+    try {
+        const cards = await findCardById(cardId);
+        const carta = cards[0];
+        if(carta) {
+            let cartaGenerada = await drawCardFromData(carta);
+            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
+            await sendCard(interaction, cartaGenerada[0]);
+            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
+        }
+        else {
+            interaction.followUp("No se encontro ninguna carta con la id especificada");
+        }
     } catch (error) {
         logger.error(error);
         interaction.followUp("Hubo un error al intentar obtener la carta.")

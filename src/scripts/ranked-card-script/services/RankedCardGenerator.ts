@@ -8,10 +8,11 @@ const { createCanvas, loadImage } = require('canvas');
 const Canvas = require('canvas');
 const fs = require('fs');
 const stackBlur = require('stackblur-canvas');
+const { resolve } = require("path");
 
-const resourcesPath = "resources/ranked-cards-script/"
-Canvas.registerFont(resourcesPath+'Teko.ttf', { family: 'Teko Medium', weight: 'normal', style: 'normal'});
-Canvas.registerFont(resourcesPath+'NotoSansJP-Medium.ttf', {  family:'Noto Sans JP', weight: 'normal', style: 'normal'});
+
+Canvas.registerFont(resolve("./resources/ranked-cards-script/Teko.ttf"), { family: 'Teko Medium', weight: 'normal', style: 'normal'});
+Canvas.registerFont(resolve("./resources/ranked-cards-script/NotoSansJP-Medium.ttf"), {  family:'Noto Sans JP', weight: 'normal', style: 'normal'});
 
 const difficultyNames = ["","Easy","","Normal","","Hard","","Expert","","ExpertPlus"];
 const difficultyNamesShort = ["","E","","N","","H","","Ex","","Ex+"];
@@ -439,8 +440,8 @@ async function drawCard(bsr: string, hash: string, songName: string, songSubName
   ctx.fillText(score+"%", 190, 590);
 
   //agregar los badges si hay
-  const chromaBadge = await loadImage(resourcesPath+"badge_chroma.png");
-  const curatorBadge = await loadImage(resourcesPath+"badge_curated.png");
+  const chromaBadge = await loadImage(resolve("./resources/ranked-cards-script/badge_chroma.png"));
+  const curatorBadge = await loadImage(resolve("./resources/ranked-cards-script/badge_curated.png"));
 
   if(curated && chroma) {
     ctx.drawImage(curatorBadge, 8, 150, 50, 50);
@@ -679,7 +680,9 @@ export async function drawMapShowCase(slots: boolean[], cards: RankedCard[], use
       ctx.drawImage(avatarImage, 1280-marginBottom-avatarSize, marginBottom, avatarSize, avatarSize);
   }
   //dibujamos cover
-  const coverImage = await loadImage(cards[0].coverImage);
+  const coverCard = cards.find(i => i != null);
+
+  const coverImage = await loadImage(coverCard.coverImage);
   ctx.drawImage(coverImage, marginBottom, marginBottom, avatarSize, avatarSize);
 
   //separador
@@ -691,10 +694,10 @@ export async function drawMapShowCase(slots: boolean[], cards: RankedCard[], use
   ctx.font = `80px Teko`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText((cards[0].songName + cards[0].songSubName).toUpperCase(), marginBottom*2+avatarSize, 0);
+  ctx.fillText((coverCard.songName + coverCard.songSubName).toUpperCase(), marginBottom*2+avatarSize, 0);
   ctx.font = `45px Teko`;
-  ctx.fillText(cards[0].songAuthorName.toUpperCase(), marginBottom*2+avatarSize, 80);
-  ctx.fillText(cards[0].levelAuthorName.toUpperCase(), marginBottom*2+avatarSize, 175);
+  ctx.fillText(coverCard.songAuthorName.toUpperCase(), marginBottom*2+avatarSize, 80);
+  ctx.fillText(coverCard.levelAuthorName.toUpperCase(), marginBottom*2+avatarSize, 175);
   return canvas.toBuffer();
 }
 

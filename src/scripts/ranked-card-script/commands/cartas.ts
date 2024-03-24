@@ -11,6 +11,7 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
+import { errorToString } from "@utils/strings";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -305,7 +306,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             }
         }
         catch(error) {
-            logger.error(error);
+            logger.error(errorToString(error));
             interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
             await transaction.rollback();
             return;
@@ -344,48 +345,40 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         }                
 
     } catch (error) {
-        logger.error(error);
+        logger.error(errorToString(error));
         interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
         await transaction.rollback();
     }
 }
 
 async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheType>) {
-    try {
-        const carta = await findAllTopCard();
-        if(carta) {
-            let cartaGenerada = await drawCardFromData(carta);
-            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            await sendCard(interaction, cartaGenerada[0]);
-        }
-        else {
-            interaction.followUp("No hay cartas");
-        }
 
-    } catch (error) {
-        logger.error(error);
-        interaction.followUp("Hubo un error al intentar obtener la carta.")
+    const carta = await findAllTopCard();
+    if(carta) {
+        let cartaGenerada = await drawCardFromData(carta);
+        cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
+        await sendCard(interaction, cartaGenerada[0]);
     }
+    else {
+        interaction.followUp("No hay cartas");
+    }
+
 }
 
 async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) {
-    try {
-        const userCarta = await findOrCreateUser(interaction.user.id);
-        const carta = await findTopCard(userCarta[0].id);
-        if(carta) {
-            let cartaGenerada = await drawCardFromData(carta);
-            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            await sendCard(interaction, cartaGenerada[0]);
-            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
-        }
-        else {
-            interaction.followUp("Ché no tenés cartas");
-        }
 
-    } catch (error) {
-        logger.error(error);
-        interaction.followUp("Hubo un error al intentar obtener la carta.")
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const carta = await findTopCard(userCarta[0].id);
+    if(carta) {
+        let cartaGenerada = await drawCardFromData(carta);
+        cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
+        await sendCard(interaction, cartaGenerada[0]);
+        await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
     }
+    else {
+        interaction.followUp("Ché no tenés cartas");
+    }
+
 }
 
 async function handleSearchCommand(interaction: ChatInputCommandInteraction<CacheType>, searchText: string) {
@@ -397,40 +390,35 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
     const pageSize = 10; // Número de cartas por página
     const offset = (page - 1) * pageSize;
 
-    try {
-        // Suponiendo que tienes una función para obtener las cartas del usuario
-        const { count, rows } = await RankedCard.findAndCountAll({
-            where: { 
-                userCardId: userId,
-                [Op.or]: [
-                    { bsr: { [Op.like]: `%${searchText}%` } },
-                    { songName: { [Op.like]: `%${searchText}%` } },
-                    { songSubName: { [Op.like]: `%${searchText}%` } },
-                    { songAuthorName: { [Op.like]: `%${searchText}%` } },
-                    { levelAuthorName: { [Op.like]: `%${searchText}%` } },
-                ],
-            },
-            order: [['id', 'DESC']], // Ordena por ID de mayor a menor
-            limit: pageSize,
-            offset: offset,
-        });
+    // Suponiendo que tienes una función para obtener las cartas del usuario
+    const { count, rows } = await RankedCard.findAndCountAll({
+        where: { 
+            userCardId: userId,
+            [Op.or]: [
+                { bsr: { [Op.like]: `%${searchText}%` } },
+                { songName: { [Op.like]: `%${searchText}%` } },
+                { songSubName: { [Op.like]: `%${searchText}%` } },
+                { songAuthorName: { [Op.like]: `%${searchText}%` } },
+                { levelAuthorName: { [Op.like]: `%${searchText}%` } },
+            ],
+        },
+        order: [['id', 'DESC']], // Ordena por ID de mayor a menor
+        limit: pageSize,
+        offset: offset,
+    });
 
-        if (rows.length === 0) {
-            await interaction.followUp('No se encontraron cartas.');
-            return;
-        }
-
-        // Formatea las cartas para el mensaje
-        
-        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
-        const totalPages = Math.ceil(count / pageSize);
-
-        await interaction.followUp("**Resultados de: ** \"" + searchText + "\" - Página " + page + " de " + totalPages + "\n" + cardsList);
-
-    } catch (error) {
-        console.error('Error al mostrar el resultado:', error);
-        await interaction.followUp('Hubo un error al intentar mostrar tu busqueda de cartas o la página no existe.');
+    if (rows.length === 0) {
+        await interaction.followUp('No se encontraron cartas.');
+        return;
     }
+
+    // Formatea las cartas para el mensaje
+    
+    const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
+    const totalPages = Math.ceil(count / pageSize);
+
+    await interaction.followUp("**Resultados de: ** \"" + searchText + "\" - Página " + page + " de " + totalPages + "\n" + cardsList);
+
 }
 
 async function sendCard(interaction: ChatInputCommandInteraction<CacheType>, imageBuffer: any) {
@@ -460,36 +448,31 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
     const pageSize = 10; // Número de cartas por página
     const offset = (page - 1) * pageSize;
 
-    try {
-        // Suponiendo que tienes una función para obtener las cartas del usuario
-        const { count, rows } = await RankedCard.findAndCountAll({
-            where: { userCardId: userId },
-            order: [[top? 'stars' : 'id', 'DESC']], // Ordena por ID de mayor a menor
-            limit: pageSize,
-            offset: offset,
-        });
+    // Suponiendo que tienes una función para obtener las cartas del usuario
+    const { count, rows } = await RankedCard.findAndCountAll({
+        where: { userCardId: userId },
+        order: [[top? 'stars' : 'id', 'DESC']], // Ordena por ID de mayor a menor
+        limit: pageSize,
+        offset: offset,
+    });
 
-        if (rows.length === 0) {
-            await interaction.followUp('No tienes cartas en tu inventario o la página no existe.');
-            return;
-        }
-
-        // Formatea las cartas para el mensaje
-        
-        const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
-        const totalPages = Math.ceil(count / pageSize);
-
-        await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
-
-    } catch (error) {
-        console.error('Error al mostrar el inventario:', error);
-        await interaction.followUp('Hubo un error al intentar mostrar tu inventario de cartas o la página no existe.');
+    if (rows.length === 0) {
+        await interaction.followUp('No tienes cartas en tu inventario o la página no existe.');
+        return;
     }
+
+    // Formatea las cartas para el mensaje
+    
+    const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
+    const totalPages = Math.ceil(count / pageSize);
+
+    await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
+
 }
 
 function cardToText(card: RankedCard) {
-    const difficultySquares = ["",":green_square:","",":blue_square:","",":green_square:","",":red_square:","",":purple_square:"];
-    return `${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}`
+    const difficultySquares = ["",":green_square:","",":blue_square:","",":orange_square:","",":red_square:","",":purple_square:"];
+    return `${difficultySquares[card.difficulty] + " **" + card.songName}**, Estrellas: **${card.stars}**, ID: **${card.id}**${card.shiny?" :rainbow:":""}, Bsr: **${card.bsr}**`
 }
 
 const tradeProposals = new Map(); // userId a la propuesta
@@ -630,7 +613,7 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
         await interaction.reply(`Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al vender la carta:', error);
+        logger.error('Error al vender la carta:' + errorToString(error));
         await interaction.reply('Hubo un error al intentar vender tu carta.');
     }
 }
@@ -639,20 +622,17 @@ async function handleMoneyCommand(interaction: ChatInputCommandInteraction<Cache
     const userCarta = await findOrCreateUser(interaction.user.id);
     const userId = userCarta[0].id;
 
-    try {
-        // Buscar el registro de UserCard del usuario
-        const userCard = await UserCard.findOne({ where: { id: userId } });
 
-        if (!userCard) {
-            await interaction.reply('No se encontró información de dinero para tu usuario.');
-            return;
-        }
+    // Buscar el registro de UserCard del usuario
+    const userCard = await UserCard.findOne({ where: { id: userId } });
 
-        await interaction.reply(`Tienes un total de ${userCard.money} pesos.`);
-    } catch (error) {
-        console.error('Error al obtener el dinero del usuario:', error);
-        await interaction.reply('Hubo un error al intentar mostrar tu dinero.');
+    if (!userCard) {
+        await interaction.reply('No se encontró información de dinero para tu usuario.');
+        return;
     }
+
+    await interaction.reply(`Tienes un total de ${userCard.money} pesos.`);
+
 }
 
 async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -687,73 +667,65 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
 
         await interaction.followUp('Compra realizada con éxito.');
     } catch (error) {
-        console.error('Error al comprar la carta:', error);
+        console.error('Error al comprar la carta:' + errorToString(error));
         await transaction.rollback();
         await interaction.followUp('Hubo un error al intentar comprar la carta. Tu dinero ha sido devuelto.');
     }
 }
 
 async function handleMapCommand(interaction: ChatInputCommandInteraction<CacheType>, bsr: string) {
-    try {
-        const cards = await findCardByBsr(interaction.user.id, bsr);
-        if(!cards) {
-            interaction.followUp("No");
-            return;
+
+    const cards = await findCardByBsr(interaction.user.id, bsr);
+    if(cards.length == 0) {
+        interaction.followUp("No tienes cartas con este bsr.");
+        return;
+    }
+    const hash = cards[0].hash;
+    const beatSaverInfo = await getBeatSaverInfo(hash);
+    
+    let diffExist = [false,false,false,false,false];
+    const diffsNames = ["Easy","Normal","Hard","Expert","ExpertPlus"];
+    const diffsVal = [1,3,5,7,9];
+    const cardsSorted = []
+    for(var i = 0; i < beatSaverInfo.versions[0].diffs.length; i++) {
+        let diff = beatSaverInfo.versions[0].diffs[i];
+        if(diff.characteristic != 'Standard') {
+            continue;
         }
-        const hash = cards[0].hash;
-        const beatSaverInfo = await getBeatSaverInfo(hash);
-        
-        let diffExist = [false,false,false,false,false];
-        const diffsNames = ["Easy","Normal","Hard","Expert","ExpertPlus"];
-        const diffsVal = [1,3,5,7,9];
-        const cardsSorted = []
-        for(var i = 0; i < beatSaverInfo.versions[0].diffs.length; i++) {
-            let diff = beatSaverInfo.versions[0].diffs[i];
-            if(diff.characteristic != 'Standard') {
-                continue;
-            }
-            if(!diff.stars || diff.stars <= 0) {
-                continue;
-            }
-            for(var j = 0; j < diffsNames.length; j++) {
-                if(diff.difficulty == diffsNames[j]) {
-                    diffExist[j] = true;
-                    for(var k = 0; k < cards.length; k++) {
-                        if(diffsVal[j] == cards[k].difficulty) {
-                            cardsSorted[j] = cards[k];
-                        }
+        if(!diff.stars || diff.stars <= 0) {
+            continue;
+        }
+        for(var j = 0; j < diffsNames.length; j++) {
+            if(diff.difficulty == diffsNames[j]) {
+                diffExist[j] = true;
+                for(var k = 0; k < cards.length; k++) {
+                    if(diffsVal[j] == cards[k].difficulty) {
+                        cardsSorted[j] = cards[k];
                     }
                 }
             }
         }
-        await interaction.followUp({ 
-            files: [{
-                    attachment: await drawMapShowCase(diffExist, cardsSorted, interaction.user),
-                    name: "map.png" 
-        }]});
-
-
-    } catch (error) {
-        logger.error(error);
-        interaction.followUp("Hubo un error al intentar obtener la carta.")
     }
+    await interaction.followUp({ 
+        files: [{
+                attachment: await drawMapShowCase(diffExist, cardsSorted, interaction.user),
+                name: "map.png" 
+    }]});
+
 }
 
 async function handleShowCardCommand(interaction: ChatInputCommandInteraction<CacheType>, cardId: number) {
-    try {
-        const cards = await findCardById(cardId);
-        const carta = cards[0];
-        if(carta) {
-            let cartaGenerada = await drawCardFromData(carta);
-            cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
-            await sendCard(interaction, cartaGenerada[0]);
-            await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
-        }
-        else {
-            interaction.followUp("No se encontro ninguna carta con la id especificada");
-        }
-    } catch (error) {
-        logger.error(error);
-        interaction.followUp("Hubo un error al intentar obtener la carta.")
+
+    const cards = await findCardById(cardId);
+    const carta = cards[0];
+    if(carta) {
+        let cartaGenerada = await drawCardFromData(carta);
+        cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
+        await sendCard(interaction, cartaGenerada[0]);
+        await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
     }
+    else {
+        interaction.followUp("No se encontro ninguna carta con la id especificada");
+    }
+
 }

@@ -3,6 +3,7 @@ import { getCommandsFromFolder } from "@utils/commandFolders";
 import DiscordJS, { Guild, TextChannel, Message, GatewayIntentBits, Collection, Events, ClientEvents } from "discord.js"
 import { Script } from "./Script";
 import { DiscordCommand, DiscordEvent } from "@ts/interfaces";
+import { errorToString } from "@utils/strings";
 
 /**
  * A discord client wrapper, made to work around a single Discord Guild
@@ -117,11 +118,11 @@ export class DiscordClientWrapper {
             try {
                 await command.execute(command.script, interaction);
             } catch (error: any) {
-                logger.error(error?.stack || error);
+                logger.error(`Error while excecuting command /${command.data.name}: ` + errorToString(error));
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+                    await interaction.followUp({ content: 'Ocurrió un error ejecutando este comando!', ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+                    await interaction.reply({ content: 'Ocurrió un error ejecutando este comando!', ephemeral: true });
                 }
             }
         });

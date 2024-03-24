@@ -25,7 +25,8 @@ export class PeriodicBirthdayFetcher {
      */
     public async checkUsersBirthdays() {
 
-        try {
+        // No necesitamos este try catch, dejamos que el handler global lo maneje
+        // try {
 
             if(this.fetchRunning) {
                 logger.warn(`Birthday Fecher: Periodic Birthday Fetcher is already running. `)
@@ -57,11 +58,13 @@ export class PeriodicBirthdayFetcher {
 
            
 
-        } catch (error: any) {
-            logger.error("Error ocurred runnning periodic score fetcher. This call to periodic fetcher was stopped.")
-            logger.error(error?.stack || error);
-            this.fetchRunning = false
-        }
+        // } catch (error: any) {
+        //     logger.error("Error ocurred runnning periodic score fetcher. This call to periodic fetcher was stopped.")
+        //     logger.error(JSON.stringify(error));
+        //     logger.error(error.message);
+        //     logger.error(error?.stack || error);
+        //     this.fetchRunning = false
+        // }
 
         
 

@@ -6,7 +6,6 @@ import { getCardProbabilityWeight } from "./RankedCardGenerator";
 
 export async function saveCard(cardData: any, transaction: Transaction) {
     try {
-      await sequelize.sync();
       const card = await RankedCard.create(cardData, {transaction});
       return card.id;
     } catch (error) {

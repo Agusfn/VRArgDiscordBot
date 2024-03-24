@@ -45,8 +45,8 @@ RankedCard.init({
             key: "id"
         }
     },
-    bsr: {type: Types.STRING, defaultValue: "0"}, 
-    hash: {type: Types.STRING, defaultValue: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}, 
+    bsr: {type: Types.STRING(8), defaultValue: "0"}, 
+    hash: {type: Types.STRING(80), defaultValue: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}, 
     date: {type: Types.DATE},
     songName: {type: Types.STRING}, 
     songSubName: {type: Types.STRING}, 

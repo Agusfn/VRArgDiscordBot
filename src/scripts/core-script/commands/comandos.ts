@@ -1,6 +1,7 @@
 import { DiscordCommand } from "@ts/interfaces";
 import { ApplicationCommandOptionType, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { CoreScript } from "../CoreScript";
+import { replyLongMessageToInteraction } from "@utils/other";
 
 
 export default {
@@ -41,7 +42,7 @@ export default {
 			}
 		}
 
-		await interaction.reply({ content: text, ephemeral: true });
+		await replyLongMessageToInteraction(interaction, text, true);
 	},
 } as DiscordCommand<CoreScript>;
 

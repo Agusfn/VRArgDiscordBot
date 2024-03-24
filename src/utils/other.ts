@@ -38,15 +38,15 @@ export const logException = (error: any) => {
 
 }
 
-export const replyLongMessageToInteraction = async (interaction: ChatInputCommandInteraction, messageContent: string) => {
+export const replyLongMessageToInteraction = async (interaction: ChatInputCommandInteraction, messageContent: string, ephemeral = false) => {
         
     const messagesContents = separateMultiLineString(messageContent, 1900) // message content limit is 2000
 
     for(let i = 0; i < messagesContents.length; i++) {
         if(i == 0) { // first response is reply of interaction to acknowledge command
-            await interaction.reply(messagesContents[i]);
+            await interaction.reply({ content: messagesContents[i], ephemeral });
         } else { // subsequent are just normal messages
-            await interaction.channel.send(messagesContents[i]);
+            await interaction.followUp({ content: messagesContents[i], ephemeral });
         }
     }
 }

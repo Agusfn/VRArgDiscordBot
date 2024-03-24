@@ -120,9 +120,9 @@ export class DiscordClientWrapper {
             } catch (error: any) {
                 logger.error(`Error while excecuting command /${command.data.name}: ` + errorToString(error));
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'Ocurrió un error ejecutando este comando!', ephemeral: true });
+                    await interaction.followUp({ content: 'Ocurrió un error ejecutando este comando', ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'Ocurrió un error ejecutando este comando!', ephemeral: true });
+                    await interaction.reply({ content: 'Ocurrió un error ejecutando este comando', ephemeral: true });
                 }
             }
         });

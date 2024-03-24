@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } from "discord.js";
 import { VersusScript } from "../VersusScript";
 import axios from "axios";
 
@@ -50,9 +50,18 @@ export default {
 							}
 			})
 			
-			// Enviar el archivo .bplist y la imagen generada
-			await interaction.followUp({files: [{attachment: buffer, name: `${response['3-filename']}.bplist`}, {attachment: image, name: `${response['3-filename']}.png`}]})
+			const button = new ButtonBuilder()
+        .setLabel('Tira una moneda')
+        .setStyle(ButtonStyle.Secondary)
+				.setCustomId('coinflip')
+				.setEmoji('🪙')
 
+			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+			// Enviar el archivo .bplist con la imagen, tambien generar un boton que ejecute un coinflip
+
+			await interaction.followUp({files: [{attachment: buffer, name: `${response['3-filename']}.bplist`}, {attachment: image, name: `${response['3-filename']}.png`}]})
+			await interaction.channel.send({components: [row] });
 
 	} catch (error) {
 		console.error(error)

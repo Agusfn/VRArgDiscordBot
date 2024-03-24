@@ -5,6 +5,7 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import sequelize from "@core/sequelize";
 import logger from "@utils/logger";
 import { CoreScript } from "@scripts/core-script/CoreScript";
+import { errorToString } from "./utils";
 
 (async() => {
 
@@ -44,9 +45,10 @@ process.on('SIGINT', function() {
     process.exit();
 });
 
+
 process.on('uncaughtException', error => {
-    logger.error("Uncaught Exception: " + (error.stack ? error.stack : error));
+    logger.error("Uncaught Exception: " + errorToString(error));
 });
 process.on('unhandledRejection', (error: any, promise) => {
-    logger.error("Unhandled Rejection: " + (error.stack ? error.stack : error));
+    logger.error("Uncaught Exception: " + errorToString(error));
 });

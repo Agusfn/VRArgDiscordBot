@@ -29,3 +29,10 @@ Install:
 
 Run:
 >python BsPoolMakerAPI/app.py
+
+
+## Slash commands
+
+# Deploy
+
+Run `npm run deploy-commands`

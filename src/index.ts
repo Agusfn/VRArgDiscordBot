@@ -1,17 +1,54 @@
+require('dotenv').config()
 import "./fixTsPaths"
-import { ScriptLoader } from "@lib/index"
-import { initializeApp } from "./initializeApp"
-import { TestScript, ServerHelper, BeatSaberScript, VersusScript, RankedCardsScript, PlayerBirthdayScript} from "@scripts/index"
+import { ScriptLoader } from "@core/ScriptLoader";
+import { DiscordClientWrapper } from "@core/DiscordClient";
+import sequelize from "@core/sequelize";
+import logger from "@utils/logger";
+import { CoreScript } from "@scripts/core-script/CoreScript";
+import { errorToString } from "./utils";
+
+(async() => {
+
+    const discordClient = new DiscordClientWrapper(process.env.DISCORD_BOT_TOKEN, process.env.DISCORD_GUILD_ID);
+
+    // Make sure DB connection works
+    await sequelize.authenticate();
+    logger.info("Sequelize DB authenticated");
+
+    const scriptLoader = new ScriptLoader(discordClient, [
+        CoreScript,
+        ...require("./scriptList").default
+    ]);
+    
+    // Register Discord universal event listener for slash commands
+    discordClient.setCommandListener();
+
+    // Register all other Discord events and read slash commands from all scripts
+    await scriptLoader.initializeScripts();
+
+    // Register call onReady() of Scripts when client is ready (will be called after login)
+    discordClient.onReady(() => {
+        scriptLoader.callScriptsOnReady();
+    });
+
+    // Log into discord after all events and commands have been registered
+    await discordClient.login();
+
+})()
 
 
-// Register scripts
-//ScriptLoader.registerScript(TestScript)
-ScriptLoader.registerScript(ServerHelper)
-//ScriptLoader.registerScript(MemeScript)
-ScriptLoader.registerScript(BeatSaberScript)
-ScriptLoader.registerScript(VersusScript)
-ScriptLoader.registerScript(RankedCardsScript)
-ScriptLoader.registerScript(PlayerBirthdayScript)
+process.on('SIGINT', function() {
+    logger.info("Closing gracefully...");
+    logger.end();
+    sequelize.close();
+    DiscordClientWrapper.getInstance().destroy();
+    process.exit();
+});
 
-// Initialize config, database, ORM, etc.
-initializeApp()
+
+process.on('uncaughtException', error => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
+process.on('unhandledRejection', (error: any, promise) => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});

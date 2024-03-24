@@ -16,10 +16,11 @@ export default winston.createLogger({
     ),    
     transports: [
       new winston.transports.Console(),
-      new winston.transports.File({ filename: 'log.log' })
+      new winston.transports.File({ filename: 'logs/all.log' }),
+      new winston.transports.File({ filename: 'logs/all.log', level: "error" })
     ],
     // Log exceptions to file. Also makes process exit when an exception is raised.
     exceptionHandlers: [
-      new winston.transports.File({ filename: 'exceptions.log' })
+      new winston.transports.File({ filename: 'logs/errors.log' })
     ]
 });

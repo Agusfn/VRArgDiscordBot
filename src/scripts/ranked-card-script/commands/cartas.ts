@@ -12,6 +12,7 @@ import sequelize from "@core/sequelize";
 import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
 import { errorToString } from "@utils/strings";
+import { channel } from "diagnostic_channel";
 const { pagination, ButtonTypes, ButtonStyles } = require('@devraelfreeze/discordjs-pagination');
 
 export default {
@@ -624,16 +625,18 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
     for(var i = 0; i < cards.length; i++) {
         cards[i] = parseInt(cards[i].trim());
     }
+
+    interaction.followUp('Vendiendo cartas...');
     
-    const transaction = await sequelize.transaction();
-    try {
-        for(var i = 0; i < cards.length; i++) {
+    for(var i = 0; i < cards.length; i++) {
+        const transaction = await sequelize.transaction();
+            try {
             const userCarta = await findOrCreateUser(interaction.user.id);
             const userId = userCarta[0].id;
 
             // Validad que la carta este solo una vez
             if(cards.indexOf(cards[i]) != i) {
-                await interaction.followUp('No puedes vender la misma carta más de una vez.');
+                await interaction.channel.send(`${interaction.user.id} La carta ${cards[i]} está repetida en la lista de cartas a vender.`);
                 continue;
             }
 
@@ -643,7 +646,7 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
 
             if (!card) {
-                await interaction.followUp(`No se encontró la carta ${cardId} o no te pertenece.`);
+                await interaction.channel.send(`${interaction.user.id} No se encontró la carta ${cardId} en tu inventario.`);
                 continue;
             }
 
@@ -660,14 +663,14 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             await RankedCard.destroy({ where: { id: cardId }, transaction });
             
 
-            await interaction.followUp(`Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+            await interaction.channel.send(`${interaction.user.id} Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+            await transaction.commit();
+            } catch (error) {
+                await transaction.rollback();
+                logger.error('Error al vender la carta:' + errorToString(error));
+                await interaction.channel.send(`${interaction.user.id} Hubo un error al intentar vender tu carta ${cards[i]}.`);
+            }
         }
-        await transaction.commit();
-    } catch (error) {
-        await transaction.rollback();
-        logger.error('Error al vender la carta:' + errorToString(error));
-        await interaction.followUp('Hubo un error al intentar vender tu carta.');
-    }
 }
 
 async function handleMoneyCommand(interaction: ChatInputCommandInteraction<CacheType>) {

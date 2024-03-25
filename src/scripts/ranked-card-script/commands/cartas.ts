@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
@@ -12,6 +12,7 @@ import sequelize from "@core/sequelize";
 import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
 import { errorToString } from "@utils/strings";
+const { pagination, ButtonTypes, ButtonStyles } = require('@devraelfreeze/discordjs-pagination');
 
 export default {
 	data: new SlashCommandBuilder()
@@ -78,22 +79,10 @@ export default {
             subcommand
                 .setName('inventario')
                 .setDescription('Muestra tu inventario de cartas.')
-                .addIntegerOption(option =>
-                    option
-                        .setName('pagina')
-                        .setDescription('Número de página para mostrar (opcional)')
-                        .setRequired(false)
-                )
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('inventariotop')
                 .setDescription('Muestra tu inventario de cartas top.')
-                .addIntegerOption(option =>
-                    option
-                        .setName('pagina')
-                        .setDescription('Número de página para mostrar (opcional)')
-                        .setRequired(false)
-                )
         ).addSubcommand(subcommand =>
             subcommand
                 .setName('cambiar')
@@ -118,9 +107,9 @@ export default {
             subcommand
                 .setName('vender')
                 .setDescription('Vende una de tus cartas.')
-                .addIntegerOption(option =>
-                    option.setName('id')
-                        .setDescription('ID de la carta que deseas vender')
+                .addStringOption(option =>
+                    option.setName('ids')
+                        .setDescription('ID de la carta que deseas vender, separado por comas si son varias')
                         .setRequired(true))
         ).addSubcommand(subcommand =>
             subcommand
@@ -214,6 +203,7 @@ export default {
                 await handleDenyTradeCommand(interaction);
             }
             else if (interaction.options.getSubcommand() === 'vender') {
+                await interaction.deferReply();
                 await handleSellCardCommand(interaction, interaction.options.getInteger('id'));
             }
             else if (interaction.options.getSubcommand() === 'dinero') {
@@ -444,16 +434,12 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
     const userCarta = await findOrCreateUser(interaction.user.id);
     const userId = userCarta[0].id;
     // Verifica si se proporcionó una opción de página, si no, usa la página 1 como predeterminado
-    const page = interaction.options.getInteger('pagina') || 1;
     const pageSize = 10; // Número de cartas por página
-    const offset = (page - 1) * pageSize;
 
     // Suponiendo que tienes una función para obtener las cartas del usuario
     const { count, rows } = await RankedCard.findAndCountAll({
         where: { userCardId: userId },
         order: [[top? 'stars' : 'id', 'DESC']], // Ordena por ID de mayor a menor
-        limit: pageSize,
-        offset: offset,
     });
 
     if (rows.length === 0) {
@@ -463,10 +449,48 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
 
     // Formatea las cartas para el mensaje
     
-    const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
     const totalPages = Math.ceil(count / pageSize);
 
-    await interaction.followUp("**Inventario de Cartas" + (top?" Top":"") + "** - Página " + page + " de " + totalPages + "\n" + cardsList);
+    let embedList = [];
+    for(var i = 0; i < totalPages; i++) {
+        let embed = new EmbedBuilder()
+            .setTitle("**Inventario de Cartas" + (top?" Top":"") + "**")
+
+        // add rows of cards 
+        for(var j = 0; j < pageSize; j++) {
+            const card = rows[i*pageSize + j];
+            if(card) {
+                embed.addFields({
+                    name: cardToText(card),
+                    value: 'Valor: **' + calculateCardPrice(card) + '** pesos',
+                });
+            }
+        }
+        embedList.push(embed);
+
+    }
+    
+    await pagination({
+        interaction: interaction,
+        embeds: embedList,
+        author: interaction.member.user,
+        time: 40000,
+        fastSkip: false,
+        disableButtons: false,
+        pageTravel: true,
+        buttons: [
+            {
+                type: ButtonTypes.previous,
+                style: ButtonStyles.Primary,
+                emoji: '◀️',
+            },
+            {
+                type: ButtonTypes.next,
+                style: ButtonStyles.Primary,
+                emoji: '▶️',
+            },
+        ],
+    });
 
 }
 
@@ -584,37 +608,61 @@ async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<C
 }
 
 export async function handleSellCardCommand(interaction: any, cardId: number) {
-    const userCarta = await findOrCreateUser(interaction.user.id);
-    const userId = userCarta[0].id;
 
-    const transaction = await sequelize.transaction();
+    // validate string with regex ^\d+(,\d+)*$
+    const re = /^\d+(,\d+)*$/;
+    let cards = interaction.options.getString('ids').split(',')
 
-    try {
-        // Buscar la carta y verificar que pertenezca al usuario
-        const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
-
-        if (!card) {
-            await interaction.reply('No se encontró la carta o no te pertenece.');
+    for(var i = 0; i < cards.length; i++) {
+        if(!re.test(cards[i].trim())) {
+            await interaction.followUp(`El formato ${cards[i].trim()} no es válido. Debe ser una lista de ids separados por comas.`)
             return;
         }
+        cards[i] = parseInt(cards[i].trim());
+    }
+    
+    const transaction = await sequelize.transaction();
+    try {
+        for(var i = 0; i < cards.length; i++) {
+            const userCarta = await findOrCreateUser(interaction.user.id);
+            const userId = userCarta[0].id;
 
-        // Calcular el precio de la carta
-        const price = calculateCardPrice(card);
+            // Validad que la carta este solo una vez
+            if(cards.indexOf(cards[i]) != i) {
+                await interaction.followUp('No puedes vender la misma carta más de una vez.');
+                continue;
+            }
 
-        // Actualizar el dinero del usuario en UserCard
-        await UserCard.increment('money', { by: price, where: { id: userId }, transaction });
+            // Buscar la carta y verificar que pertenezca al usuario
+            const cardId = cards[i];
 
-        // Eliminar la carta de RankedCard y UserDeck
-        await UserDeck.destroy({ where: { cardId }, transaction });
-        await RankedCard.destroy({ where: { id: cardId }, transaction });
-        
+            const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
 
+            if (!card) {
+                await interaction.followUp(`No se encontró la carta ${cardId} o no te pertenece.`);
+                continue;
+            }
+
+            // Calcular el precio de la carta
+            const price = calculateCardPrice(card);
+
+            // Actualizar el dinero del usuario en UserCard
+            await UserCard.increment('money', { by: price, where: { id: userId }, transaction });
+
+            // Eliminar la carta de RankedCard y UserDeck
+
+
+            await UserDeck.destroy({ where: { cardId }, transaction });
+            await RankedCard.destroy({ where: { id: cardId }, transaction });
+            
+
+            await interaction.followUp(`Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+        }
         await transaction.commit();
-        await interaction.reply(`Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
     } catch (error) {
         await transaction.rollback();
         logger.error('Error al vender la carta:' + errorToString(error));
-        await interaction.reply('Hubo un error al intentar vender tu carta.');
+        await interaction.followUp('Hubo un error al intentar vender tu carta.');
     }
 }
 

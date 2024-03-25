@@ -610,7 +610,8 @@ async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<C
 export async function handleSellCardCommand(interaction: any, cardId: number) {
 
     // validate string with regex ^\d+(,\d+)*$
-    const re = /^\d{1,10}([,]\s*\d{1,10})*$/gm;
+    const re = /^\s*\d{1,10}(\s*,\s*\d{1,10})*\s*$/gm
+    ;
     const cardList = interaction.options.getString('ids');
 
     if (!re.test(cardList)) {

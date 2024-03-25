@@ -610,14 +610,17 @@ async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<C
 export async function handleSellCardCommand(interaction: any, cardId: number) {
 
     // validate string with regex ^\d+(,\d+)*$
-    const re = /^\d+(,\d+)*$/;
-    let cards = interaction.options.getString('ids').split(',')
+    const re = /^\d{1,10}([,]\s*\d{1,10})*$/gm;
+    const cardList = interaction.options.getString('ids');
+
+    if (!re.test(cardList)) {
+        await interaction.followUp('La lista de cartas no es válida.');
+        return;
+    }
+
+    let cards = cardList.split(',')
 
     for(var i = 0; i < cards.length; i++) {
-        if(!re.test(cards[i].trim())) {
-            await interaction.followUp(`El formato ${cards[i].trim()} no es válido. Debe ser una lista de ids separados por comas.`)
-            return;
-        }
         cards[i] = parseInt(cards[i].trim());
     }
     

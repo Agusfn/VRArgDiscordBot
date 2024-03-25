@@ -663,12 +663,12 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             await RankedCard.destroy({ where: { id: cardId }, transaction });
             
 
-            await interaction.channel.send(`#${interaction.user.globalName} has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+            await interaction.channel.send(`${interaction.user.globalName} has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
             await transaction.commit();
             } catch (error) {
                 await transaction.rollback();
                 logger.error('Error al vender la carta:' + errorToString(error));
-                await interaction.channel.send(`#${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
+                await interaction.channel.send(`${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
             }
         }
 }

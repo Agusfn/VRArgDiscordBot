@@ -636,7 +636,7 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
 
             // Validad que la carta este solo una vez
             if(cards.indexOf(cards[i]) != i) {
-                await interaction.channel.send(`${interaction.user.id} La carta ${cards[i]} está repetida en la lista de cartas a vender.`);
+                await interaction.channel.send(`#${interaction.user.globalName} la carta ${cards[i]} está repetida en la lista de cartas a vender.`);
                 continue;
             }
 
@@ -646,7 +646,7 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
 
             if (!card) {
-                await interaction.channel.send(`${interaction.user.id} No se encontró la carta ${cardId} en tu inventario.`);
+                await interaction.channel.send(`El inventario de ${interaction.user.globalName} no contiene la carta con el ID=${cardId}`);
                 continue;
             }
 
@@ -663,12 +663,12 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             await RankedCard.destroy({ where: { id: cardId }, transaction });
             
 
-            await interaction.channel.send(`${interaction.user.id} Has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+            await interaction.channel.send(`#${interaction.user.globalName} has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
             await transaction.commit();
             } catch (error) {
                 await transaction.rollback();
                 logger.error('Error al vender la carta:' + errorToString(error));
-                await interaction.channel.send(`${interaction.user.id} Hubo un error al intentar vender tu carta ${cards[i]}.`);
+                await interaction.channel.send(`#${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
             }
         }
 }

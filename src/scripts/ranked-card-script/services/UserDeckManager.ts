@@ -29,6 +29,9 @@ export async function placeCard(interaction: ChatInputCommandInteraction<CacheTy
             return;
         }
 
+        // Elimina la carta del deck si ya esta colocada
+        await UserDeck.destroy({ where: { cardId } });
+
         // Verifica si ya existe una carta en la posición deseada
         const existingCard = await UserDeck.findOne({
             where: {

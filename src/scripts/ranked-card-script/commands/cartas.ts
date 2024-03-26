@@ -211,7 +211,7 @@ export default {
             }
             else if (interaction.options.getSubcommand() === 'vender') {
                 await interaction.deferReply();
-                await handleSellCardCommand(interaction, interaction.options.getInteger('id'));
+                await handleSellCardCommand(interaction, interaction.options.getString('ids'));
             }
             else if (interaction.options.getSubcommand() === 'dinero') {
                 await handleMoneyCommand(interaction);
@@ -481,7 +481,7 @@ async function handleInventarioCommand(interaction: ChatInputCommandInteraction<
         interaction: interaction,
         embeds: embedList,
         author: interaction.member.user,
-        time: 40000,
+        time: 15*60*1000,
         fastSkip: false,
         disableButtons: false,
         pageTravel: true,
@@ -614,52 +614,55 @@ async function handleDenyTradeCommand(interaction: ChatInputCommandInteraction<C
     await interaction.reply('Intercambio rechazado con éxito.');
 }
 
-export async function handleSellCardCommand(interaction: any, cardId: number) {
+export async function handleSellCardCommand(interaction: any, cardList: string) {
 
     // validate string with regex ^\d+(,\d+)*$
     const re = /^\s*\d{1,10}(\s*,\s*\d{1,10})*\s*$/gm
     ;
-    const cardList = interaction.options.getString('ids');
-
     if (!re.test(cardList)) {
-        await interaction.followUp('La lista de cartas no es válida.');
+        await interaction.channel.send('La lista de cartas no es válida.');
         return;
     }
 
-    let cards = cardList.split(',')
+    let cardsString = cardList.split(',')
+    let cards = [];
 
-    for(var i = 0; i < cards.length; i++) {
-        cards[i] = parseInt(cards[i].trim());
+    for(var i = 0; i < cardsString.length; i++) {
+        cards.push(parseInt(cardsString[i].trim()));
+    }
+    if(cards.length > 1) {
+        interaction.followUp('Vendiendo cartas...');
     }
 
-    interaction.followUp('Vendiendo cartas...');
+    const userCarta = await findOrCreateUser(interaction.user.id);
+    const userId = userCarta[0].id;
     
     for(var i = 0; i < cards.length; i++) {
+
+        // Validad que la carta este solo una vez
+        if(cards.indexOf(cards[i]) != i) {
+            await interaction.channel.send(`#${interaction.user.globalName} la carta ${cards[i]} está repetida en la lista de cartas a vender.`);
+            continue;
+        }
+
+        // Buscar la carta y verificar que pertenezca al usuario
+        const cardId = cards[i];
+
+        const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
+
+        if (!card) {
+            await interaction.channel.send(`El inventario de ${interaction.user.globalName} no contiene la carta con el ID=${cardId}`);
+            continue;
+        }
+
+        // Calcular el precio de la carta
+        const price = calculateCardPrice(card);
+
         const transaction = await startTransaction();
-            try {
-            const userCarta = await findOrCreateUser(interaction.user.id);
-            const userId = userCarta[0].id;
 
-            // Validad que la carta este solo una vez
-            if(cards.indexOf(cards[i]) != i) {
-                await interaction.channel.send(`#${interaction.user.globalName} la carta ${cards[i]} está repetida en la lista de cartas a vender.`);
-                continue;
-            }
-
-            // Buscar la carta y verificar que pertenezca al usuario
-            const cardId = cards[i];
-
-            const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
-
-            if (!card) {
-                await interaction.channel.send(`El inventario de ${interaction.user.globalName} no contiene la carta con el ID=${cardId}`);
-                continue;
-            }
-
-            // Calcular el precio de la carta
-            const price = calculateCardPrice(card);
-
+        try {
             // Actualizar el dinero del usuario en UserCard
+            
             await UserCard.increment('money', { by: price, where: { id: userId }, transaction });
 
             // Eliminar la carta de RankedCard y UserDeck
@@ -669,14 +672,14 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             await RankedCard.destroy({ where: { id: cardId }, transaction });
             
 
-            await interaction.channel.send(`${interaction.user.globalName} has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
+            await interaction.channel.send(`${interaction.user.globalName} ha vendido la carta ${cardToText(card)} por **${price}** pesos.`);
             await commitTransaction(transaction);
-            } catch (error) {
-                await rollbackTransaction(transaction);
-                logger.error('Error al vender la carta:' + errorToString(error));
-                await interaction.channel.send(`${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
-            }
+        } catch (error) {
+            await rollbackTransaction(transaction);
+            logger.error('Error al vender la carta:' + errorToString(error));
+            await interaction.channel.send(`${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
         }
+    }
 }
 
 async function handleMoneyCommand(interaction: ChatInputCommandInteraction<CacheType>) {

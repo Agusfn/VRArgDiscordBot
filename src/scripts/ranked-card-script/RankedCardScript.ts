@@ -26,7 +26,8 @@ export class RankedCardScript extends Script {
         
             if (action === "sellcard") {
                 try {
-                    handleSellCardCommand(interaction, parseInt(cardId));
+                    await interaction.reply({ content: 'Vendiendo carta ' + cardId + '...', ephemeral: true });
+                    handleSellCardCommand(interaction, cardId);
                 } catch (error) {
                     console.error('Error al vender la carta:', error);
                     await interaction.reply({ content: 'Hubo un error al intentar vender tu carta.', ephemeral: true });

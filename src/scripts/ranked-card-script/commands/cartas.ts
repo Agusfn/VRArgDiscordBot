@@ -159,8 +159,11 @@ export default {
             if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
                 const transaction = await startTransaction();
-                await openCardPack([], interaction, transaction, false);
+                let didDraw = await openCardPack([], interaction, transaction, false);
                 await commitTransaction(transaction);
+                if(didDraw) {
+                    script.clearUserReminder(interaction.user.id);
+                }
             }
             else if (interaction.options.getSubcommand() === 'top') {
                 await interaction.deferReply();
@@ -296,7 +299,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                     }
                     await interaction.channel.send("Usa **/cartas recordar** si deseas recibir un recordatorio cuando puedas abrir cartas nuevamente.");
                 }
-                return;
+                return false;
             }
             else {
                 updateLastDraw(interaction.user.id, now, transaction);
@@ -306,7 +309,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             logger.error(errorToString(error));
             interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
             await rollbackTransaction(transaction);
-            return;
+            return false;
         }
     }
 
@@ -345,7 +348,10 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         logger.error(errorToString(error));
         interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
         await rollbackTransaction(transaction);
+        return false;
     }
+
+    return true;
 }
 
 async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheType>) {

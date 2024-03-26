@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@devraelfreeze/discordjs-pagination": "^2.7.6",
     "@types/axios": "^0.14.0",
     "@types/moment": "^2.13.0",
     "@types/node-cron": "^2.0.3",

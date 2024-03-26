@@ -52,8 +52,6 @@ export class RankedCardScript extends Script {
             for (const user of usersToRemind) {
                 // Envía el recordatorio. Asegúrate de tener una referencia al cliente de Discord y al canal
                 this.reminderChannel.send(`<@${user.discordUserId}>, ¡es hora de abrir nuevas cartas!`);
-                user.sendReminder = false;
-                await user.save();
             }
         };
         

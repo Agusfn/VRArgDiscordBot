@@ -4,7 +4,7 @@ import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
 import { addCardId, drawCardFromData, drawMapShowCase, generateHashCard, generateRandomCard } from "../services/RankedCardGenerator";
-import { calculateCardPrice, findAllTopCard, findCardByBsr, findCardById, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
+import { calculateCardPrice, findAllTopCard, findCard, findCardByBsr, findCardById, findTopCard, saveCard, updateCardOwnership } from "../services/RankedCardManager";
 import { drawUserDeck, placeCard, removeCardFromPosition, removeFromUserDeck } from "../services/UserDeckManager";
 import { RankedCard, UserCard, UserDeck } from "../models";
 import { DiscordClientWrapper } from "@core/DiscordClient";
@@ -12,8 +12,6 @@ import sequelize from "@core/sequelize";
 import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
 import { errorToString } from "@utils/strings";
-
-let databaseIsBusy = false;
 import { channel } from "diagnostic_channel";
 const { pagination, ButtonTypes, ButtonStyles } = require('@devraelfreeze/discordjs-pagination');
 
@@ -152,17 +150,11 @@ export default {
         const { commandName } = interaction;
 
         if (commandName === 'cartas') {
-
-            if(databaseIsBusy){
-                interaction.reply("El bot esta ocupado, prueba de nuevo en un rato");
-                return;
-            }
-
             if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
-                const transaction = await startTransaction();
+                const transaction = await sequelize.transaction();
                 await openCardPack([], interaction, transaction, false);
-                await commitTransaction(transaction);
+                await transaction.commit();
             }
             else if (interaction.options.getSubcommand() === 'top') {
                 await interaction.deferReply();
@@ -307,7 +299,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         catch(error) {
             logger.error(errorToString(error));
             interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
-            await rollbackTransaction(transaction);
+            await transaction.rollback();
             return;
         }
     }
@@ -346,7 +338,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
     } catch (error) {
         logger.error(errorToString(error));
         interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
-        await rollbackTransaction(transaction);
+        await transaction.rollback();
     }
 }
 
@@ -593,10 +585,10 @@ async function handleAcceptTradeCommand(interaction: ChatInputCommandInteraction
         return;
     }
 
-    const transaction = await startTransaction();
+    const transaction = await sequelize.transaction();
     await removeFromUserDeck(transaction, proposal.cardToGiveId, proposal.cardToReceiveId);
     await updateCardOwnership(transaction, proposal.cardToGiveId, proposal.receiverId, proposal.cardToReceiveId, proposal.senderId);
-    await commitTransaction(transaction);
+    await transaction.commit();
 
     await interaction.reply('Intercambio completado con éxito.');
 }
@@ -652,11 +644,6 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             const cardId = cards[i];
 
             const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
-    const transaction = await startTransaction();
-
-    try {
-        // Buscar la carta y verificar que pertenezca al usuario
-        const card = await RankedCard.findOne({ where: { id: cardId, userCardId: userId } });
 
             if (!card) {
                 await interaction.channel.send(`El inventario de ${interaction.user.globalName} no contiene la carta con el ID=${cardId}`);
@@ -677,9 +664,9 @@ export async function handleSellCardCommand(interaction: any, cardId: number) {
             
 
             await interaction.channel.send(`${interaction.user.globalName} has vendido la carta ${cardToText(card)} por **${price}** pesos.`);
-            await commitTransaction(transaction);
+            await transaction.commit();
             } catch (error) {
-                await rollbackTransaction(transaction);
+                await transaction.rollback();
                 logger.error('Error al vender la carta:' + errorToString(error));
                 await interaction.channel.send(`${interaction.user.globalName} hubo un error al intentar vender tu carta ${cards[i]}.`);
             }
@@ -708,7 +695,7 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
     const userId = userCarta[0].id;
     const price = 1000; // Costo del paquete
 
-    const transaction = await startTransaction();
+    const transaction = await sequelize.transaction();
     try {
         // Inicia una transacción
         
@@ -731,12 +718,12 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
         await openCardPack([], interaction, transaction, true);
         
         // Si todo sale bien, confirmas la transacción
-        await commitTransaction(transaction);
+        await transaction.commit();
 
         await interaction.followUp('Compra realizada con éxito.');
     } catch (error) {
         console.error('Error al comprar la carta:' + errorToString(error));
-        await rollbackTransaction(transaction);
+        await transaction.rollback();
         await interaction.followUp('Hubo un error al intentar comprar la carta. Tu dinero ha sido devuelto.');
     }
 }
@@ -796,19 +783,4 @@ async function handleShowCardCommand(interaction: ChatInputCommandInteraction<Ca
         interaction.followUp("No se encontro ninguna carta con la id especificada");
     }
 
-}
-
-async function startTransaction() {
-    databaseIsBusy = true
-    return await sequelize.transaction();
-}
-
-async function commitTransaction(transaction: Transaction) {
-    await transaction.commit();
-    databaseIsBusy = false;
-}
-
-async function rollbackTransaction(transaction: Transaction) {
-    await transaction.rollback();
-    databaseIsBusy = false;
 }

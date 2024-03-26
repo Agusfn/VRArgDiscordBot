@@ -8,6 +8,7 @@ import { drawCardFromData } from "./RankedCardGenerator";
 import axios from "axios";
 import sharp from "sharp";
 import path from "path";
+import { rollbackTransaction } from "../commands/cartas";
 
 const Canvas = require('canvas');
 const resourcesPath = "resources/ranked-cards-script/"
@@ -178,7 +179,7 @@ export async function removeFromUserDeck(transaction: any, cardIdToGive: number,
             transaction
         });
     } catch (error) {
-        await transaction.rollback();
+        await rollbackTransaction(transaction);
         throw error; // Manejo de error más robusto puede ser necesario
     }
 }

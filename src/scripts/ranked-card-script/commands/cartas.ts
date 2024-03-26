@@ -791,17 +791,17 @@ async function handleShowCardCommand(interaction: ChatInputCommandInteraction<Ca
 
 }
 
-async function startTransaction() {
+export async function startTransaction() {
     databaseIsBusy = true
     return await sequelize.transaction();
 }
 
-async function commitTransaction(transaction: Transaction) {
+export async function commitTransaction(transaction: Transaction) {
     await transaction.commit();
     databaseIsBusy = false;
 }
 
-async function rollbackTransaction(transaction: Transaction) {
+export async function rollbackTransaction(transaction: Transaction) {
     await transaction.rollback();
     databaseIsBusy = false;
 }

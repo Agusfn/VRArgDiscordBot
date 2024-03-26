@@ -222,9 +222,9 @@ export default {
             else if (interaction.options.getSubcommand() === 'recordar') {
                 await interaction.deferReply();
                 const userCarta = await findOrCreateUser(interaction.user.id);
-                userCarta[0].sendReminder = true;
+                userCarta[0].sendReminder = !userCarta[0].sendReminder;
                 await userCarta[0].save();
-                await interaction.followUp(`Recordatorio activado. Recibirás un recordatorio cuando puedas sacar cartas nuevamente.`);
+                await interaction.followUp("Recordatorio para abrir cartas " + (userCarta[0].sendReminder?"activado":"desactivado"));
             }
             else if (interaction.options.getSubcommand() === 'mostrar') {
                 await interaction.deferReply();

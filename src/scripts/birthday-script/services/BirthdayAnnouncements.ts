@@ -25,7 +25,7 @@ export class BirthdayAnnouncements {
     public async announceBirthday(player: PlayerBirthday) {
         const user = await UserManager.getUserByDiscordId(player.discordUserId)
 
-        this.outputChannel.send(`Feliz cumpleaños <@${user.discordUserId}>! 🎉🎉🎉`)
+        this.outputChannel.send(`Feliz cum <@${user.discordUserId}>! 🎉🎉🎉`)
     }
 
     

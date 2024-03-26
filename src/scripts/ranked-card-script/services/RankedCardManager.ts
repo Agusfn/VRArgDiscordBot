@@ -3,6 +3,7 @@ import sequelize from "@core/sequelize";
 import { Op, Transaction } from 'sequelize';
 import { findOrCreateUser } from "./UserCardManager";
 import { getCardProbabilityWeight } from "./RankedCardGenerator";
+import { rollbackTransaction } from "../commands/cartas";
 
 export async function saveCard(cardData: any, transaction: Transaction) {
     try {
@@ -10,7 +11,7 @@ export async function saveCard(cardData: any, transaction: Transaction) {
       return card.id;
     } catch (error) {
       console.error('Error al guardar la carta:', error);
-      transaction.rollback();
+      await rollbackTransaction(transaction);
     }
 }
 
@@ -164,7 +165,7 @@ export async function updateCardOwnership(transaction: any, cardIdToGive: number
           transaction
       });
   } catch (error) {
-      await transaction.rollback();
+      await rollbackTransaction(transaction);
       throw error; // Manejo de error más robusto puede ser necesario
   }
 }

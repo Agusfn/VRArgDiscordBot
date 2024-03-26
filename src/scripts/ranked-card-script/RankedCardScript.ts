@@ -26,7 +26,8 @@ export class RankedCardScript extends Script {
         
             if (action === "sellcard") {
                 try {
-                    handleSellCardCommand(interaction, parseInt(cardId));
+                    await interaction.reply({ content: 'Vendiendo carta ' + cardId + '...', ephemeral: true });
+                    handleSellCardCommand(interaction, cardId);
                 } catch (error) {
                     console.error('Error al vender la carta:', error);
                     await interaction.reply({ content: 'Hubo un error al intentar vender tu carta.', ephemeral: true });
@@ -52,8 +53,6 @@ export class RankedCardScript extends Script {
             for (const user of usersToRemind) {
                 // Envía el recordatorio. Asegúrate de tener una referencia al cliente de Discord y al canal
                 this.reminderChannel.send(`<@${user.discordUserId}>, ¡es hora de abrir nuevas cartas!`);
-                user.sendReminder = false;
-                await user.save();
             }
         };
         

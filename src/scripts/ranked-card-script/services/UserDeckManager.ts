@@ -8,6 +8,7 @@ import { drawCardFromData } from "./RankedCardGenerator";
 import axios from "axios";
 import sharp from "sharp";
 import path from "path";
+import { rollbackTransaction } from "../commands/cartas";
 
 const Canvas = require('canvas');
 const resourcesPath = "resources/ranked-cards-script/"
@@ -27,6 +28,9 @@ export async function placeCard(interaction: ChatInputCommandInteraction<CacheTy
             interaction.followUp("La carta no existe o no te pertenece.");
             return;
         }
+
+        // Elimina la carta del deck si ya esta colocada
+        await UserDeck.destroy({ where: { cardId } });
 
         // Verifica si ya existe una carta en la posición deseada
         const existingCard = await UserDeck.findOne({
@@ -178,7 +182,7 @@ export async function removeFromUserDeck(transaction: any, cardIdToGive: number,
             transaction
         });
     } catch (error) {
-        await transaction.rollback();
+        await rollbackTransaction(transaction);
         throw error; // Manejo de error más robusto puede ser necesario
     }
 }

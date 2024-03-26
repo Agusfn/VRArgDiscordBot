@@ -671,9 +671,8 @@ export async function handleSellCardCommand(interaction: any, cardList: string) 
             await UserDeck.destroy({ where: { cardId }, transaction });
             await RankedCard.destroy({ where: { id: cardId }, transaction });
             
-
-            await interaction.channel.send(`${interaction.user.globalName} ha vendido la carta ${cardToText(card)} por **${price}** pesos.`);
             await commitTransaction(transaction);
+            await interaction.channel.send(`${interaction.user.globalName} ha vendido la carta ${cardToText(card)} por **${price}** pesos.`);
         } catch (error) {
             await rollbackTransaction(transaction);
             logger.error('Error al vender la carta:' + errorToString(error));

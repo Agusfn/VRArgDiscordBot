@@ -7,6 +7,7 @@ import "../fixTsPaths"
 import { REST, RESTPostAPIApplicationCommandsJSONBody, Routes } from "discord.js";
 import { getCommandsFromFolder, getScriptCommandsFoldersPaths } from "@utils/commandFolders";
 import logger from "@utils/logger";
+import { errorToString } from "@utils/strings";
 
 
 // Obtain all commands from scripts command directories
@@ -40,3 +41,12 @@ const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN);
 		logger.error(error?.stack || error);
 	}
 })();
+
+
+
+process.on('uncaughtException', error => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
+process.on('unhandledRejection', (error: any, promise) => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});

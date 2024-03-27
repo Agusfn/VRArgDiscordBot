@@ -57,6 +57,22 @@ export default {
                 )
         ).addSubcommand(subcommand =>
             subcommand
+                .setName('buscarglobal')
+                .setDescription('Busca entre todas las cartas, puedes buscar por nombre, artista, mapper o id (bsr)')
+                .addStringOption(option =>
+                    option
+                        .setName('texto')
+                        .setDescription('Texto a buscar')
+                        .setRequired(true)
+                    )
+                .addIntegerOption(option =>
+                    option
+                        .setName('pagina')
+                        .setDescription('Número de página para mostrar (opcional)')
+                        .setRequired(false)
+                )
+        ).addSubcommand(subcommand =>
+            subcommand
                 .setName('colocar')
                 .setDescription('Coloca la carta que elijas en la posicion que elijas')
                 .addIntegerOption(option => 
@@ -159,8 +175,11 @@ export default {
             if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
                 const transaction = await startTransaction();
-                await openCardPack([], interaction, transaction, false);
+                let didDraw = await openCardPack([], interaction, transaction, false);
                 await commitTransaction(transaction);
+                if(didDraw) {
+                    script.clearUserReminder(interaction.user.id);
+                }
             }
             else if (interaction.options.getSubcommand() === 'top') {
                 await interaction.deferReply();
@@ -177,7 +196,12 @@ export default {
             else if (interaction.options.getSubcommand() === 'buscar') {
                 await interaction.deferReply();
                 const searchText = interaction.options.getString('texto');
-                await handleSearchCommand(interaction, searchText);
+                await handleSearchCommand(interaction, searchText, false);
+            }
+            else if (interaction.options.getSubcommand() === 'buscarglobal') {
+                await interaction.deferReply();
+                const searchText = interaction.options.getString('texto');
+                await handleSearchCommand(interaction, searchText, true);
             }
             else if (interaction.options.getSubcommand() === 'colocar') {
                 await interaction.deferReply();
@@ -296,7 +320,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                     }
                     await interaction.channel.send("Usa **/cartas recordar** si deseas recibir un recordatorio cuando puedas abrir cartas nuevamente.");
                 }
-                return;
+                return false;
             }
             else {
                 updateLastDraw(interaction.user.id, now, transaction);
@@ -306,7 +330,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             logger.error(errorToString(error));
             interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
             await rollbackTransaction(transaction);
-            return;
+            return false;
         }
     }
 
@@ -345,7 +369,10 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         logger.error(errorToString(error));
         interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
         await rollbackTransaction(transaction);
+        return false;
     }
+
+    return true;
 }
 
 async function openTopCardGlobal(interaction: ChatInputCommandInteraction<CacheType>) {
@@ -378,7 +405,7 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
 
 }
 
-async function handleSearchCommand(interaction: ChatInputCommandInteraction<CacheType>, searchText: string) {
+async function handleSearchCommand(interaction: ChatInputCommandInteraction<CacheType>, searchText: string, global: boolean) {
     // Obtén el ID del usuario de Discord
     const userCarta = await findOrCreateUser(interaction.user.id);
     const userId = userCarta[0].id;
@@ -388,21 +415,30 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
     const offset = (page - 1) * pageSize;
 
     // Suponiendo que tienes una función para obtener las cartas del usuario
-    const { count, rows } = await RankedCard.findAndCountAll({
-        where: { 
-            userCardId: userId,
-            [Op.or]: [
-                { bsr: { [Op.like]: `%${searchText}%` } },
-                { songName: { [Op.like]: `%${searchText}%` } },
-                { songSubName: { [Op.like]: `%${searchText}%` } },
-                { songAuthorName: { [Op.like]: `%${searchText}%` } },
-                { levelAuthorName: { [Op.like]: `%${searchText}%` } },
-            ],
-        },
+    const operation = [
+        { bsr: { [Op.like]: `%${searchText}%` } },
+        { songName: { [Op.like]: `%${searchText}%` } },
+        { songSubName: { [Op.like]: `%${searchText}%` } },
+        { songAuthorName: { [Op.like]: `%${searchText}%` } },
+        { levelAuthorName: { [Op.like]: `%${searchText}%` } },
+    ];
+    const { count, rows } = global ? await RankedCard.findAndCountAll({
+        where: {[Op.or]: operation},
+        order: [['id', 'DESC']], // Ordena por ID de mayor a menor
+        limit: pageSize,
+        offset: offset,
+        include: [{
+            model: UserCard,
+            attributes: ['discordUserId'], // Solo selecciona el discordId para la respuesta
+        }]
+    }) :
+    await RankedCard.findAndCountAll({
+        where: {userCardId: userId, [Op.or]: operation},
         order: [['id', 'DESC']], // Ordena por ID de mayor a menor
         limit: pageSize,
         offset: offset,
     });
+
 
     if (rows.length === 0) {
         await interaction.followUp('No se encontraron cartas.');
@@ -410,10 +446,9 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
     }
 
     // Formatea las cartas para el mensaje
-    
-    const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos`).join('\n');
-    const totalPages = Math.ceil(count / pageSize);
+    const cardsList = rows.map((card, index) => `${offset + index + 1}. ${cardToText(card)}, Valor: **${calculateCardPrice(card)}** pesos` + (global ? `, Dueño: **<@!${card.UserCard.discordUserId}>**`:``)).join('\n');
 
+    const totalPages = Math.ceil(count / pageSize);
     await interaction.followUp("**Resultados de: ** \"" + searchText + "\" - Página " + page + " de " + totalPages + "\n" + cardsList);
 
 }

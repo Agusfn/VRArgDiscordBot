@@ -2,6 +2,7 @@ import { DiscordCommand } from "@ts/interfaces";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } from "discord.js";
 import { VersusScript } from "../VersusScript";
 import axios from "axios";
+import { SSPlayer } from "@scripts/beat-saber-script/models";
 
 
 export default {
@@ -10,11 +11,11 @@ export default {
 		.setDescription("Genera un versus entre dos jugadores de Beat Saber.")
 		.addStringOption(option => option
 			.setName("jugador1")
-			.setDescription("Enlace o ID de ScoreSaber del primer jugador")
+			.setDescription("@ del primer jugador")
 			.setRequired(true))
 		.addStringOption(option => option
 			.setName("jugador2")
-			.setDescription("Enlace o ID de ScoreSaber del segundo jugador")
+			.setDescription("@ del segundo jugador")
 			.setRequired(true)),
 	async execute(script, interaction) {
 	
@@ -22,11 +23,22 @@ export default {
                 
 			await interaction.deferReply();
 
-			// Obtener los id de los jugadores
-			let player1 = userLinkToId(interaction.options.getString("jugador1"))
-			let player2 = userLinkToId(interaction.options.getString("jugador2"))
+			// Obtener los ID de los jugadores
 
+			const player1Id = interaction.options.getString("jugador1").replace(/[<@!>]/g, '')
+			const player2Id = interaction.options.getString("jugador2").replace(/[<@!>]/g, '')
 
+			const player1 = await SSPlayer.findOne({ where: { discordUserId: player1Id } }).then(res => res?.dataValues.id)
+			const player2 = await SSPlayer.findOne({ where: { discordUserId: player2Id } }).then(res => res?.dataValues.id)
+
+			if (!player1) {
+				interaction.editReply(`No se encontró un jugador de Beat Saber vinculado a <@${player1Id}>, tiene que vincular su cuenta de Beat Saber con el comando /linkear`)
+				return
+			}
+			if (!player2) {
+				interaction.editReply(`No se encontró un jugador de Beat Saber vinculado a <@${player2Id}>, tiene que vincular su cuenta de Beat Saber con el comando /linkear`)
+				return
+			}
 
 			// Hacer la llamada al servidor
 			const response: any = await axios.get(`http://127.0.0.1:5000?user1=${player1}&user2=${player2}`).then(res => res.data)
@@ -71,13 +83,3 @@ export default {
 	return
 	},
 } as DiscordCommand<VersusScript>;
-
-function userLinkToId(user: string) {
-	const splitedUser = user.split("/")
-
-	if (splitedUser.length > 1) {
-		return splitedUser[splitedUser.length - 1]
-	} else {
-		return user
-	}
-}

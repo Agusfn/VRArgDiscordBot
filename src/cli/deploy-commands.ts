@@ -9,6 +9,12 @@ import { getCommandsFromFolder, getScriptCommandsFoldersPaths } from "@utils/com
 import logger from "@utils/logger";
 import { errorToString } from "@utils/strings";
 
+process.on('uncaughtException', error => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
+process.on('unhandledRejection', (error: any, promise) => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
 
 // Obtain all commands from scripts command directories
 const commandFolderPaths = getScriptCommandsFoldersPaths();
@@ -41,12 +47,3 @@ const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN);
 		logger.error(error?.stack || error);
 	}
 })();
-
-
-
-process.on('uncaughtException', error => {
-    logger.error("Uncaught Exception: " + errorToString(error));
-});
-process.on('unhandledRejection', (error: any, promise) => {
-    logger.error("Uncaught Exception: " + errorToString(error));
-});

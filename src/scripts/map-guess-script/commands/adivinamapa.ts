@@ -5,11 +5,7 @@ import { getBeatSaverInfo, getLeaderboard } from "@scripts/ranked-card-script/se
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import { createCanvas, loadImage } from "canvas";
 
-let partidaEnCurso = false;
-let palabraSecreta = '';
 let palabraOculta = '';
-let canalDeJuego = '';
-let temporizador: NodeJS.Timeout;
 
 export default {
 	data: new SlashCommandBuilder()
@@ -21,7 +17,7 @@ export default {
         const { commandName } = interaction;
 
         if (commandName === 'adivinamapa') {
-            if(partidaEnCurso) {
+            if(script.partidaEnCurso) {
                 await interaction.reply("Ya hay una partida en curso, espera a que termine");
                 return;
             }
@@ -30,16 +26,16 @@ export default {
 
             const scoresaberData = await getLeaderboard(13*Math.random());
             //const beatsaverData = await getBeatSaverInfo(scoresaberData.hash);
-            palabraSecreta = scoresaberData.songName;
-            palabraOculta = ocultarPalabra(palabraSecreta);
+            script.palabraSecreta = scoresaberData.songName;
+            palabraOculta = ocultarPalabra(script.palabraSecreta);
     
-            partidaEnCurso = true;
-            canalDeJuego = interaction.channel.id;
+            script.partidaEnCurso = true;
+            script.canalDeJuego = interaction.channel.id;
 
-            temporizador = setTimeout(() => {
-                if (partidaEnCurso) {
-                  interaction.channel.send('Se acabó el tiempo! Nadie adivinó el mapa ranked, era: **' + palabraSecreta + '**');
-                  partidaEnCurso = false;
+            script.temporizador = setTimeout(() => {
+                if (script.partidaEnCurso) {
+                  interaction.channel.send('Se acabó el tiempo! Nadie adivinó el mapa ranked, era: **' + script.palabraSecreta + '**');
+                  script.partidaEnCurso = false;
                 }
             }, 1000*60);
 
@@ -47,7 +43,7 @@ export default {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
             for(var i = 0; i < 8; i++) {
-                if(!partidaEnCurso) {
+                if(!script.partidaEnCurso) {
                     i = 7;
                 }
                 const stackBlur = require('stackblur-canvas');
@@ -64,19 +60,6 @@ export default {
         }
     },
 } as DiscordCommand<MapGuessScript>;
-
-DiscordClientWrapper.getInstance().on('messageCreate', message => {
-if (message.author.bot || !partidaEnCurso || message.channel.id !== canalDeJuego) return;
-
-if (message.content.toLowerCase() === palabraSecreta.toLowerCase()) {
-    message.react('✅');
-    message.channel.send(`¡Felicidades ${message.author}! Has adivinado el mapa ranked.`);
-    clearTimeout(temporizador);
-    partidaEnCurso = false;
-} else {
-    message.react('❌');
-}
-});
 
 function ocultarPalabra(palabra: string) {
     let first = false;

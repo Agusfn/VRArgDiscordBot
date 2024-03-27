@@ -3,6 +3,7 @@ import { AttachmentBuilder, SlashCommandBuilder } from "discord.js";
 import { MapGuessScript } from "../MapGuessScript";
 import { getBeatSaverInfo, getLeaderboard } from "@scripts/ranked-card-script/services/ApiFunctions";
 import { DiscordClientWrapper } from "@core/DiscordClient";
+import { createCanvas, loadImage } from "canvas";
 
 let partidaEnCurso = false;
 let palabraSecreta = '';
@@ -25,6 +26,8 @@ export default {
                 return;
             }
 
+            const message = await interaction.reply('Iniciando...');
+
             const scoresaberData = await getLeaderboard(13*Math.random());
             //const beatsaverData = await getBeatSaverInfo(scoresaberData.hash);
             palabraSecreta = scoresaberData.songName;
@@ -40,9 +43,24 @@ export default {
                 }
             }, 1000*60);
 
-            const coverImageAttachment = new AttachmentBuilder(scoresaberData.coverImage);
-            await interaction.reply({ content: `Adivina el mapa ranked: \`${palabraOculta}\``, files: [coverImageAttachment] });
+            function delay(ms: number) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            for(var i = 0; i < 8; i++) {
+                if(!partidaEnCurso) {
+                    i = 7;
+                }
+                const stackBlur = require('stackblur-canvas');
+                const canvas = createCanvas(512, 512);
+                const ctx = canvas.getContext('2d');
+                const imagenCover = await loadImage(scoresaberData.coverImage);
+                ctx.drawImage(imagenCover, 0, 0, canvas.width, canvas.height);
+                stackBlur.canvasRGBA(canvas, 0, 0, canvas.width, canvas.height, 70-10*i);
+                const coverImageAttachment = new AttachmentBuilder(canvas.toBuffer());
 
+                await message.edit({ content: `Adivina el mapa ranked: \`${palabraOculta}\``, files: [coverImageAttachment] });
+                await delay(5000);
+            }
         }
     },
 } as DiscordCommand<MapGuessScript>;

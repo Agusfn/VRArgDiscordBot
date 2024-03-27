@@ -7,7 +7,14 @@ import "../fixTsPaths"
 import { REST, RESTPostAPIApplicationCommandsJSONBody, Routes } from "discord.js";
 import { getCommandsFromFolder, getScriptCommandsFoldersPaths } from "@utils/commandFolders";
 import logger from "@utils/logger";
+import { errorToString } from "@utils/strings";
 
+process.on('uncaughtException', error => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
+process.on('unhandledRejection', (error: any, promise) => {
+    logger.error("Uncaught Exception: " + errorToString(error));
+});
 
 // Obtain all commands from scripts command directories
 const commandFolderPaths = getScriptCommandsFoldersPaths();

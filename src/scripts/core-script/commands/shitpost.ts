@@ -1,12 +1,13 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { SlashCommandBuilder, TextChannel } from "discord.js";
+import { PermissionFlagsBits, SlashCommandBuilder, TextChannel } from "discord.js";
 import { CoreScript } from "../CoreScript";
 
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName('shitpost')
-		.setDescription('LOL april fools 24'),
+		.setDescription('LOL april fools 24')
+		.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers), // mods or higher,
 	async execute(script, interaction) {
 
 

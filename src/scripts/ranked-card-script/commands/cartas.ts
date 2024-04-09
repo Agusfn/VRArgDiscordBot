@@ -323,7 +323,9 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                 return false;
             }
             else {
-                updateLastDraw(interaction.user.id, now, transaction);
+                if(!buy) {
+                    updateLastDraw(interaction.user.id, now, transaction);
+                }
             }
         }
         catch(error) {

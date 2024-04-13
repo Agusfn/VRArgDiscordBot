@@ -1,10 +1,9 @@
 import { Script } from "@core/Script";
-import { HistoricScoreFetcher, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerScoreSaver, PlayerTriggerEvents, ScoreSaberAccountManager, ScoreSaberDataCache } from "./services";
+import { HistoricScoreFetcher, PeriodicScoreFetcher, PlayerProfileUpdater, PlayerScoreSaver, PlayerTriggerEvents, ScoreSaberAccountManager, ScoreSaberDataCache, PeriodicRoleUpdater } from "./services";
 import * as cron from "node-cron"
 import { PlayerAnnouncements } from "./services/PlayerAnnouncements";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import { TextChannel } from "discord.js";
-import { updateRoles } from "./commands/update_roles";
 
 export class BeatSaberScript extends Script {
 
@@ -46,6 +45,11 @@ export class BeatSaberScript extends Script {
         // Each 25 minutes, check for changes in scoresaber players profiles (rank, nickname, etc)
         cron.schedule("*/25 * * * *", () => {
             this.playerProfileUpdater.checkPlayersProfileUpdates();
+        });
+
+        // Each day at 08:00, update roles of players in the Discord server
+        cron.schedule("0 8 * * *", () => {
+            PeriodicRoleUpdater(this.client);
         });
     }
 

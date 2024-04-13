@@ -9,11 +9,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName('update_roles')
         .setDescription("Get user roles")
-        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers) // mods or higher,
-        .addUserOption(option => option
-            .setName('user')
-            .setDescription('The user to get roles from')
-            .setRequired(false)),
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers), // Mods or higher
             
     async execute(script, interaction) {
         updateRoles(interaction)

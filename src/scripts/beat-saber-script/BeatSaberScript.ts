@@ -4,6 +4,7 @@ import * as cron from "node-cron"
 import { PlayerAnnouncements } from "./services/PlayerAnnouncements";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import { TextChannel } from "discord.js";
+import { updateRoles } from "./commands/update_roles";
 
 export class BeatSaberScript extends Script {
 
@@ -46,7 +47,6 @@ export class BeatSaberScript extends Script {
         cron.schedule("*/25 * * * *", () => {
             this.playerProfileUpdater.checkPlayersProfileUpdates();
         });
-
     }
 
 

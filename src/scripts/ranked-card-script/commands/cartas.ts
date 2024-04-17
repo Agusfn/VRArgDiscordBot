@@ -750,6 +750,7 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
 
         if (!userCard || userCard.money < price) {
             await interaction.followUp('No tienes suficiente guita para comprar un paquete de cartas. Necesitas 1000 pesos.');
+            rollbackTransaction(transaction);
             return;
         }
 

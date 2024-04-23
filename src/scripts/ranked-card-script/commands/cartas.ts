@@ -181,7 +181,7 @@ export default {
                 if(didDraw) {
                     script.clearUserReminder(interaction.user.id);
                 }
-                if(Math.random() < 1) {
+                if(Math.random() < 0.125) {
                     interaction.channel.send("¡Puedes ganar una carta extra si adivinas el siguiente mapa en menos de 1 minuto! (Otra persona puede llevarse la carta si lo adivina antes)");
                     const message = await interaction.channel.send('Iniciando...');
                     await MapGuessScript.getInstance().iniciarPartida(message, interaction.channel, true);
@@ -289,7 +289,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
             const hoursSince = timeSince / (1000 * 60 * 60);
 
             // Verificar si la diferencia es menor a 24 horas
-            if (hoursSince < 0 && !buy) {
+            if (hoursSince < 23 && !buy) {
                 // Convertir a horas, minutos y segundos para mostrar
                 const horas = Math.floor(hoursSince);
                 const minutos = Math.floor((timeSince / (1000 * 60)) % 60);

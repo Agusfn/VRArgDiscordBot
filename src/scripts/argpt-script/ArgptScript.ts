@@ -6,8 +6,8 @@ export class ArgptScript extends Script {
     protected scriptTitle = "Argpt Script";
 
     public enabled: boolean = false;
-    public ip: string = "";
-    public port: number = 0;
+    public ip: string = "localhost";
+    public port: number = 1234;
 
     constructor(public client: DiscordClientWrapper) {
         super(client);

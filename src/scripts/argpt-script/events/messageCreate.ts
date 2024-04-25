@@ -22,13 +22,17 @@ export default {
     const history = conversationHistory.get(channelId);
     history.push({ role: "user", content: message.content });
 
+    // Envía el indicador de "escribiendo" cada 5 segundos
     message.channel.sendTyping();
+    const typingInterval = setInterval(() => {
+      message.channel.sendTyping();
+    }, 5000);
 
     try {
       const postData = {
         messages: history,
-        temperature: 0.5,
-        max_tokens: 4096,
+        temperature: 1.0,
+        max_tokens: -1,
         stream: false
       };
 
@@ -37,6 +41,7 @@ export default {
       const response = await axios.post(API_URL, postData, {
         headers: { 'Content-Type': 'application/json' }
       });
+      clearInterval(typingInterval);
       const reply = response.data.choices[0].message.content;
 
       // Añade la respuesta del bot al historial
@@ -45,6 +50,7 @@ export default {
       // Envía la respuesta de LM Studio al canal de Discord
       await message.channel.send(reply);
     } catch (error) {
+      clearInterval(typingInterval);
       console.error('Error al obtener la respuesta de LM Studio:', error);
       await message.channel.send('Lo siento, no pude procesar tu mensaje.');
     }

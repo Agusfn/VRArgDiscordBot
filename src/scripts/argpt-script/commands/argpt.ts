@@ -18,6 +18,11 @@ export default {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('clear')
+                .setDescription('Limpia el historial')
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('setup')
                 .setDescription('Configurar la ip y puerto al que se conectara argpt')
                 .addStringOption(option =>
@@ -42,10 +47,15 @@ export default {
             if (interaction.options.getSubcommand() === 'enable') {
                 script.enabled = true;
                 interaction.reply("ArGPT ha sido activado.");
+                script.channel = interaction.channel;
             }
             else if (interaction.options.getSubcommand() === 'disable') {
                 script.enabled = false;
                 interaction.reply("ArGPT ha sido desactivado.");
+            }
+            else if (interaction.options.getSubcommand() === 'clear') {
+                script.history.splice(0, script.history.length);
+                interaction.reply("Historial de ArGPT limpiado correctamente.");
             }
             else if (interaction.options.getSubcommand() === 'setup') {
                 script.ip = interaction.options.getString('ip');

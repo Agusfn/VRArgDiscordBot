@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { SlashCommandBuilder } from "discord.js";
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { ArgptScript } from "../ArgptScript";
 
 export default {
@@ -37,7 +37,8 @@ export default {
                         .setDescription('Puerto')
                         .setRequired(true)
                 )
-        ),
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
     async execute(script, interaction) {
         if (!interaction.isCommand()) return;
 

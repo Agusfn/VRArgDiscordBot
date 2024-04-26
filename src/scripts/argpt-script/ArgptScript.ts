@@ -21,6 +21,7 @@ export class ArgptScript extends Script {
 
     constructor(public client: DiscordClientWrapper) {
         super(client);
+        this.loadPrompt();
     }
 
     public async sendResponse() {
@@ -48,7 +49,7 @@ export class ArgptScript extends Script {
           const reply = response.data.choices[0].message.content;
     
           // Añade la respuesta del bot al historial
-          this.history.push({ role: "system", content: "<Santos Bot>: " + reply });
+          this.history.push({ role: "assistant", content: reply });
     
           // Envía la respuesta de LM Studio al canal de Discord
           await this.channel.send(reply);
@@ -64,5 +65,9 @@ export class ArgptScript extends Script {
         }
     }
 
+    public loadPrompt() {
+      this.history.push({ role: "system", content: "Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. No necesitas ser formal, se lo mas informal posible, habla con lunfardos incluso tienes permitido usar malas palabras, boludo, ché, cuchame, xd."});
+      this.history.push({ role: "assistant", content: "Que onda pibes en que puedo ayudarlos? xd" });
+    }
 }
 

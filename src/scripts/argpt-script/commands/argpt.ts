@@ -56,6 +56,7 @@ export default {
             }
             else if (interaction.options.getSubcommand() === 'clear') {
                 script.history.splice(0, script.history.length);
+                script.loadPrompt();
                 interaction.reply("Historial de ArGPT limpiado correctamente.");
             }
             else if (interaction.options.getSubcommand() === 'setup') {

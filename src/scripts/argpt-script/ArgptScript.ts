@@ -3,6 +3,25 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import axios from "axios";
 import { GuildTextBasedChannel } from "discord.js";
 
+const initialPrompt = `
+  Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. 
+  No necesitas ser formal, se lo mas informal posible, habla con lunfardos incluso tienes permitido usar malas palabras, boludo, ché, cuchame, xd.
+
+  - Para ver las reglas del servidor, visita: $info-reglas
+  - Si quieres saber más sobre los roles disponibles, consulta: $roles
+  - Para instructivos básicos sobre Beat Saber, puedes ir a: $instructivos-bs
+  - Utilidades y herramientas de Beat saber que te pueden ser útiles están aquí: $utilidades-bs
+  - Si alguien manda algo basado, manda: $chad-gif
+`;
+
+const variables: { [key: string]: string } = {
+  "info-reglas": "https://discord.com/channels/549296239301361684/840104271261597707",
+  "roles": "https://discord.com/channels/549296239301361684/965037463414386738",
+  "instructivos-bs": "https://discord.com/channels/549296239301361684/965048164430258206",
+  "utilidades-bs": "https://discord.com/channels/549296239301361684/1034815919630860328",
+  "chad-gif": "https://tenor.com/view/mujikcboro-seriymujik-gif-24361533"
+};
+
 export class ArgptScript extends Script {
 
     protected scriptTitle = "Argpt Script";
@@ -46,7 +65,7 @@ export class ArgptScript extends Script {
             headers: { 'Content-Type': 'application/json' }
           });
           clearInterval(typingInterval);
-          const reply = response.data.choices[0].message.content;
+          const reply = this.replaceVariables(response.data.choices[0].message.content);
     
           // Añade la respuesta del bot al historial
           this.history.push({ role: "assistant", content: reply });
@@ -65,8 +84,15 @@ export class ArgptScript extends Script {
         }
     }
 
+    private replaceVariables(text: string): string {
+      Object.keys(variables).forEach(key => {
+          text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
+      });
+      return text;
+    }
+    
     public loadPrompt() {
-      this.history.push({ role: "system", content: "Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. No necesitas ser formal, se lo mas informal posible, habla con lunfardos incluso tienes permitido usar malas palabras, boludo, ché, cuchame, xd."});
+      this.history.push({ role: "system", content: initialPrompt});
       this.history.push({ role: "assistant", content: "Que onda pibes en que puedo ayudarlos? xd" });
     }
 }

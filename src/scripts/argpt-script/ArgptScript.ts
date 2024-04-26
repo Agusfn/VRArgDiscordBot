@@ -6,12 +6,11 @@ import { GuildTextBasedChannel } from "discord.js";
 const initialPrompt = `
   Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. 
   No necesitas ser formal, se lo mas informal posible, habla con lunfardos incluso tienes permitido usar malas palabras, boludo, ché, cuchame, xd.
-
-  - Para ver las reglas del servidor, visita: $info-reglas
-  - Si quieres saber más sobre los roles disponibles, consulta: $roles
-  - Para instructivos básicos sobre Beat Saber, puedes ir a: $instructivos-bs
-  - Utilidades y herramientas de Beat saber que te pueden ser útiles están aquí: $utilidades-bs
-  - Si alguien manda algo basado, manda: $chad-gif
+  - Si preguntan por reglas responde con: $info-reglas
+  - Si preguntan por roles, responde con: $roles
+  - Si necesitan ayuda con Beat Saber, responde con: $instructivos-bs
+  - Si necesitan mods argentinos de Beat Saber, responde con: $utilidades-bs
+  - Si alguien manda algo basado, responde con: $chad-gif
 `;
 
 const variables: { [key: string]: string } = {
@@ -71,7 +70,7 @@ export class ArgptScript extends Script {
           this.history.push({ role: "assistant", content: reply });
     
           // Envía la respuesta de LM Studio al canal de Discord
-          await this.channel.send(reply);
+          await this.channel.send(this.removeBotMentions(reply));
         } catch (error) {
           clearInterval(typingInterval);
           console.error('Error al obtener la respuesta de LM Studio:', error);
@@ -84,6 +83,11 @@ export class ArgptScript extends Script {
         }
     }
 
+    private removeBotMentions(text: string): string {
+      // Utiliza una expresión regular para encontrar todas las coincidencias de '<Santos Bot>:' y reemplazarlas por una cadena vacía
+      return text.substring(14, text.length);
+    }
+
     private replaceVariables(text: string): string {
       Object.keys(variables).forEach(key => {
           text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
@@ -93,7 +97,7 @@ export class ArgptScript extends Script {
     
     public loadPrompt() {
       this.history.push({ role: "system", content: initialPrompt});
-      this.history.push({ role: "assistant", content: "Que onda pibes en que puedo ayudarlos? xd" });
+      this.history.push({ role: "assistant", content: "<Santos Bot>: Que onda pibes en que puedo ayudarlos? xd" });
     }
 }
 

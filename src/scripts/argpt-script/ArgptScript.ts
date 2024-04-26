@@ -13,11 +13,11 @@ export class ArgptScript extends Script {
 
     public channel: GuildTextBasedChannel;
 
-    public lastTypingTime = 0;
-
     public history = new Array<{role: string, content: string}>;
 
     public pendingResponse = false;
+
+    public typingTimeout: any;
 
     constructor(public client: DiscordClientWrapper) {
         super(client);

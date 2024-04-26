@@ -1,7 +1,6 @@
 import { DiscordEvent } from "@ts/interfaces";
 import { Events } from "discord.js";
 import { ArgptScript } from "../ArgptScript";
-import axios from 'axios';
 
 export default {
 	name: Events.MessageCreate,
@@ -13,16 +12,15 @@ export default {
 
     script.pendingResponse = true;
 
-    const currentTime = Date.now();
-    script.lastTypingTime = currentTime;
+    // Cancelar cualquier timeout anterior para asegurar que no se envíen respuestas múltiples
+    if (script.typingTimeout) {
+      clearTimeout(script.typingTimeout);
+    }
 
-    function delay(ms: number) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-    await delay(5000);
-    if (currentTime === script.lastTypingTime) {
-      await script.sendResponse();
-    }
+    // Establecer un nuevo timeout para enviar la respuesta
+    script.typingTimeout = setTimeout(async () => {
+        await script.sendResponse();
+    }, 5000); // Esperar 5 segundos antes de enviar la respuesta
 		
 	},
 } as DiscordEvent<ArgptScript, Events.MessageCreate>;

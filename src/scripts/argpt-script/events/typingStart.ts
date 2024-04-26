@@ -6,18 +6,15 @@ export default {
     name: Events.TypingStart,
     async execute(script, typing) {
         if (!script.enabled || typing.user.bot || typing.channel.id !== script.channel.id) return;
-
-        const currentTime = Date.now();
-        script.lastTypingTime = currentTime;
-
         if(script.pendingResponse) {
-            function delay(ms: number) {
-                return new Promise(resolve => setTimeout(resolve, ms));
+            if (script.typingTimeout) {
+                clearTimeout(script.typingTimeout);
             }
-            await delay(5000);
-            if (currentTime === script.lastTypingTime) {
+
+            // Establecer un nuevo timeout
+            script.typingTimeout = setTimeout(async () => {
                 await script.sendResponse();
-            }
+            }, 5000); // Esperar 5 segundos antes de enviar la respuesta
         }
     },
 } as DiscordEvent<ArgptScript, Events.TypingStart>;

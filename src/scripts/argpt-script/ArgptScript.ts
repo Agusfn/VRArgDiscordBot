@@ -1,7 +1,7 @@
 import { Script } from "@core/Script";
 import { DiscordClientWrapper } from "@core/DiscordClient";
 import axios from "axios";
-import { GuildTextBasedChannel } from "discord.js";
+import { Events, GuildTextBasedChannel } from "discord.js";
 
 export class ArgptScript extends Script {
 

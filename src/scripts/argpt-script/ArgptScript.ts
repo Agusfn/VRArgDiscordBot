@@ -85,7 +85,7 @@ export class ArgptScript extends Script {
 
     private removeBotMentions(text: string): string {
       // Utiliza una expresión regular para encontrar todas las coincidencias de '<Santos Bot>:' y reemplazarlas por una cadena vacía
-      return text.substring(14, text.length);
+      return text.substring(13, text.length);
     }
 
     private replaceVariables(text: string): string {
@@ -97,7 +97,8 @@ export class ArgptScript extends Script {
     
     public loadPrompt() {
       this.history.push({ role: "system", content: initialPrompt});
-      this.history.push({ role: "assistant", content: "<Santos Bot>: Que onda pibes en que puedo ayudarlos? xd" });
+      this.history.push({ role: "assistant", content: "<SantosBot>: Que onda pibes en que puedo ayudarlos? xd" });
+      this.history.push({ role: "assistant", content: "<SantosBot>: O quieren hacer algo? cuentenme" });
     }
 }
 

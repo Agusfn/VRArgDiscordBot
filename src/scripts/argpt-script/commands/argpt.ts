@@ -62,7 +62,7 @@ export default {
             else if (interaction.options.getSubcommand() === 'setup') {
                 script.ip = interaction.options.getString('ip');
                 script.port = interaction.options.getInteger('port');
-                interaction.reply("Has configurado la IP y puerto correctamente!");
+                interaction.reply({ content: "Has configurado la IP y puerto correctamente!", ephemeral: true });
             }
         }
     },

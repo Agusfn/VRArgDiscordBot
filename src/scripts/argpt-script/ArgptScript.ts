@@ -64,9 +64,10 @@ export class ArgptScript extends Script {
             headers: { 'Content-Type': 'application/json' }
           });
           clearInterval(typingInterval);
-          const reply = this.replaceVariables(response.data.choices[0].message.content);
+          let reply = this.replaceVariables(response.data.choices[0].message.content);
     
           // Añade la respuesta del bot al historial
+          if(reply.length == 0) {reply = "<SantosBot>: :wheelchair:"}
           this.history.push({ role: "assistant", content: reply });
     
           // Envía la respuesta de LM Studio al canal de Discord
@@ -92,6 +93,7 @@ export class ArgptScript extends Script {
       Object.keys(variables).forEach(key => {
           text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
       });
+      text = text.replace("everyone", "every-one");
       return text;
     }
     

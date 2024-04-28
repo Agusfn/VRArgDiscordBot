@@ -176,6 +176,13 @@ SSPlayer.init({
                 }
             }
         },
+        getAllPlayers: { // all players
+            where: {
+                discordUserId: {
+                    [Op.ne]: null
+                }
+            }
+        },
         /** Query scope to find SS Player with a given discord user id. */
         withDiscordUserId(discordUserId: string) {
             return {

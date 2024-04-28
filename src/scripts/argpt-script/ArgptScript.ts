@@ -27,7 +27,7 @@ export class ArgptScript extends Script {
 
     public enabled: boolean = false;
     public ip: string = "localhost";
-    public port: number = 1234;
+    public port: number = 25454;
 
     public channel: GuildTextBasedChannel;
 
@@ -65,9 +65,12 @@ export class ArgptScript extends Script {
           });
           clearInterval(typingInterval);
           let reply = this.replaceVariables(response.data.choices[0].message.content);
-    
+          
           // Añade la respuesta del bot al historial
           if(reply.length == 0) {reply = "<SantosBot>: :wheelchair:"}
+          if(!reply.substring(1, reply.length).startsWith("SantosBot")) {
+            reply = "<SantosBot>: " + reply;
+          }
           this.history.push({ role: "assistant", content: reply });
     
           // Envía la respuesta de LM Studio al canal de Discord
@@ -93,8 +96,7 @@ export class ArgptScript extends Script {
       Object.keys(variables).forEach(key => {
           text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
       });
-      text = text.replace("@everyone", "everyone");
-      text = text.replace("@here", "here");
+      text = text.replace(/@([^\s\n]+)/g, '$1');
       return text;
     }
     

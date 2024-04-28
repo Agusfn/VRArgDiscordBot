@@ -323,7 +323,9 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
                 return false;
             }
             else {
-                updateLastDraw(interaction.user.id, now, transaction);
+                if(!buy) {
+                    updateLastDraw(interaction.user.id, now, transaction);
+                }
             }
         }
         catch(error) {
@@ -748,6 +750,7 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
 
         if (!userCard || userCard.money < price) {
             await interaction.followUp('No tienes suficiente guita para comprar un paquete de cartas. Necesitas 1000 pesos.');
+            rollbackTransaction(transaction);
             return;
         }
 

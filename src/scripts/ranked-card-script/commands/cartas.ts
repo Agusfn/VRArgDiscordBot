@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, Channel, ChatInputCommandInteraction, EmbedBuilder, GuildTextBasedChannel, InteractionResponse, Message, MessageInteraction, SlashCommandBuilder } from "discord.js";
 import { RankedCardScript } from "../RankedCardScript";
 import { findOrCreateUser, findUserCardById, updateLastDraw } from "../services/UserCardManager";
 import logger from "@utils/logger";
@@ -13,6 +13,7 @@ import { Op, Transaction } from "sequelize";
 import { getBeatSaverInfo } from "../services/ApiFunctions";
 import { errorToString } from "@utils/strings";
 import { channel } from "diagnostic_channel";
+import { MapGuessScript } from "@scripts/map-guess-script/MapGuessScript";
 const { pagination, ButtonTypes, ButtonStyles } = require('@devraelfreeze/discordjs-pagination');
 
 let databaseIsBusy = false;
@@ -175,10 +176,15 @@ export default {
             if (interaction.options.getSubcommand() === 'abrir') {
                 await interaction.deferReply();
                 const transaction = await startTransaction();
-                let didDraw = await openCardPack([], interaction, transaction, false);
+                let didDraw = await openCardPack([], interaction, transaction, false, 4);
                 await commitTransaction(transaction);
                 if(didDraw) {
                     script.clearUserReminder(interaction.user.id);
+                }
+                if(Math.random() < 0.125) {
+                    interaction.channel.send("¡Puedes ganar una carta extra si adivinas el siguiente mapa en menos de 1 minuto! (Otra persona puede llevarse la carta si lo adivina antes)");
+                    const message = await interaction.channel.send('Iniciando...');
+                    await MapGuessScript.getInstance().iniciarPartida(message, interaction.channel, true);
                 }
             }
             else if (interaction.options.getSubcommand() === 'top') {
@@ -264,7 +270,7 @@ export default {
     },
 } as DiscordCommand<RankedCardScript>;
 
-async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>, transaction: Transaction, buy: boolean) {
+async function openCardPack(args: string[], interaction: ChatInputCommandInteraction<CacheType>, transaction: Transaction, buy: boolean, amount: number) {
     let isHash = false;
 
     if(args.length >=2 && args[0] != null) {
@@ -349,7 +355,7 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         }
         else {
             let generatedCard;
-            for(var i = 0; i < 4; i++) {
+            for(var i = 0; i < amount; i++) {
                 let shiny = 500*Math.random() < 1;
                 generatedCard = await generateRandomCard(interaction.user.username, shiny);
                 cardPrices.push(calculateCardPrice(generatedCard[1]))
@@ -364,12 +370,62 @@ async function openCardPack(args: string[], interaction: ChatInputCommandInterac
         // Enviar carta
         for(var i = 0; i < imageBuffers.length; i++) {
             await sendCard(interaction, imageBuffers[i]);
-            await sendButton(interaction, cardIds[i], cardPrices[i]);
+            await sendButton(interaction.channel, cardIds[i], cardPrices[i]);
         }                
 
     } catch (error) {
         logger.error(errorToString(error));
         interaction.followUp("Hubo un error al intentar generar la/s carta/s.");
+        await rollbackTransaction(transaction);
+        return false;
+    }
+
+    return true;
+}
+
+export async function openFreeCard(args: string[], message: Message, transaction: Transaction, amount: number) {
+    let isHash = false;
+
+    if(args.length >=2 && args[0] != null) {
+        isHash = true;
+    }
+
+    const userCarta = await findOrCreateUser(message.author.id);
+
+    try {
+
+        let imageBuffers = [];
+        let cardPrices = [];
+        let cardIds = [];
+        
+        if(isHash) {
+            let generatedCard = await generateHashCard(args[0], parseInt(args[1]));
+            imageBuffers.push(generatedCard[0]);
+            cardPrices.push(0);
+        }
+        else {
+            let generatedCard;
+            for(var i = 0; i < amount; i++) {
+                let shiny = 500*Math.random() < 1;
+                generatedCard = await generateRandomCard(message.author.username, shiny);
+                cardPrices.push(calculateCardPrice(generatedCard[1]))
+                const cardData = generatedCard[1];
+                cardData.userCardId = userCarta[0].id;                       
+                let cartId = await saveCard(cardData, transaction);
+                cardIds.push(cartId);
+                generatedCard[0] = await addCardId(generatedCard[0], cartId);
+                imageBuffers.push(generatedCard[0]);
+            }
+        }
+        // Enviar carta
+        for(var i = 0; i < imageBuffers.length; i++) {
+            await sendCardMessage(message, imageBuffers[i]);
+            await sendButton(message.channel, cardIds[i], cardPrices[i]);
+        }                
+
+    } catch (error) {
+        logger.error(errorToString(error));
+        message.channel.send("Hubo un error al intentar generar la/s carta/s.");
         await rollbackTransaction(transaction);
         return false;
     }
@@ -399,7 +455,7 @@ async function openTopCard(interaction: ChatInputCommandInteraction<CacheType>) 
         let cartaGenerada = await drawCardFromData(carta);
         cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
         await sendCard(interaction, cartaGenerada[0]);
-        await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
+        await sendButton(interaction.channel, carta.id, calculateCardPrice(cartaGenerada[1]));
     }
     else {
         interaction.followUp("Ché no tenés cartas");
@@ -455,7 +511,7 @@ async function handleSearchCommand(interaction: ChatInputCommandInteraction<Cach
 
 }
 
-async function sendCard(interaction: ChatInputCommandInteraction<CacheType>, imageBuffer: any) {
+async function sendCard(interaction: any, imageBuffer: any) {
     await interaction.followUp({ 
         files: [{
                 attachment: imageBuffer,
@@ -463,14 +519,22 @@ async function sendCard(interaction: ChatInputCommandInteraction<CacheType>, ima
         }]});
 }
 
-async function sendButton(interaction: ChatInputCommandInteraction<CacheType>, cardId: number, cardPrice: number) {
+async function sendCardMessage(message: Message, imageBuffer: any) {
+    await message.reply({ 
+        files: [{
+                attachment: imageBuffer,
+                name: "card.png" 
+        }]});
+}
+
+async function sendButton(channel: any, cardId: number, cardPrice: number) {
     const button = new ButtonBuilder()
         .setCustomId("sellcard_" + cardId)
         .setLabel('Vender esta carta por ' + cardPrice + ' Pesos')
         .setStyle(ButtonStyle.Secondary);
     
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-    await interaction.channel.send({components: [row] });
+    await channel.send({components: [row] });
 }
 
 async function handleInventarioCommand(interaction: ChatInputCommandInteraction<CacheType>, top: boolean) {
@@ -761,7 +825,7 @@ async function handleBuyCardCommand(interaction: ChatInputCommandInteraction<Cac
         });
         await interaction.followUp('Abriendo paquete de 4 cartas por 1000 pesos...');
 
-        await openCardPack([], interaction, transaction, true);
+        await openCardPack([], interaction, transaction, true, 4);
         
         // Si todo sale bien, confirmas la transacción
         await commitTransaction(transaction);
@@ -823,7 +887,7 @@ async function handleShowCardCommand(interaction: ChatInputCommandInteraction<Ca
         let cartaGenerada = await drawCardFromData(carta);
         cartaGenerada[0] = await addCardId(cartaGenerada[0], carta.id);
         await sendCard(interaction, cartaGenerada[0]);
-        await sendButton(interaction, carta.id, calculateCardPrice(cartaGenerada[1]));
+        await sendButton(interaction.channel, carta.id, calculateCardPrice(cartaGenerada[1]));
     }
     else {
         interaction.followUp("No se encontro ninguna carta con la id especificada");

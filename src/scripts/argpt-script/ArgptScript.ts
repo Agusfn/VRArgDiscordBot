@@ -67,7 +67,7 @@ export class ArgptScript extends Script {
           let reply = this.replaceVariables(response.data.choices[0].message.content);
     
           // Añade la respuesta del bot al historial
-          if(reply.length == 0) {reply = ":wheelchair:"}
+          if(reply.length == 0) {reply = "<SantosBot>: :wheelchair:"}
           this.history.push({ role: "assistant", content: reply });
     
           // Envía la respuesta de LM Studio al canal de Discord

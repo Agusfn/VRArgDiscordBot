@@ -93,7 +93,8 @@ export class ArgptScript extends Script {
       Object.keys(variables).forEach(key => {
           text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
       });
-      text = text.replace("everyone", "every-one");
+      text = text.replace("@everyone", "everyone");
+      text = text.replace("@here", "here");
       return text;
     }
     

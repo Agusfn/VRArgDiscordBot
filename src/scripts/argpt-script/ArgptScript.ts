@@ -38,6 +38,7 @@ export class ArgptScript extends Script {
     public typingTimeout: any;
 
     private startContextSize: number;
+    private maxHistorySize = 200;
 
     constructor(public client: DiscordClientWrapper) {
         super(client);
@@ -79,13 +80,13 @@ export class ArgptScript extends Script {
           await this.channel.send(this.removeBotMentions(reply));
         } catch (error) {
           clearInterval(typingInterval);
-          console.error('Error al obtener la respuesta de LM Studio:', error);
+          console.error('Error al obtener la respuesta de la API de LLM:', error);
           await this.channel.send('Lo siento, no pude procesar tu mensaje.');
         }
     
         // Opcional: limpiar el historial si se vuelve muy grande
-        if ((this.history.length - this.startContextSize) > 80) { // Ajusta el tamaño máximo según sea necesario
-            this.history.splice(this.startContextSize, this.history.length - 80); // Conserva solo los últimos 20 mensajes
+        if ((this.history.length - this.startContextSize) > this.maxHistorySize) {
+            this.history.splice(this.startContextSize, this.history.length - this.maxHistorySize);
         }
     }
 

@@ -24,6 +24,7 @@
     "everpolate": "^0.0.3",
     "moment": "^2.29.1",
     "node-cron": "^3.0.0",
+    "node-html-parser": "^6.1.13",
     "node-html-to-image": "^4.0.0",
     "scoresaber-api-client": "github:wwisser/scoresaber-api-client",
     "sequelize": "^6.37.0",

@@ -37,6 +37,8 @@ export class ArgptScript extends Script {
 
     public typingTimeout: any;
 
+    private startContextSize: number;
+
     constructor(public client: DiscordClientWrapper) {
         super(client);
         this.loadPrompt();
@@ -82,8 +84,8 @@ export class ArgptScript extends Script {
         }
     
         // Opcional: limpiar el historial si se vuelve muy grande
-        if (this.history.length > 30) { // Ajusta el tamaño máximo según sea necesario
-            this.history.splice(0, this.history.length - 30); // Conserva solo los últimos 20 mensajes
+        if ((this.history.length - this.startContextSize) > 80) { // Ajusta el tamaño máximo según sea necesario
+            this.history.splice(this.startContextSize, this.history.length - 80); // Conserva solo los últimos 20 mensajes
         }
     }
 
@@ -104,6 +106,7 @@ export class ArgptScript extends Script {
       this.history.push({ role: "system", content: initialPrompt});
       this.history.push({ role: "assistant", content: "<SantosBot>: Que onda pibes en que puedo ayudarlos? xd" });
       this.history.push({ role: "assistant", content: "<SantosBot>: O quieren hacer algo? cuentenme" });
+      this.startContextSize = this.history.length;
     }
 }
 

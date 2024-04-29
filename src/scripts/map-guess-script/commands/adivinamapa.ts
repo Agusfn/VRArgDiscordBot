@@ -18,7 +18,7 @@ export default {
                 return;
             }
             const message = await interaction.reply('Iniciando...');
-            await script.iniciarPartida(message, interaction, false);
+            await script.iniciarPartida(message, interaction.channel, false);
             
         }
     },

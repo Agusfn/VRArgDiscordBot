@@ -26,52 +26,42 @@ export async function updateRoles (interaction: any) {
     const idRoleTop15 = process.env.TOP_15_ROLE_ID
 
 
-    // Get all players with their Discord account linked
-    const players = await SSPlayer.scope("getArgentinianPlayers").findAll()
+    const players = await SSPlayer.scope("getArgentinianPlayers").findAll();
 
-    if(players.length == 0) {
-        logger.info("Player Role Updater: No players found.")
-        return
-    } else {
-        logger.info(`Player Role Updater: Found ${players.length} players.`)
-    }
-
-    for(const player of players) {
-        if(!player.User.isPresent) continue
-
-        const countryRank = player.countryRank
-
-        const discordUserId = player.discordUserId
-        // Get roles from user
-
-        const member = await interaction.guild.members.fetch(discordUserId);
-
-        // Set roles depending on countryRank, removing other top roles
-        if(countryRank == 1) {
-            member.roles.add(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 5 && countryRank > 1) {
-            member.roles.add(idRoleTop5);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 10 && countryRank > 5) {
-            member.roles.add(idRoleTop10);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 15 && countryRank > 10) {
-            member.roles.add(idRoleTop15);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-        } else {
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
+        if (players.length === 0) {
+            logger.info("Player Role Updater: No players found.");
+            return;
         }
-    }
+
+        logger.info(`Player Role Updater: Found ${players.length} players.`);
+
+        for (const player of players) {
+            if (!player.User.isPresent) continue;
+
+            const countryRank = player.countryRank;
+            const discordUserId = player.discordUserId;
+
+            // Fetch the member from the guild
+            const member = await interaction.guild.members.fetch(discordUserId);
+
+            // Modify roles based on countryRank
+            const rolesToAdd = [];
+            const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
+
+            if (countryRank === 1) {
+                rolesToAdd.push(idRoleTop1);
+            } else if (countryRank <= 5) {
+                rolesToAdd.push(idRoleTop5);
+            } else if (countryRank <= 10) {
+                rolesToAdd.push(idRoleTop10);
+            } else if (countryRank <= 15) {
+                rolesToAdd.push(idRoleTop15);
+            }
+
+            // Add and remove roles accordingly
+            await member.roles.remove(rolesToRemove);
+            await member.roles.add(rolesToAdd);
+        }
+
+        logger.info("Player Role Updater: Roles updated successfully.");
 }

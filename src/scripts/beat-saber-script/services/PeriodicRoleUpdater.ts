@@ -32,32 +32,22 @@ export async function PeriodicRoleUpdater (client: any) {
 
         const member = await guild.members.cache.get(discordUserId)
 
-        // Set roles depending on countryRank, removing other top roles
-        if(countryRank == 1) {
-            member.roles.add(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 5 && countryRank > 1) {
-            member.roles.add(idRoleTop5);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 10 && countryRank > 5) {
-            member.roles.add(idRoleTop10);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 15 && countryRank > 10) {
-            member.roles.add(idRoleTop15);
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-        } else {
-            member.roles.remove(idRoleTop1);
-            member.roles.remove(idRoleTop5);
-            member.roles.remove(idRoleTop10);
-            member.roles.remove(idRoleTop15);
+        // Modify roles based on countryRank
+        const rolesToAdd = [];
+        const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
+
+        if (countryRank === 1) {
+            rolesToAdd.push(idRoleTop1);
+        } else if (countryRank <= 5) {
+            rolesToAdd.push(idRoleTop5);
+        } else if (countryRank <= 10) {
+            rolesToAdd.push(idRoleTop10);
+        } else if (countryRank <= 15) {
+            rolesToAdd.push(idRoleTop15);
         }
+
+        // Add and remove roles accordingly
+        await member.roles.remove(rolesToRemove);
+        await member.roles.add(rolesToAdd);
     }
 }

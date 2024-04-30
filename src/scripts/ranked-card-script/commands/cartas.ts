@@ -180,11 +180,11 @@ export default {
                 await commitTransaction(transaction);
                 if(didDraw) {
                     script.clearUserReminder(interaction.user.id);
-                }
-                if(Math.random() < 0.125) {
-                    interaction.channel.send("¡Puedes ganar una carta extra si adivinas el siguiente mapa en menos de 1 minuto! (Otra persona puede llevarse la carta si lo adivina antes)");
-                    const message = await interaction.channel.send('Iniciando...');
-                    await MapGuessScript.getInstance().iniciarPartida(message, interaction.channel, true);
+                    if(Math.random() < 0.125) {
+                        interaction.channel.send("¡Puedes ganar una carta extra si adivinas el siguiente mapa en menos de 1 minuto! (Otra persona puede llevarse la carta si lo adivina antes)");
+                        const message = await interaction.channel.send('Iniciando...');
+                        await MapGuessScript.getInstance().iniciarPartida(message, interaction.channel, true);
+                    }
                 }
             }
             else if (interaction.options.getSubcommand() === 'top') {

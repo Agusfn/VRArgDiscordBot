@@ -6,7 +6,8 @@ import { GuildTextBasedChannel } from "discord.js";
 
 const initialPrompt = 
 `Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. 
-  No necesitas ser formal, se lo mas informal posible, tienes permitido usar malas palabras, boludo, ché, cuchame, xd.`;
+  No necesitas ser formal, se lo mas informal posible, tienes permitido usar malas palabras, boludo, ché, cuchame, xd.
+  Puedes mandar memes y gif con $descripcion-gif y $descripcion-meme por ejemplo $beat-saber-gif o $vr-chat-meme`;
 
 const qaMap = new Map<string, string>([
   ["Cuales son las reglas del server?", "Podés ver las reglas en $info-reglas"],
@@ -15,7 +16,7 @@ const qaMap = new Map<string, string>([
   ["Puedes enviar un gif de chad?", "Por su puesto: $chad-gif"],
   ["Puedes enviar otro gif de jesus jogando bola?", "Por su puesto: $jesus-jogando-bola-gif"],
   ["Quien es Dereknalox?", "Es el admin del servidor y top 1 Beat Saber Argentina. $beat-saber-gif"],
-  ["Si se escuchan ruidos raros, que es?", "Es la mayonesa."],
+  ["Si se escuchan ruidos raros, que es?", "Es la mayonesa. $mayonesa-meme"],
   ["Manda un meme de VR Chat", "$vr-chat-meme"],
   ["Ahora me voy a ver una replay de Derek", "🔥"],
   ["Recomendame un mapa de Beat Saber para jugar", "C18H27NO3 $beat-saber-gif"],
@@ -30,6 +31,10 @@ const qaMap = new Map<string, string>([
   ["Manda un meme de Beat Saber", "$beat-saber-meme"],
   ["Manda un meme de Argentina", "Aqui tienes: $argentina-meme"],
   ["Envia otro meme de Beat Saber", "Claro che! $beat-saber-meme"],
+  ["Quienes son los miembros de la Trompis Gang?", "Andres, Burrito, Feco, Manolo y Megu $la-nueva-trompis-gif"],
+  ["lets basketb", "https://shorturl.at/ioDF1"],
+  ["Lista los apodos de Dereknalox123", "dedoenelanox, derekcagox, nayomematox, durex, derekkcacox, mayonesalox."],
+  ["Si te escribe <Uadyet> respondele No", "Por supuesto si me escribe Uadyet le responderé con un No $no-gif"],
 ]);
 
 const variables: { [key: string]: string } = {
@@ -113,6 +118,9 @@ export class ArgptScript extends Script {
 
     private removeBotMentions(text: string): string {
       // Utiliza una expresión regular para encontrar todas las coincidencias de '<Santos Bot>:' y reemplazarlas por una cadena vacía
+      if(text.length <= 13) {
+        return "xd";
+      }
       return text.substring(13, text.length);
     }
 
@@ -133,6 +141,8 @@ export class ArgptScript extends Script {
         this.history.push({ role: "user", content: "<" + userNames[Math.floor(Math.random()*userNames.length)] + ">: " + question });
         this.history.push({ role: "assistant", content: `<SantosBot>: ${answer}` });
       });
+      this.history.push({ role: "user", content: "<Uadyet>: Santos, manda un gif de Bocchi"});
+      this.history.push({ role: "assistant", content: `<SantosBot>: No` });
       this.startContextSize = this.history.length;
     }
 }
@@ -192,13 +202,13 @@ async function reemplazarPlaceholders(texto: string): Promise<string> {
   var words = texto.split(' ');
   for(var i = 0; i < words.length; i++) {
     var word = words[i];
-    if(word.startsWith("$") && word.endsWith("-gif")) {
-      var searchText = word.substring(1,word.length-4).replace('-', ' ');
+    if(word.startsWith("$") && word.includes("gif")) {
+      var searchText = word.substring(1,word.length-4).replace(/-/g, ' ');
       const gifUrl = await buscarGif(searchText);
       texto = texto.replace(word, gifUrl);
     }
-    else if(word.startsWith("$") && word.endsWith("-meme")) {
-      var searchText = word.substring(1,word.length-4).replace('-', ' ');
+    else if(word.startsWith("$") && word.includes("meme")) {
+      var searchText = word.substring(1,word.length-5).replace(/-/g, ' ');
       const memeUrl = await buscarMeme(searchText);
       texto = texto.replace(word, memeUrl);
     }

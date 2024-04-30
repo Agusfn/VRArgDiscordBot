@@ -38,11 +38,11 @@ export async function PeriodicRoleUpdater (client: any) {
 
         if (countryRank === 1) {
             rolesToAdd.push(idRoleTop1);
-        } else if (countryRank <= 5) {
+        } else if (countryRank <= 5 && countryRank > 1) {
             rolesToAdd.push(idRoleTop5);
-        } else if (countryRank <= 10) {
+        } else if (countryRank <= 10 && countryRank > 5) {
             rolesToAdd.push(idRoleTop10);
-        } else if (countryRank <= 15) {
+        } else if (countryRank <= 15 && countryRank > 10) {
             rolesToAdd.push(idRoleTop15);
         }
 

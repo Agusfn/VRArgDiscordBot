@@ -176,13 +176,13 @@ SSPlayer.init({
                 }
             }
         },
-        getAllPlayers: { // all players
+        getArgentinianPlayers: { // players that are from Argentina
             where: {
-                discordUserId: {
-                    [Op.ne]: null
-                }
-            }
+                country: "AR"
+            },
+            include: [User]
         },
+
         /** Query scope to find SS Player with a given discord user id. */
         withDiscordUserId(discordUserId: string) {
             return {

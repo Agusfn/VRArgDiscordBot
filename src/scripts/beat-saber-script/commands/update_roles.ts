@@ -27,7 +27,7 @@ export async function updateRoles (interaction: any) {
 
 
     // Get all players with their Discord account linked
-    const players = await SSPlayer.scope("getAllPlayers").findAll()
+    const players = await SSPlayer.scope("getArgentinianPlayers").findAll()
 
     if(players.length == 0) {
         logger.info("Player Role Updater: No players found.")
@@ -37,8 +37,8 @@ export async function updateRoles (interaction: any) {
     }
 
     for(const player of players) {
-        // Get player countryRank if country is set to AR
-        if(player.country == "AR") {
+        if(!player.User.isPresent) continue
+
         const countryRank = player.countryRank
 
         const discordUserId = player.discordUserId
@@ -52,17 +52,17 @@ export async function updateRoles (interaction: any) {
             member.roles.remove(idRoleTop5);
             member.roles.remove(idRoleTop10);
             member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 5) {
+        } else if(countryRank <= 5 && countryRank > 1) {
             member.roles.add(idRoleTop5);
             member.roles.remove(idRoleTop1);
             member.roles.remove(idRoleTop10);
             member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 10) {
+        } else if(countryRank <= 10 && countryRank > 5) {
             member.roles.add(idRoleTop10);
             member.roles.remove(idRoleTop1);
             member.roles.remove(idRoleTop5);
             member.roles.remove(idRoleTop15);
-        } else if(countryRank <= 15) {
+        } else if(countryRank <= 15 && countryRank > 10) {
             member.roles.add(idRoleTop15);
             member.roles.remove(idRoleTop1);
             member.roles.remove(idRoleTop5);
@@ -72,7 +72,6 @@ export async function updateRoles (interaction: any) {
             member.roles.remove(idRoleTop5);
             member.roles.remove(idRoleTop10);
             member.roles.remove(idRoleTop15);
-        }
         }
     }
 }

@@ -4,50 +4,37 @@ import { SSPlayer } from "../models"
 export async function PeriodicRoleUpdater (client: any) {
     const guild = await client.guild
 
-
     const idRoleTop1 = process.env.TOP_1_ROLE_ID
     const idRoleTop5 = process.env.TOP_5_ROLE_ID
     const idRoleTop10 = process.env.TOP_10_ROLE_ID
     const idRoleTop15 = process.env.TOP_15_ROLE_ID
 
-
     // Get all players with their Discord account linked
-    const players = await SSPlayer.scope("getArgentinianPlayers").findAll()
+    const top1Player = await SSPlayer.scope("getArgentinianPlayerTop1").findAll();
+    const top5Players = await SSPlayer.scope("getArgentinianPlayerTop5").findAll();
+    const top10Players = await SSPlayer.scope("getArgentinianPlayerTop10").findAll();
+    const top15Players = await SSPlayer.scope("getArgentinianPlayerTop15").findAll();
 
-    if(players.length == 0) {
-        logger.info("Player Role Updater: No players found.")
-        return
-    } else {
-        logger.info(`Player Role Updater: Found ${players.length} players.`)
-    }
+    const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
 
+    // Assign roles to players
+    await assignRolesToPlayers(top1Player, idRoleTop1, guild, rolesToRemove)
+    await assignRolesToPlayers(top5Players, idRoleTop5, guild, rolesToRemove)
+    await assignRolesToPlayers(top10Players, idRoleTop10, guild, rolesToRemove)
+    await assignRolesToPlayers(top15Players, idRoleTop15, guild, rolesToRemove)
+
+    logger.info("Roles updated.")
+}
+
+export async function assignRolesToPlayers(players: SSPlayer[], roleId: string, guild: any, roleToRemove: string[]) {
     for(const player of players) {
-        if(!player.User.isPresent) continue
-
-        // Get player countryRank if country is set to AR
-        const countryRank = player.countryRank
+        if(!player.User?.isPresent) continue
 
         const discordUserId = player.discordUserId
-        // Get roles from user
-
         const member = await guild.members.cache.get(discordUserId)
 
-        // Modify roles based on countryRank
-        const rolesToAdd = [];
-        const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
+        await member.roles.remove(roleToRemove);
 
-        if (countryRank === 1) {
-            rolesToAdd.push(idRoleTop1);
-        } else if (countryRank <= 5 && countryRank > 1) {
-            rolesToAdd.push(idRoleTop5);
-        } else if (countryRank <= 10 && countryRank > 5) {
-            rolesToAdd.push(idRoleTop10);
-        } else if (countryRank <= 15 && countryRank > 10) {
-            rolesToAdd.push(idRoleTop15);
-        }
-
-        // Add and remove roles accordingly
-        await member.roles.remove(rolesToRemove);
-        await member.roles.add(rolesToAdd);
+        await member.roles.add(roleId);
     }
 }

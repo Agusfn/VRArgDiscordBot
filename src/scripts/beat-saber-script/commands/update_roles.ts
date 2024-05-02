@@ -4,6 +4,7 @@ import { BeatSaberScript } from "../BeatSaberScript";
 import { SSPlayer } from "../models";
 import logger from "@utils/logger";
 import { UserManager } from "@scripts/core-script/services/UserManager";
+import { assignRolesToPlayers } from "../services";
 
 export default {
     data: new SlashCommandBuilder()
@@ -13,8 +14,6 @@ export default {
             
     async execute(script, interaction) {
         updateRoles(interaction)
-
-        interaction.reply("Roles updated.")
     },
 } as DiscordCommand<BeatSaberScript>;
 
@@ -26,43 +25,21 @@ export async function updateRoles (interaction: any) {
     const idRoleTop15 = process.env.TOP_15_ROLE_ID
 
 
-    const players = await SSPlayer.scope("getArgentinianPlayers").findAll();
+    const top1Player = await SSPlayer.scope("getArgentinianPlayerTop1").findAll();
+    const top5Players = await SSPlayer.scope("getArgentinianPlayerTop5").findAll();
+    const top10Players = await SSPlayer.scope("getArgentinianPlayerTop10").findAll();
+    const top15Players = await SSPlayer.scope("getArgentinianPlayerTop15").findAll();
 
-        if (players.length === 0) {
-            logger.info("Player Role Updater: No players found.");
-            return;
-        }
+    const guild = await interaction.guild
 
-        logger.info(`Player Role Updater: Found ${players.length} players.`);
+    const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
 
-        for (const player of players) {
-            if (!player.User.isPresent) continue;
+    await assignRolesToPlayers(top1Player, idRoleTop1, guild, rolesToRemove)
+    await assignRolesToPlayers(top5Players, idRoleTop5, guild, rolesToRemove)
+    await assignRolesToPlayers(top10Players, idRoleTop10, guild, rolesToRemove)
+    await assignRolesToPlayers(top15Players, idRoleTop15, guild, rolesToRemove)
 
-            const countryRank = player.countryRank;
-            const discordUserId = player.discordUserId;
+    logger.info("Roles updated.")
 
-            // Fetch the member from the guild
-            const member = await interaction.guild.members.fetch(discordUserId);
-
-            // Modify roles based on countryRank
-            const rolesToAdd = [];
-            const rolesToRemove = [idRoleTop1, idRoleTop5, idRoleTop10, idRoleTop15];
-
-            if (countryRank === 1) {
-                rolesToAdd.push(idRoleTop1);
-            } else if (countryRank <= 5 && countryRank > 1) {
-                rolesToAdd.push(idRoleTop5);
-            } else if (countryRank <= 10 && countryRank > 5) {
-                rolesToAdd.push(idRoleTop10);
-            } else if (countryRank <= 15 && countryRank > 10) {
-                rolesToAdd.push(idRoleTop15);
-            }
-    
-
-            // Add and remove roles accordingly
-            await member.roles.remove(rolesToRemove);
-            await member.roles.add(rolesToAdd);
-        }
-
-        logger.info("Player Role Updater: Roles updated successfully.");
+    interaction.reply("Roles updated.")
 }

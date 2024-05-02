@@ -182,6 +182,53 @@ SSPlayer.init({
             },
             include: [User]
         },
+        getArgentinianPlayersInTop15: { // players that are from Argentina and country rank is >= 1 and <= 15 != 0
+            where: {
+                country: "AR",
+                countryRank: {
+                    [Op.gte]: 1,
+                    [Op.lte]: 15
+                }
+            },
+            include: [User]
+        },
+        getArgentinianPlayerTop1: { // players that are from Argentina and country rank is 1
+            where: {
+                country: "AR",
+                countryRank: 1
+            },
+            include: [User]
+        },
+        getArgentinianPlayerTop5: { // players that are from Argentina and country rank is >= 2 and <= 5
+            where: {
+                country: "AR",
+                countryRank: {
+                    [Op.gte]: 2,
+                    [Op.lte]: 5
+                }
+            },
+            include: [User]
+        },
+        getArgentinianPlayerTop10: { // players that are from Argentina and country rank is >= 6 and <= 10
+            where: {
+                country: "AR",
+                countryRank: {
+                    [Op.gte]: 6,
+                    [Op.lte]: 10
+                }
+            },
+            include: [User]
+        },
+        getArgentinianPlayerTop15: { // players that are from Argentina and country rank is >= 11 and <= 15
+            where: {
+                country: "AR",
+                countryRank: {
+                    [Op.gte]: 11,
+                    [Op.lte]: 15
+                }
+            },
+            include: [User]
+        },
 
         /** Query scope to find SS Player with a given discord user id. */
         withDiscordUserId(discordUserId: string) {

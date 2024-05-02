@@ -125,10 +125,13 @@ export class ArgptScript extends Script {
     }
 
     private replaceVariables(text: string): string {
-      Object.keys(variables).forEach(key => {
-          text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
-      });
-      text = text.replace(/@([^\s\n]+)/g, '$1');
+      while(text.includes("@")) {
+        Object.keys(variables).forEach(key => {
+              text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
+          });
+          text = text.replace(/@([^\s\n]+)/g, '$1');
+      }
+
       return text;
     }
     

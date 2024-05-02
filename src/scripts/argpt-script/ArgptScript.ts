@@ -125,12 +125,9 @@ export class ArgptScript extends Script {
     }
 
     private replaceVariables(text: string): string {
-      while(text.includes("@")) {
-        Object.keys(variables).forEach(key => {
-              text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
-          });
-          text = text.replace(/@([^\s\n]+)/g, '$1');
-      }
+
+      // replace all @ in text for ":wheelchair:"
+      text = text.replace(/@/g, ":wheelchair:");
 
       return text;
     }

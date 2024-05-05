@@ -100,19 +100,36 @@ export class ScoreSaberAccountManager {
      * @param scoreSaberId 
      * @param isSelfUser If the discordUserId is the one making this request (for validation msg purposes)
      */
-    public async unlinkScoreSaberAccountFromUser(discordUserId: string, isSelfUser: boolean): Promise<SSPlayer> {
+    public async unlinkScoreSaberAccountFromUser(isSelfUser: boolean, ssPlayerId?: string, discordUserId?: string): Promise<SSPlayer> {
+
+        if(!ssPlayerId && !discordUserId) {
+            throw new Error("You must either provide the scoresaber player id or the discord user id!");
+        }
 
         // check user has linked scoresaber account
-        const ssPlayer = await SSPlayer.findOne({where: { discordUserId: discordUserId }})
+        const ssPlayer = await SSPlayer.findOne({
+            where: ssPlayerId ? { id: ssPlayerId } : { discordUserId: discordUserId }
+        });
 
+        // To-do: move this validation on the upper level
         if(!ssPlayer) {
-            if(isSelfUser) {
+            if(isSelfUser && discordUserId) {
                 this.errorMessage = "No tenés una cuenta de ScoreSaber vinculada a tu cuenta!"
             } else {
-                this.errorMessage = `El usuario de Discord seleccionado no tiene ninguna cuenta de ScoreSaber vinculada.`
+                if(discordUserId) {
+                    this.errorMessage = `El usuario de Discord seleccionado no tiene ninguna cuenta de ScoreSaber vinculada.`
+                } else {
+                    this.errorMessage = `No está registrado en el bot el jugador de ScoreSaber con el id ingresado (${ssPlayerId}).`
+                }
             }
             return null
         }
+
+        if(ssPlayer && !ssPlayer.discordUserId) {
+            this.errorMessage = "El jugador de ScoreSaber con el ID ingresado está registrado pero no tiene ninguna cuenta de Discord vinculada para desvincular.";
+            return null;
+        }
+
 
         ssPlayer.discordUserId = null
         ssPlayer.milestoneAnnouncements = false

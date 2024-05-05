@@ -9,7 +9,7 @@ export default {
 		.setDescription("Desvincular la cuenta de ScoreSaber de tu cuenta de Discord."),
 	async execute(script, interaction) {
 		
-		const ssPlayer = await script.scoreSaberAccountManager.unlinkScoreSaberAccountFromUser(interaction.user.id, true)
+		const ssPlayer = await script.scoreSaberAccountManager.unlinkScoreSaberAccountFromUser(true, null, interaction.user.id)
 
 		if(ssPlayer) {
 			interaction.reply(`La cuenta de ScoreSaber **${ssPlayer.name}** (ID ${ssPlayer.id}) se te desvinculó correctamente!`)

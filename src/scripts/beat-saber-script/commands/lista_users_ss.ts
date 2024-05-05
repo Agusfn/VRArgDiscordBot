@@ -17,10 +17,11 @@ export default {
 
 		let userListTxt = "**__Lista de usuarios con ScoreSaber vinculado:__**\n"
 		for(const player of players) {
-			userListTxt += `**User Discord:** ${player.User?.username || "(desvinculado)"}. **SS:** ${player.name}. **URL:** <${player.scoreSaberURL()}>\n`
+			userListTxt += `**ID Discord:** ${(player.User ? player.User.discordUserId : "(no vinculado)")}. **User Discord:** ${player.User?.username || "(no vinculado)"}. `
+			userListTxt += `**ID SS:** ${player.id}. **Nombre SS:** ${player.name}. **URL:** <${player.scoreSaberURL()}>\n`
 		}
 
-		await replyLongMessageToInteraction(interaction, userListTxt);
+		await replyLongMessageToInteraction(interaction, userListTxt, true);
 
 	},
 } as DiscordCommand<BeatSaberScript>;

@@ -133,7 +133,14 @@ export class ArgptScript extends Script {
       if(text.length <= 13) {
         return "xd";
       }
-      return text.substring(13, text.length);
+      text = text.substring(13, text.length).trim();
+      if(text.startsWith('<')) {
+        var pos = text.indexOf('>');
+        if(pos) {
+          text = text.substring(pos+2, text.length).trim();
+        }
+      }
+      return text;
     }
 
     private replaceVariables(text: string): string {
@@ -284,6 +291,11 @@ async function reemplazarPlaceholders(texto: string): Promise<string> {
       var searchText = word.substring(1,word.length-5).replace(/-/g, ' ');
       const memeUrl = await buscarMeme(searchText);
       texto = texto.replace(word, memeUrl);
+    }
+    else if(word.startsWith("$")) {
+      var searchText = word.substring(1,word.length-4).replace(/-/g, ' ');
+      const gifUrl = await buscarGif(searchText);
+      texto = texto.replace(word, gifUrl);
     }
   }
   return texto;

@@ -97,7 +97,7 @@ export default {
             }
             else if (interaction.options.getSubcommand() === 'lang') {
                 script.voiceLang = interaction.options.getString('lang_code');
-                interaction.reply({ content: "Has configurado el idioma de la voz a " + script.voiceLang, ephemeral: true });
+                interaction.reply("Has configurado el idioma de la voz a " + script.voiceLang);
             }
         }
     },

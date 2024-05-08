@@ -71,6 +71,8 @@ export class ArgptScript extends Script {
     private startContextSize: number;
     private maxHistorySize = 200;
 
+    private timeoutHandle: NodeJS.Timeout | null = null;
+
     constructor(public client: DiscordClientWrapper) {
         super(client);
         this.loadPrompt();
@@ -158,6 +160,8 @@ export class ArgptScript extends Script {
 
     public async handleVoice(text: string) {
       // Asegurar que interaction.member es una instancia de GuildMember
+
+      this.resetTimer();
       
       const urls = await getSpeechFromText(text, this.voiceLang);
     
@@ -181,8 +185,7 @@ export class ArgptScript extends Script {
                   });
                   player.play(resource);
               } else {
-                  connection.disconnect();
-                  connection.destroy();
+                this.setupDisconnectTimer(connection);
               }
           }
       });
@@ -192,6 +195,28 @@ export class ArgptScript extends Script {
           inputType: StreamType.Arbitrary,
       });
       player.play(resource);
+    }
+
+    private setupDisconnectTimer(connection: any) {
+      // Clear existing timer if any
+      if (this.timeoutHandle) {
+          clearTimeout(this.timeoutHandle);
+      }
+
+      // Set a new timer
+      this.timeoutHandle = setTimeout(() => {
+          connection.disconnect();
+          connection.destroy();
+          this.timeoutHandle = null; // Reset the timer handle
+      }, 60000); // Wait for 60 seconds before disconnecting
+  }
+
+    public resetTimer() {
+        // Method to reset timer when new message is received
+        if (this.timeoutHandle) {
+            clearTimeout(this.timeoutHandle);
+            this.timeoutHandle = null;
+        }
     }
 }
 

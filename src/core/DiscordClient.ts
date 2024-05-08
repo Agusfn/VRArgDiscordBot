@@ -38,7 +38,7 @@ export class DiscordClientWrapper {
     constructor(private botToken: string, private guildId: string) {
 
         this.client = new DiscordJS.Client({ 
-            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessageTyping]
+            intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildVoiceStates]
         });
 
         DiscordClientWrapper.instance = this.client;

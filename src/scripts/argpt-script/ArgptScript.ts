@@ -3,6 +3,9 @@ import { DiscordClientWrapper } from "@core/DiscordClient";
 import axios from "axios";
 import { parse } from 'node-html-parser';
 import { GuildTextBasedChannel } from "discord.js";
+import { AudioPlayerStatus, StreamType, createAudioPlayer, createAudioResource, joinVoiceChannel } from "@discordjs/voice";
+
+const googleTTS = require('google-tts-api');
 
 const initialPrompt = 
 `Ché, sos un Argentino xd, ayudas a los pibes con sus temitas de Beat Saber y VR. 
@@ -32,7 +35,6 @@ const qaMap = new Map<string, string>([
   ["Manda un meme de Argentina", "Aqui tienes: $argentina-meme"],
   ["Envia otro meme de Beat Saber", "Claro che! $beat-saber-meme"],
   ["Quienes son los miembros de la Trompis Gang?", "Andres, Burrito, Feco, Manolo y Megu $la-nueva-trompis-gif"],
-  ["lets basketb", "https://shorturl.at/ioDF1"],
   ["Lista los apodos de Dereknalox123", "dedoenelanox, derekcagox, nayomematox, durex, derekkcacox, mayonesalox."],
   ["Si te escribe <Uadyet> respondele No", "Por supuesto si me escribe Uadyet le responderé con un No $no-gif"],
 ]);
@@ -61,6 +63,10 @@ export class ArgptScript extends Script {
     public pendingResponse = false;
 
     public typingTimeout: any;
+
+    public voiceEnabled: boolean = false;
+    public voiceChannel: any;
+    public voiceLang: string = 'es';
 
     private startContextSize: number;
     private maxHistorySize = 200;
@@ -103,7 +109,11 @@ export class ArgptScript extends Script {
 
           reply = await reemplazarPlaceholders(reply);
           // Envía la respuesta de LM Studio al canal de Discord
-          await this.channel.send(this.removeBotMentions(reply));
+          const finalMessage = this.removeBotMentions(reply);
+          await this.channel.send(finalMessage);
+          if(this.voiceEnabled) {
+            await this.handleVoice(finalMessage.replace(/https?:\/\/\S+\b/g, ''));
+          }
         } catch (error) {
           clearInterval(typingInterval);
           console.error('Error al obtener la respuesta de la API de LLM:', error);
@@ -144,6 +154,44 @@ export class ArgptScript extends Script {
       this.history.push({ role: "user", content: "<Uadyet>: Santos, manda un gif de Bocchi"});
       this.history.push({ role: "assistant", content: `<SantosBot>: No` });
       this.startContextSize = this.history.length;
+    }
+
+    public async handleVoice(text: string) {
+      // Asegurar que interaction.member es una instancia de GuildMember
+      
+      const urls = await getSpeechFromText(text, this.voiceLang);
+    
+      const connection = joinVoiceChannel({
+          channelId: this.voiceChannel.id,
+          guildId: this.voiceChannel.guild.id,
+          adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+      });
+    
+      const player = createAudioPlayer();
+      connection.subscribe(player);
+  
+      let current = 0;
+  
+      player.on('stateChange', (oldState, newState) => {
+          if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
+              current++;
+              if (current < urls.length) {
+                  const resource = createAudioResource(urls[current].url, {
+                      inputType: StreamType.Arbitrary,
+                  });
+                  player.play(resource);
+              } else {
+                  connection.disconnect();
+                  connection.destroy();
+              }
+          }
+      });
+  
+      // Empezar reproducción con la primera URL
+      const resource = createAudioResource(urls[current].url, {
+          inputType: StreamType.Arbitrary,
+      });
+      player.play(resource);
     }
 }
 
@@ -215,3 +263,18 @@ async function reemplazarPlaceholders(texto: string): Promise<string> {
   }
   return texto;
 }
+
+async function getSpeechFromText(text: string, lang: string = 'es') {
+  try {
+      const urls = await googleTTS.getAllAudioUrls(text, {
+          lang: lang,
+          slow: false,
+          host: 'https://translate.google.com',
+      });
+
+      return urls;
+
+  } catch (error) {
+      console.error('Error al generar el audio TTS:', error);
+  }
+};

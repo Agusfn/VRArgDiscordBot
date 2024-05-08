@@ -293,7 +293,7 @@ async function reemplazarPlaceholders(texto: string): Promise<string> {
       texto = texto.replace(word, memeUrl);
     }
     else if(word.startsWith("$")) {
-      var searchText = word.substring(1,word.length-4).replace(/-/g, ' ');
+      var searchText = word.substring(1,word.length).replace(/-/g, ' ');
       const gifUrl = await buscarGif(searchText);
       texto = texto.replace(word, gifUrl);
     }

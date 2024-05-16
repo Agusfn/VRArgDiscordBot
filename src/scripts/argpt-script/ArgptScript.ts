@@ -79,7 +79,6 @@ export class ArgptScript extends Script {
     }
 
     public async sendResponse() {
-        this.pendingResponse = false;
         // Envía el indicador de "escribiendo" cada 5 segundos
         this.channel.sendTyping();
         const typingInterval = setInterval(() => {
@@ -113,11 +112,13 @@ export class ArgptScript extends Script {
           // Envía la respuesta de LM Studio al canal de Discord
           const finalMessage = this.removeBotMentions(reply);
           await this.channel.send(finalMessage);
+          this.pendingResponse = false;
           if(this.voiceEnabled) {
             await this.handleVoice(finalMessage.replace(/https?:\/\/\S+\b/g, ''));
           }
         } catch (error) {
           clearInterval(typingInterval);
+          this.pendingResponse = false;
           console.error('Error al obtener la respuesta de la API de LLM:', error);
           await this.channel.send('Lo siento, no pude procesar tu mensaje.');
         }
@@ -129,7 +130,6 @@ export class ArgptScript extends Script {
     }
 
     private removeBotMentions(text: string): string {
-      // Utiliza una expresión regular para encontrar todas las coincidencias de '<Santos Bot>:' y reemplazarlas por una cadena vacía
       if(text.length <= 13) {
         return "xd";
       }

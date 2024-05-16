@@ -48,6 +48,8 @@ const variables: { [key: string]: string } = {
   "jesus-jogando-bola-gif": "https://tenor.com/view/jesus-jogando-bola-gif-20827588"
 };
 
+const lastTwo = ["",""];
+
 export class ArgptScript extends Script {
 
     protected scriptTitle = "Argpt Script";
@@ -106,12 +108,32 @@ export class ArgptScript extends Script {
           if(!reply.substring(1, reply.length).startsWith("SantosBot")) {
             reply = "<SantosBot>: " + reply;
           }
+          
+          const similar = compareStringsIgnoreCase(lastTwo[1], lastTwo[0], 13);//TODO 13 es el largo por SantosBot pero deberia ser dinamico
+          if(similar > 6) {
+            const similar2 = compareStringsIgnoreCase(lastTwo[0], reply, 13);
+            if(similar2 > 0) {
+              reply = "<SantosBot>: " + reply.substring(13 + similar2, reply.length);
+            }
+          }
+
+          if(reply == "<SantosBot>: " || reply == "<SantosBot>:") {
+            reply = reply + " xd";
+          }
+          console.log("sending: " + reply);
           this.history.push({ role: "assistant", content: reply });
+
+          lastTwo[1] = lastTwo[0];
+          lastTwo[0] = reply;
 
           reply = await reemplazarPlaceholders(reply);
           // Envía la respuesta de LM Studio al canal de Discord
-          const finalMessage = this.removeBotMentions(reply);
+          let finalMessage = this.removeBotMentions(reply);
+          if(finalMessage.length == 0) {
+            finalMessage = finalMessage + " xd";
+          }
           await this.channel.send(finalMessage);
+
           this.pendingResponse = false;
           if(this.voiceEnabled) {
             await this.handleVoice(finalMessage.replace(/https?:\/\/\S+\b/g, ''));
@@ -131,9 +153,12 @@ export class ArgptScript extends Script {
 
     private removeBotMentions(text: string): string {
       if(text.length <= 13) {
-        return "xd";
+        return text;
       }
       text = text.substring(13, text.length).trim();
+      if(!text.includes(':')) {
+        return text;
+      }
       if(text.startsWith('<')) {
         var pos = text.indexOf('>');
         if(pos) {
@@ -315,3 +340,23 @@ async function getSpeechFromText(text: string, lang: string = 'es') {
       console.error('Error al generar el audio TTS:', error);
   }
 };
+
+function compareStringsIgnoreCase(str1: string, str2: string, offset: number): number {
+  // Validar si alguna de las cadenas es vacía
+  if (str1.length <= offset || str2.length <= offset) {
+      return 0;
+  }
+
+  // Convertir ambas cadenas a minúsculas
+  const lowerStr1 = str1.toLowerCase().substring(offset, str1.length);
+  const lowerStr2 = str2.toLowerCase().substring(offset, str2.length);
+
+  let index = 0;
+  const minLength = Math.min(lowerStr1.length, lowerStr2.length);
+
+  while (index < minLength && lowerStr1[index] === lowerStr2[index]) {
+      index++;
+  }
+
+  return index;
+}

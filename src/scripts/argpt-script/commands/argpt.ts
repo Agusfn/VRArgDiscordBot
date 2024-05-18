@@ -1,5 +1,5 @@
 import { DiscordCommand } from "@ts/interfaces";
-import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { GuildMember, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { ArgptScript } from "../ArgptScript";
 
 export default {
@@ -23,6 +23,11 @@ export default {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('voice')
+                .setDescription('Entra al canal de voz')
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('setup')
                 .setDescription('Configurar la ip y puerto al que se conectara argpt')
                 .addStringOption(option =>
@@ -37,6 +42,17 @@ export default {
                         .setDescription('Puerto')
                         .setRequired(true)
                 )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('lang')
+                .setDescription('Configurar el idioma de la voz')
+                .addStringOption(option =>
+                    option
+                        .setName('lang_code')
+                        .setDescription('codigo de idioma. ejemplo: es, en')
+                        .setRequired(true)
+                    )
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
     async execute(script, interaction) {
@@ -63,6 +79,25 @@ export default {
                 script.ip = interaction.options.getString('ip');
                 script.port = interaction.options.getInteger('port');
                 interaction.reply({ content: "Has configurado la IP y puerto correctamente!", ephemeral: true });
+            }
+            else if (interaction.options.getSubcommand() === 'voice') {
+                script.voiceEnabled = !script.voiceEnabled;
+                interaction.reply("ArGPT voice set to " + script.voiceEnabled);
+
+                if(!script.voiceEnabled){
+                    return;
+                }
+
+                if (!(interaction.member instanceof GuildMember)) {
+                    interaction.reply({ content: "You must be in a voice channel to use this command.", ephemeral: true });
+                    return;
+                }
+
+                script.voiceChannel = interaction.member.voice.channel;
+            }
+            else if (interaction.options.getSubcommand() === 'lang') {
+                script.voiceLang = interaction.options.getString('lang_code');
+                interaction.reply("Has configurado el idioma de la voz a " + script.voiceLang);
             }
         }
     },

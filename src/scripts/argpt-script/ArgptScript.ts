@@ -128,7 +128,10 @@ export class ArgptScript extends Script {
       Object.keys(variables).forEach(key => {
           text = text.replace(new RegExp("\\$"+key, 'g'), variables[key]);
       });
-      text = text.replace(/@([^\s\n]+)/g, '$1');
+
+      // remove all @ from text
+      text = text.replace(/@/g, ':wheelchair:');
+
       return text;
     }
     
